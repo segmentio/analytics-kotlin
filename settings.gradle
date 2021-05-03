@@ -1,0 +1,5 @@
+include ':sovran-kotlin'
+include ':analytics-kotlin'
+include ':samples:kotlin-android-app'
+include ':samples:java-android-app'
+rootProject.name = "Analytics-Android-Next"

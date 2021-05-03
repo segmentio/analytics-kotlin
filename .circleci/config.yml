@@ -1,0 +1,43 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/analytics-next
+    docker:
+      - image: circleci/android:api-30
+    environment:
+      JVM_OPTS: -Xmx6400m
+      CIRCLE_JDK_VERSION: oraclejdk8
+    steps:
+      - checkout
+      - restore_cache:
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "samples/kotlin-android-app/build.gradle" }}-{{ checksum  "samples/java-android-app/build.gradle" }}
+      - run:
+          name: Download Dependencies
+          command: ./gradlew androidDependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "samples/kotlin-android-app/build.gradle" }}-{{ checksum  "samples/java-android-app/build.gradle" }}
+      - run:
+          name: Run Tests
+          command: ./gradlew lint test
+      - run:
+          name: Snyk
+          command: curl -sL https://raw.githubusercontent.com/segmentio/snyk_helpers/master/initialization/snyk.sh | sh
+          environment:
+            SNYK_FAIL_ON: upgradable
+            SNYK_SEVERITY_THRESHOLD: high
+      - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          path: app/build/reports
+          destination: reports
+      - store_test_results: # for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+          path: app/build/test-results
+workflows:
+  version: 2
+  run:
+    jobs:
+      - build:
+          context: snyk
+          filters:
+            tags:
+              only: /.*/
