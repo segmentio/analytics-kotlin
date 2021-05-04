@@ -3,6 +3,7 @@ package com.segment.analytics.utilities
 import android.content.SharedPreferences
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.time.Instant
 
 /**
@@ -133,9 +134,14 @@ class EventsFileManager(
     // Atomic write to underlying file
     // TODO make atomic
     private fun writeToFile(content: ByteArray, file: File) {
-        val os = FileOutputStream(file, true)
-        os.write(content)
-        os.flush()
-        os.close()
+        val atomicFile = AtomicFile(file)
+        val os = atomicFile.startWrite(true)
+        try {
+            os.write(content)
+            os.flush()
+            atomicFile.finishWrite(os)
+        } catch (ex: IOException) {
+            atomicFile.failWrite(os)
+        }
     }
 }
