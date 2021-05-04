@@ -39,7 +39,15 @@ class EventFragment(val type: EventType, val analytics: Analytics) : Fragment() 
         }
 
         view.findViewById<Button>(R.id.sendEvent).setOnClickListener {
-            val input = view.findViewById<EditText>(R.id.input).text.toString()
+            val input = view.findViewById<EditText>(R.id.input).text.toString().let {
+                if (it.isNotEmpty()) {
+                    it
+                } else {
+                    "Placeholder"
+                }
+            }
+
+
             val properties = getUserProps(traitRoot)
             when (type) {
                 EventType.Track -> sendTrack(eventName = input, props = properties)
