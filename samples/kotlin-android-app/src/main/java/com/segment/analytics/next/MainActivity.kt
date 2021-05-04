@@ -6,15 +6,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
+import com.segment.analytics.EventType
 
 
 class MainActivity : AppCompatActivity() {
 
     val analytics = MainApplication.analytics
-    val trackFragment = EventFragment("Track", analytics)
-    val identifyFragment = EventFragment("Identify", analytics)
-    val screenFragment = EventFragment("Screen", analytics)
-    val groupFragment = EventFragment("Group", analytics)
+    val trackFragment = EventFragment(EventType.Track, analytics)
+    val identifyFragment = EventFragment(EventType.Identify, analytics)
+    val screenFragment = EventFragment(EventType.Screen, analytics)
+    val groupFragment = EventFragment(EventType.Group, analytics)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -8,11 +8,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.segment.analytics.*
 import com.segment.analytics.platform.Plugin
-import com.segment.analytics.platform.plugins.log
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -20,27 +20,38 @@ import kotlinx.serialization.json.Json
  * A UI fragment allowing users to send events through the analytics timeline
  * It leverages the Plugin concept to display in-flight events
  */
-class EventFragment(val type: String, val analytics: Analytics) : Fragment() {
-    val properties = mutableMapOf<String, String>()
+class EventFragment(val type: EventType, val analytics: Analytics) : Fragment() {
+
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         val props = fetch(type)
         // Inflate the layout for this fragment
         val view = inflater.inflate(props.second, container, false)
+
+        val traitRoot = view.findViewById<LinearLayout>(R.id.props)
+        // add the first one
+        addPropertyLayout(traitRoot)
+        view.findViewById<Button>(R.id.add).setOnClickListener {
+            addPropertyLayout(traitRoot)
+        }
+
         view.findViewById<Button>(R.id.sendEvent).setOnClickListener {
             val input = view.findViewById<EditText>(R.id.input).text.toString()
+            val properties = getUserProps(traitRoot)
             when (type) {
-                "Track" -> sendTrack(eventName = input, props = properties)
-                "Identify" -> sendIdentify(userId = input, traits = properties)
-                "Screen" -> sendScreen(screenName = input, props = properties)
-                "Group" -> sendGroup(groupId = input, traits = properties)
-                else -> "" to 0
+                EventType.Track -> sendTrack(eventName = input, props = properties)
+                EventType.Identify -> sendIdentify(userId = input, traits = properties)
+                EventType.Screen -> sendScreen(screenName = input, props = properties)
+                EventType.Group -> sendGroup(groupId = input, traits = properties)
             }
         }
+
         val codeView = view.findViewById<TextView>(R.id.code_view)
         codeView.movementMethod = ScrollingMovementMethod()
+
         analytics.add(object : Plugin {
             override val type: Plugin.Type = Plugin.Type.After
             override val name: String = "TempResult-$type"
@@ -60,9 +71,35 @@ class EventFragment(val type: String, val analytics: Analytics) : Fragment() {
                 return super.execute(event)
             }
         })
-        // TODO implement default properties logic for events
-        // TODO implement add property button logic
+
         return view
+    }
+
+    private fun getUserProps(root: LinearLayout): MutableMap<String, String> {
+        val map = mutableMapOf<String, String>()
+        for (i in 0 until root.childCount) {
+            val ll = root.getChildAt(i)
+            val key = ll.findViewWithTag<EditText>("key").text.toString()
+            val value = ll.findViewWithTag<EditText>("value").text.toString()
+            if (key.isNotEmpty()) {
+                map[key] = value
+            }
+        }
+        return map
+    }
+
+    private fun addPropertyLayout(container: LinearLayout) {
+        val inflater = LayoutInflater.from(context);
+        //to get the MainLayout
+        val layoutXml: Int = when (type) {
+            EventType.Track -> R.layout.property
+            EventType.Identify -> R.layout.trait
+            EventType.Screen -> R.layout.property
+            EventType.Group -> R.layout.trait
+            else -> 0
+        }
+        val view = inflater.inflate(layoutXml, container, false)
+        container.addView(view)
     }
 
     private inline fun <reified T : BaseEvent> eventStr(event: T) = Json {
@@ -71,7 +108,7 @@ class EventFragment(val type: String, val analytics: Analytics) : Fragment() {
     }.encodeToString(event)
 
     private fun colorFormat(text: String): String {
-        val spacer = fun (match: MatchResult): CharSequence {
+        val spacer = fun(match: MatchResult): CharSequence {
             return "<br>" + "&nbsp;".repeat(match.value.length - 1)
         }
 
@@ -81,28 +118,28 @@ class EventFragment(val type: String, val analytics: Analytics) : Fragment() {
         return newString
     }
 
-    private fun sendGroup(groupId: String, traits: MutableMap<String, String>) {
+    private fun sendGroup(groupId: String, traits: Map<String, String>) {
         analytics.group(groupId, traits)
     }
 
-    private fun sendScreen(screenName: String, props: MutableMap<String, String>) {
+    private fun sendScreen(screenName: String, props: Map<String, String>) {
         analytics.screen(screenName, props)
     }
 
-    private fun sendIdentify(userId: String, traits: MutableMap<String, String>) {
+    private fun sendIdentify(userId: String, traits: Map<String, String>) {
         analytics.identify(userId, traits)
     }
 
-    private fun sendTrack(eventName: String, props: MutableMap<String, String>) {
+    private fun sendTrack(eventName: String, props: Map<String, String>) {
         analytics.track(eventName, props)
     }
 
-    fun fetch(type: String): Pair<String, Int> {
+    private fun fetch(type: EventType): Pair<String, Int> {
         return when (type) {
-            "Track" -> "props" to R.layout.fragment_track
-            "Identify" -> "traits" to R.layout.fragment_identify
-            "Screen" -> "props" to R.layout.fragment_screen
-            "Group" -> "traits" to R.layout.fragment_group
+            EventType.Track -> "props" to R.layout.fragment_track
+            EventType.Identify -> "traits" to R.layout.fragment_identify
+            EventType.Screen -> "props" to R.layout.fragment_screen
+            EventType.Group -> "traits" to R.layout.fragment_group
             else -> "" to 0
         }
     }

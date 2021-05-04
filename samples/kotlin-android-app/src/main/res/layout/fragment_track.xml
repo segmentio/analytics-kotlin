@@ -27,40 +27,15 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:orientation="horizontal"
-            android:weightSum="5">
-
-            <EditText
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="2"
-                android:backgroundTint="@color/white"
-                android:hint="Property"
-                android:textColor="@color/segment_green"
-                android:textColorHint="@color/segment_green" />
-
-            <EditText
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="2"
-                android:backgroundTint="@color/white"
-                android:hint="Value"
-                android:textColor="@color/segment_green"
-                android:textColorHint="@color/segment_green" />
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:backgroundTint="@color/segment_green"
-                android:text="+"
-                android:textColor="@color/white" />
-        </LinearLayout>
     </LinearLayout>
+
+    <Button
+        android:id="@+id/add"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/segment_green"
+        android:text="Add Property"
+        android:textColor="@color/white" />
 
     <Button
         android:id="@+id/sendEvent"
