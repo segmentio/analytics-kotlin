@@ -4,11 +4,11 @@ The hassle-free way to add Segment analytics to your kotlin app (Android/JVM).
 NOTE: This project is currently in the Pilot phase and is not supported yet by Segment. We encourage you to try out this new library and provide feedback and requests via Github issues/PRs. This will eventually supplant our analytics-android library.
 
 ## Table of Contents
-- Installation (#installation)
-- Usage (#usage)
-    - Setting up the client (#setting-up-the-client)
-    - Client Options (#client-options)
-- Client Methods (#client-methods)
+- [Installation](#installation)
+- [Usage](#usage)
+    - [Setting up the client](#setting-up-the-client)
+    - [Client Options](#client-options)
+- [Client Methods](#client-methods)
     - track
     - identify
     - screen
@@ -17,12 +17,12 @@ NOTE: This project is currently in the Pilot phase and is not supported yet by S
     - find
     - remove
     - flush
-- Plugin Architecture (#plugin-architecture)
-    - Fundamentals (#fundamentals)
-    - Advanced Concepts (#advanced-concepts)
-- Contributing (#contributing)
-- Code of Conduct (#code-of-conduct)
-- License (#license)
+- [Plugin Architecture](#plugin-architecture)
+    - [Fundamentals](#fundamentals)
+    - [Advanced Concepts](#advanced-concepts)
+- [Contributing](#contributing)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
 
 ## Installation
 In your app's build.gradle file add the following
@@ -59,7 +59,7 @@ Analytics("SEGMENT_API_KEY")
 ```
 
 ### Client Options
-When creating a new client, you can pass several options which can be found below.
+When creating a new client, you can pass several [options](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/Configuration.kt) which can be found below.
 
 Android
 ```kotlin
@@ -253,7 +253,7 @@ We have the following [types]
 ### Fundamentals
 We have 3 types of basic plugins that you can use as a foundation for modifying functionality
 
-- [`Plugin`]()
+- [`Plugin`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt)
 The most trivial plugin interface that will act on any event payload going through the timeline.
 For example if you wanted to add something to the context object of any event payload as an enrichment.
 ```kotlin
@@ -270,7 +270,7 @@ class SomePlugin: Plugin {
 }
 ```
 
-- [`EventPlugin`]()
+- [`EventPlugin`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt)
 A plugin interface that will act only on specific event types. You can choose the event types by only overriding the event functions you want.
 For example if you only wanted to act on `track` & `identify` events
 ```kotlin
@@ -286,7 +286,7 @@ class SomePlugin: EventPlugin {
 }
 ```
 
-- [`DestinationPlugin`]()
+- [`DestinationPlugin`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt)
 A plugin interface most commonly used for device-mode destinations. This plugin contains an internal timeline that follows the same process as the analytics timeline,
 allowing you to modify/augment how events reach the particular destination.
 For example if you wanted to implement a device-mode destination plugin for Amplitude
@@ -310,9 +310,9 @@ class AmplitudePlugin: DestinationPlugin() {
 
 
 ### Advanced concepts
-- [`setup(Analytics)`]()
+- [`setup(Analytics)`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt#L20-L24)
 Use this function to setup your plugin. This will be implicitly called once the plugin is registered
-- [`update(Settings)`]()
+- [`update(Settings)`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt#L31-L33)
 Use this function to react to any settings updates. This will be implicitly called when settings are updated.
 You can force a settings update by calling `analytics.checkSettings()`
 - AndroidLifecycle hooks
