@@ -4,19 +4,25 @@ We want this community to be friendly and respectful to each other. Please follo
 
 ## Development workflow
 
+We recommend using the Android Studio IDE to jumpstart your development workflow
+
 To get started with the project
-TODO
+- clone this repository
+- import the project into Android Studio
 
 While developing, you can run the [example app](/example/) to test your changes.
-TODO
+- You can do this via the IDE itself using the `Run app` button in the toolbar
+- You can install the debug version of the app using the gradle command:
+```
+./gradlew installDebug
+```
 
-To fix formatting errors, run the following:
-
-TODO
-
-Remember to add tests for your change if possible. Run the unit tests by:
-
-TODO
+Remember to add tests for your change if possible. Run the unit tests:
+- Running the tests via the IDE
+- via the command line
+```
+./gradlew test
+```
 
 ### Commit message convention
 
@@ -29,11 +35,9 @@ We follow the [conventional commits specification](https://www.conventionalcommi
 - `test`: adding or updating tests, eg add integration tests using detox.
 - `chore`: tooling changes, e.g. change CI config.
 
-Our pre-commit hooks verify that your commit message matches this format when committing.
-
 ### Linting and tests
 
-TODO
+./gradlew test
 
 Our pre-commit hooks verify that the linter and tests pass when committing.
 
