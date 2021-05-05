@@ -27,14 +27,15 @@ supplant our `analytics-android` library.
 - [License](#license)
 
 ## Installation
+For our pilot phase, we will be using [jitpack](https://jitpack.io/#segmentio/analytics-kotlin) to distribute the library
 In your app's build.gradle file add the following
 ```groovy
 repositories {
-    mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
-    implementation 'com.segment.analytics.android:analytics:5.+'
+    implementation 'com.github.segmentio:analytics-kotlin:1.0.0'
 }
 ```
 
