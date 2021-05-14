@@ -2,6 +2,7 @@ package com.segment.analytics
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import com.segment.analytics.Storage.Companion.MAX_PAYLOAD_SIZE
 import com.segment.analytics.utilities.EventsFileManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -64,7 +65,7 @@ fun parseFilePaths(filePathStr: String?): List<String> {
     return if (filePathStr.isNullOrEmpty()) {
         emptyList()
     } else {
-        filePathStr.split(",")
+        filePathStr.split(",").map { it.trim() }
     }
 }
 
@@ -122,7 +123,7 @@ class AndroidStorage(
     override fun read(key: Storage.Constants): String? {
         return when (key) {
             Storage.Constants.Events -> {
-                eventsFile.read().joinToString()
+                eventsFile.read().also { Log.d("PRAY","Reading $it") }.joinToString()
             }
             else -> {
                 sharedPreferences.getString(key.rawVal, null)
@@ -143,6 +144,7 @@ class AndroidStorage(
     }
 
     override fun removeFile(filePath: String): Boolean {
+        Log.d("PRAY","Deleting: $filePath")
         return eventsFile.remove(filePath)
     }
 }

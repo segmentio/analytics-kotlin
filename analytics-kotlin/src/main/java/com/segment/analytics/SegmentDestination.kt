@@ -115,6 +115,9 @@ class SegmentDestination(
     }
 
     private fun performFlush() {
+        if (eventCount.get() < 1) {
+            return
+        }
         val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
         if (fileUrls.isEmpty()) {
             analytics.log("No events to upload")
@@ -124,9 +127,13 @@ class SegmentDestination(
         for (fileUrl in fileUrls) {
             try {
                 val connection = httpClient.upload(apiHost, apiKey)
+                val file = File(fileUrl)
+                if (!file.exists()) { // may have been deleted by scheduled flush
+                    continue
+                }
                 connection.outputStream?.let {
                     // Write the payloads into the OutputStream.
-                    val fileInputStream = FileInputStream(File(fileUrl))
+                    val fileInputStream = FileInputStream(file)
                     fileInputStream.copyTo(connection.outputStream)
                     fileInputStream.close()
                     connection.outputStream.close()

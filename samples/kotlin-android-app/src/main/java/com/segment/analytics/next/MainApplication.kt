@@ -1,11 +1,15 @@
 package com.segment.analytics.next
 
 import android.app.Application
+import android.content.Context
+import android.util.Log
 import com.segment.analytics.*
 import com.segment.analytics.next.plugins.AndroidAdvertisingIdPlugin
 import com.segment.analytics.next.plugins.AndroidRecordScreenPlugin
 import com.segment.analytics.next.plugins.WebhookPlugin
 import com.segment.analytics.platform.Plugin
+import com.segment.analytics.platform.plugins.LogType
+import com.segment.analytics.platform.plugins.Logger
 import com.segment.analytics.utilities.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,5 +54,16 @@ class MainApplication : Application() {
         analytics.add(WebhookPlugin("https://webhook.site/387c1740-f919-4446-a26e-a9a01ed28c8a", Executors.newSingleThreadExecutor()))
 
         analytics.add(AndroidAdvertisingIdPlugin(this))
+
+        analytics.add(object: Logger("CustomLogger") {
+            override fun log(type: LogType, message: String, event: BaseEvent?) {
+                if (message.contains("Error uploading events from batch file")) {
+                    val dir = applicationContext.getDir("segment-disk-queue", Context.MODE_PRIVATE)
+                    val files = dir.listFiles().map{ it.absolutePath}
+                    Log.d(name, files.toString())
+                    Log.d(name, message)
+                }
+            }
+        })
     }
 }
