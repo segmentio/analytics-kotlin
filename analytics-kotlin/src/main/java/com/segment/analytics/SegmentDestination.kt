@@ -85,7 +85,8 @@ class SegmentDestination(
             var initialDelay = flushIntervalInMillis
 
             // If we have events in queue flush them
-            val eventFilePaths = parseFilePaths(storage.read(Storage.Constants.Events)) // should we switch to extension function?
+            val eventFilePaths =
+                parseFilePaths(storage.read(Storage.Constants.Events)) // should we switch to extension function?
             if (eventFilePaths.isNotEmpty()) {
                 initialDelay = 0
             }
@@ -128,7 +129,8 @@ class SegmentDestination(
             try {
                 val connection = httpClient.upload(apiHost, apiKey)
                 val file = File(fileUrl)
-                if (!file.exists()) { // may have been deleted by scheduled flush
+                // flush is executed in a thread pool and file could have been deleted by another thread
+                if (!file.exists()) {
                     continue
                 }
                 connection.outputStream?.let {
@@ -158,11 +160,13 @@ class SegmentDestination(
                     )
                 }
             } catch (e: Exception) {
-                analytics.log("""
+                analytics.log(
+                    """
                     | Error uploading events from batch file
                     | fileUrl="$fileUrl"
                     | msg=${e.message}
-                """.trimMargin(), type = LogType.ERROR)
+                """.trimMargin(), type = LogType.ERROR
+                )
                 e.printStackTrace()
             }
         }
