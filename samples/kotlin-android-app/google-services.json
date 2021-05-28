@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "563414602026",
+    "project_id": "segment-sample-6f133",
+    "storage_bucket": "segment-sample-6f133.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:563414602026:android:c7050fbaa3bcd8e6dd0e53",
+        "android_client_info": {
+          "package_name": "com.segment.analytics.next"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "563414602026-9ao5va0s6mjhcpa1d6im903jlv1l20ue.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnJY7sJnjjUi89bH6K7TE8W9MCozjkpo4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "563414602026-9ao5va0s6mjhcpa1d6im903jlv1l20ue.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
