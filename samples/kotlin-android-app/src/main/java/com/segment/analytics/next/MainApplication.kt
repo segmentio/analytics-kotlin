@@ -1,15 +1,11 @@
 package com.segment.analytics.next
 
 import android.app.Application
-import android.content.Context
-import android.util.Log
 import com.segment.analytics.*
 import com.segment.analytics.next.plugins.AndroidAdvertisingIdPlugin
 import com.segment.analytics.next.plugins.AndroidRecordScreenPlugin
 import com.segment.analytics.next.plugins.WebhookPlugin
 import com.segment.analytics.platform.Plugin
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.Logger
 import com.segment.analytics.utilities.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
