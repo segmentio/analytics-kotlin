@@ -22,3 +22,30 @@ Here is how you can do it via adb
 ```bash
 adb shell am start -W -a android.intent.action.VIEW -d "https://segment-sample.com?utm_source=cli\&utm_click=2" com.segment.analytics.next
 ```
+
+## FCM
+This project is setup to track push notification received and opened events. This code is strictly optional and must be customized as per your needs. The code here is only for demonstration purposes
+### Setup
+- Add your FCM project's `google-services.json` to this folder
+- Modify `MyFirebaseService.kt` to customize the notification displayed to the user.
+- Here is how to send a push notification using cURL [this uses the legacy api](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-using-the-legacy-app-server-protocols)
+```bash
+curl --request POST \
+  --url https://fcm.googleapis.com/fcm/send \
+  --header 'Authorization: key=<SERVER_KEY>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+	"data": {
+		"title": "Hello World"
+		"content": "You have mail",
+	},
+	"to": "<FCM_TOKEN_FOR_DEVICE>"
+}'
+```
+
+### How it works
+- We have 2 core changes
+  - MyFirebaseService.kt
+  The core component to handle FCM push messages. This is responsible for handling the incoming message and assigning the intents for the notification. It is also responsible for firing the `Push Notification Received` event.
+  - PushNotificationTracking.kt
+  The analytics plugin responsible for firing the "Push Notification Tapped" event. This is a lifecycle plugin that will be invoked for any Activity onCreate.
