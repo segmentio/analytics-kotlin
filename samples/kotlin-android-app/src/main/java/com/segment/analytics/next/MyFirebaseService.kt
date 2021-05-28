@@ -35,7 +35,7 @@ class MyFirebaseService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Log.d("PRAY", "push notification received")
+        Log.d("SegmentSample", "push notification received")
         super.onMessageReceived(remoteMessage)
         val data = remoteMessage.data
         val title = data["title"]

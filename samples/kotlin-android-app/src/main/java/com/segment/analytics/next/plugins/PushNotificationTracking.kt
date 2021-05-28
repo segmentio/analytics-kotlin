@@ -29,7 +29,6 @@ object PushNotificationTracking: Plugin, AndroidLifecycle {
     private fun checkPushNotification(bundle: Bundle?) {
         if (bundle != null) {
             if (bundle.containsKey("push_notification")) {
-                Log.d("PRAY-Plugin", "push notification = yes")
                 analytics.track("Push Notification Tapped", buildJsonObject {
                     put("action", "Open")
                     val campaign = buildJsonObject {
