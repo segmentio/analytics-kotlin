@@ -85,7 +85,8 @@ class SegmentDestination(
             var initialDelay = flushIntervalInMillis
 
             // If we have events in queue flush them
-            val eventFilePaths = parseFilePaths(storage.read(Storage.Constants.Events)) // should we switch to extension function?
+            val eventFilePaths =
+                parseFilePaths(storage.read(Storage.Constants.Events)) // should we switch to extension function?
             if (eventFilePaths.isNotEmpty()) {
                 initialDelay = 0
             }
@@ -115,6 +116,9 @@ class SegmentDestination(
     }
 
     private fun performFlush() {
+        if (eventCount.get() < 1) {
+            return
+        }
         val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
         if (fileUrls.isEmpty()) {
             analytics.log("No events to upload")
@@ -124,9 +128,14 @@ class SegmentDestination(
         for (fileUrl in fileUrls) {
             try {
                 val connection = httpClient.upload(apiHost, apiKey)
+                val file = File(fileUrl)
+                // flush is executed in a thread pool and file could have been deleted by another thread
+                if (!file.exists()) {
+                    continue
+                }
                 connection.outputStream?.let {
                     // Write the payloads into the OutputStream.
-                    val fileInputStream = FileInputStream(File(fileUrl))
+                    val fileInputStream = FileInputStream(file)
                     fileInputStream.copyTo(connection.outputStream)
                     fileInputStream.close()
                     connection.outputStream.close()
@@ -151,11 +160,13 @@ class SegmentDestination(
                     )
                 }
             } catch (e: Exception) {
-                analytics.log("""
+                analytics.log(
+                    """
                     | Error uploading events from batch file
                     | fileUrl="$fileUrl"
                     | msg=${e.message}
-                """.trimMargin(), type = LogType.ERROR)
+                """.trimMargin(), type = LogType.ERROR
+                )
                 e.printStackTrace()
             }
         }

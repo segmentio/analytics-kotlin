@@ -64,7 +64,7 @@ fun parseFilePaths(filePathStr: String?): List<String> {
     return if (filePathStr.isNullOrEmpty()) {
         emptyList()
     } else {
-        filePathStr.split(",")
+        filePathStr.split(",").map { it.trim() }
     }
 }
 
