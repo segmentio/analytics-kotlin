@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Track Screen"
+        android:textColor="@color/segment_green"
+        android:textSize="24sp" />
+
+    <EditText
+        android:id="@+id/input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Screen name"
+        android:backgroundTint="@color/white"
+        android:textColor="@color/segment_green"
+        android:textColorHint="@color/segment_green" />
+
+    <LinearLayout
+        android:id="@+id/props"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/add"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/segment_green"
+        android:text="Add Property"
+        android:textColor="@color/white" />
+
+    <Button
+        android:id="@+id/sendEvent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/segment_green"
+        android:text="Send Event"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/code_view"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:background="@drawable/border"
+        android:padding="5dp"
+        android:scrollbars="vertical"
+        android:textColor="@color/white"
+        android:typeface="monospace" />
+</LinearLayout>
