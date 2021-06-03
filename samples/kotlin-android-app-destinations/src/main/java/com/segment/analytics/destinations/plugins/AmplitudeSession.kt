@@ -28,15 +28,12 @@ class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
     }
 
-    /**
-     * Sends a JSON payload to the specified webhookUrl, with the Content-Type=application/json
-     * header set
-     */
+    // Add the session_id to the Amplitude payload for cloud mode to handle.
     private inline fun <reified T: BaseEvent?> insertSession(payload: T?): BaseEvent? {
         var returnPayload = payload
         payload?.let {
             analytics.log(message = "Running ${payload.type} payload through $name", event = payload, type = LogType.INFO)
-            returnPayload = payload.putIntegrations("Amplitude", sessionID) as T?
+            returnPayload = payload.putIntegrations("Amplitude", mapOf("session_id" to sessionID)) as T?
         }
         return returnPayload
     }
@@ -89,7 +86,6 @@ class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
             stopTimer()
             startTimer()
         }
-
     }
 
     fun stopTimer() {
