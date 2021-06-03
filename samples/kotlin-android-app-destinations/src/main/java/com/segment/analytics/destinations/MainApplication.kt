@@ -2,7 +2,8 @@ package com.segment.analytics.destinations
 
 import android.app.Application
 import com.segment.analytics.*
-import com.segment.analytics.next.plugins.WebhookPlugin
+import com.segment.analytics.destinations.plugins.AmplitudeSession
+import com.segment.analytics.destinations.plugins.WebhookPlugin
 import com.segment.analytics.platform.Plugin
 import com.segment.analytics.utilities.*
 import kotlinx.coroutines.CoroutineScope
@@ -50,5 +51,8 @@ class MainApplication : Application() {
                 Executors.newSingleThreadExecutor()
             )
         )
+
+        // Try out amplitude session
+        analytics.add(AmplitudeSession())
     }
 }

@@ -1,4 +1,4 @@
-package com.segment.analytics.next.plugins
+package com.segment.analytics.destinations.plugins
 
 import com.segment.analytics.*
 import com.segment.analytics.platform.DestinationPlugin
@@ -14,7 +14,7 @@ import java.net.MalformedURLException
 import java.net.URL
 import java.util.concurrent.ExecutorService
 
-// A Destination plugin that doesnt modify the incoming payload, and sends it to the configured webhook
+// A Destination plugin that doesn't modify the incoming payload, and sends it to the configured webhook
 class WebhookPlugin(private val webhookUrl: String, private val networkExecutor: ExecutorService) :
     DestinationPlugin() {
     override val name: String = "WebhookDestination-$webhookUrl"
