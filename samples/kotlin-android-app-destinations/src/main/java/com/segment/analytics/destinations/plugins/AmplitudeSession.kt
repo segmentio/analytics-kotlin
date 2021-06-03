@@ -65,13 +65,11 @@ class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onBackground() {
-        log(LogType.INFO, "background", null)
         stopTimer()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
     fun onForeground() {
-        log(LogType.INFO, "foreground", null)
         startTimer()
     }
 
@@ -81,8 +79,6 @@ class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
         sessionID = Calendar.getInstance().timeInMillis
 
         timer = Timer().schedule(fireTime) {
-            log(LogType.INFO, "Timer Fired", null)
-            log(LogType.INFO, "Session: $sessionID", null)
             stopTimer()
             startTimer()
         }
