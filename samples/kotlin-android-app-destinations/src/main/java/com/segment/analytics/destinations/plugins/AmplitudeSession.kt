@@ -5,17 +5,15 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.segment.analytics.*
-import com.segment.analytics.AndroidLogger.log
 import com.segment.analytics.platform.DestinationPlugin
 import com.segment.analytics.platform.plugins.LogType
 import com.segment.analytics.platform.plugins.log
 import com.segment.analytics.utilities.putIntegrations
-import java.time.Instant
 import java.util.*
 import kotlin.concurrent.schedule
 
 // A Destination plugin that adds session tracking to Amplitude cloud mode.
-class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
+class AmplitudeSession() : DestinationPlugin() {
 
     override val name: String = "AmplitudeSession"
     var sessionID: Long = -1
@@ -25,7 +23,6 @@ class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
     }
 
     // Add the session_id to the Amplitude payload for cloud mode to handle.
@@ -39,6 +36,11 @@ class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
     }
 
     override fun track(payload: TrackEvent): BaseEvent? {
+        if (payload.event == "Application Backgrounded") {
+            onBackground()
+        } else if (payload.event == "Application Opened") {
+            onForeground()
+        }
         insertSession(payload)
         return payload
     }
@@ -63,12 +65,10 @@ class AmplitudeSession() : DestinationPlugin(), LifecycleObserver {
         return payload
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onBackground() {
         stopTimer()
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_START)
     fun onForeground() {
         startTimer()
     }
