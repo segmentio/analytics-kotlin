@@ -3,9 +3,8 @@ package com.segment.analytics.destinations
 import android.app.Application
 import com.segment.analytics.*
 import com.segment.analytics.destinations.plugins.AmplitudeSession
-import com.segment.analytics.utilities.*
 import com.segment.analytics.destinations.plugins.MixpanelDestination
-import com.segment.analytics.next.plugins.WebhookPlugin
+import com.segment.analytics.destinations.plugins.WebhookPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
