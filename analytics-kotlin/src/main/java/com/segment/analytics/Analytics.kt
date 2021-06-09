@@ -18,7 +18,12 @@ import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 
 class Analytics(internal val configuration: Configuration) : Subscriber {
-    internal val store: Store
+
+    private val _store: Store
+    internal val store: Store get() {
+        return _store
+    }
+
     internal val timeline: Timeline
     internal val analyticsScope: CoroutineScope
     internal val storage: Storage
@@ -33,7 +38,7 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
         processingDispatcher = configuration.analyticsDispatcher
         ioDispatcher = configuration.ioDispatcher
         timeline = Timeline().also { it.analytics = this }
-        store = Store()
+        _store = Store()
 
         storage = configuration.storageProvider.getStorage(
             analytics = this,
@@ -359,10 +364,6 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
     fun add(plugin: Plugin): Analytics {
         // could be done in background thread
         this.timeline.add(plugin)
-        store.currentState(System::class)?.settings?.let {
-            // if we have settings then update plugin with it
-            plugin.update(it)
-        }
         if (plugin is DestinationPlugin && plugin.name != "Segment.io") {
             analyticsScope.launch(ioDispatcher) {
                 store.dispatch(System.AddIntegrationAction(plugin.name), System::class)

@@ -3,9 +3,8 @@ package com.segment.analytics.destinations
 import android.app.Application
 import com.segment.analytics.*
 import com.segment.analytics.destinations.plugins.AmplitudeSession
+import com.segment.analytics.destinations.plugins.MixpanelDestination
 import com.segment.analytics.destinations.plugins.WebhookPlugin
-import com.segment.analytics.platform.Plugin
-import com.segment.analytics.utilities.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,21 +28,9 @@ class MainApplication : Application() {
             this.flushAt = 1
             this.flushInterval = 0
         }
-        analytics.add(object : Plugin {
-            override val type: Plugin.Type = Plugin.Type.Enrichment
-            override val name: String = "Foo"
-            override lateinit var analytics: Analytics
 
-            override fun execute(event: BaseEvent): BaseEvent? {
-                event.enableIntegration("AppsFlyer")
-                event.disableIntegration("AppBoy")
-                event.putInContext("foo", "bar")
-                event.putInContextUnderKey("device", "android", true)
-                event.removeFromContext("locale")
-                return event
-            }
+        analytics.add(MixpanelDestination(applicationContext))
 
-        })
         // A random webhook url to view your events
         analytics.add(
             WebhookPlugin(

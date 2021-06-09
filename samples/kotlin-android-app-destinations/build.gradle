@@ -37,6 +37,11 @@ android {
 }
 
 dependencies {
+
+    // Mixpanel
+    api 'com.mixpanel.android:mixpanel-android:5.8.7'
+
+
     implementation project(':analytics-kotlin')
 
     implementation 'androidx.multidex:multidex:2.0.1'

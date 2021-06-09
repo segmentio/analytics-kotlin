@@ -2,6 +2,7 @@ package com.segment.analytics.platform
 
 import com.segment.analytics.Analytics
 import com.segment.analytics.BaseEvent
+import com.segment.analytics.System
 
 // Platform abstraction for managing all plugins and their execution
 // Currently the execution follows
@@ -56,8 +57,12 @@ internal class Timeline {
 
     // Register a new plugin
     fun add(plugin: Plugin) {
-        plugins[plugin.type]?.add(plugin)
         plugin.setup(analytics)
+        plugins[plugin.type]?.add(plugin)
+        analytics.store.currentState(System::class)?.settings?.let {
+            // if we have settings then update plugin with it
+            plugin.update(it)
+        }
     }
 
     // Remove a registered plugin

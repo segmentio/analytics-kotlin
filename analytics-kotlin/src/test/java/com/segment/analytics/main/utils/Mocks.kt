@@ -34,6 +34,8 @@ fun mockContext(): Context {
 
 fun mockAnalytics(): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
+    val mockStore = Store()
+    every { mock.store } returns mockStore
     return mock
 }
 
