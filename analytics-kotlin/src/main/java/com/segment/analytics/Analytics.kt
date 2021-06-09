@@ -359,10 +359,6 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
     fun add(plugin: Plugin): Analytics {
         // could be done in background thread
         this.timeline.add(plugin)
-        store.currentState(System::class)?.settings?.let {
-            // if we have settings then update plugin with it
-            plugin.update(it)
-        }
         if (plugin is DestinationPlugin && plugin.name != "Segment.io") {
             analyticsScope.launch(ioDispatcher) {
                 store.dispatch(System.AddIntegrationAction(plugin.name), System::class)

@@ -29,7 +29,7 @@ class MainApplication : Application() {
             this.flushInterval = 0
         }
 
-        analytics.add(MixpanelDestination(applicationContext, "MIXPANEL_TOKEN"))
+        analytics.add(MixpanelDestination(applicationContext))
 
         // A random webhook url to view your events
         analytics.add(

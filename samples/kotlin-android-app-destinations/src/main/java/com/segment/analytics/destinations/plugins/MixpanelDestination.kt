@@ -14,11 +14,11 @@ import kotlinx.serialization.json.*
 import java.util.*
 
 class MixpanelDestination(
-    private val context: Context,
-    private var token: String
+    private val context: Context
 ) : DestinationPlugin(), AndroidLifecycle {
     override val name: String = "Mixpanel"
-    private var mixpanel: MixpanelAPI = MixpanelAPI.getInstance(context, token)
+    private var token: String = ""
+    private lateinit var mixpanel: MixpanelAPI
 
     companion object {
         private val TRAITS_MAPPER: Map<String, String> = mapOf(
@@ -157,7 +157,7 @@ class MixpanelDestination(
         val userId = payload.userId
         if (userId.isNotBlank()) {
             mixpanel.alias(userId, previousId)
-            analytics.log("mixpanel.alias($userId, $previousId)")
+            analytics.log("mixpanel.alias($userId, $previousId)", type = LogType.INFO, event = payload)
         }
         return payload
     }
@@ -166,6 +166,7 @@ class MixpanelDestination(
         super.update(settings)
         val mixpanelSettings = settings.integrations[name]
         mixpanelSettings?.jsonObject?.let {
+            analytics.log("mixpanel.received settings=$it", type = LogType.INFO)
             consolidatedPageCalls = it.getBoolean("consolidatedPageCalls") ?: true
             trackAllPages = it.getBoolean("trackAllPages") ?: true
             trackCategorizedPages = it.getBoolean("trackCategorizedPages") ?: true
@@ -192,12 +193,12 @@ class MixpanelDestination(
     private fun trackEvent(name: String, properties: JsonObject) {
         val props = properties.toJSONObject()
         mixpanel.track(name, props)
-        analytics.log("mixpanel.track($name, $properties)")
+        analytics.log("mixpanel.track($name, $properties)", type = LogType.INFO)
 
         val revenue = properties["revenue"]?.jsonPrimitive?.double
         if (isPeopleEnabled && revenue != null && revenue != 0.0) {
             mixpanel.people.trackCharge(revenue, props)
-            analytics.log("mixpanel.people.trackCharge($name, $props)")
+            analytics.log("mixpanel.people.trackCharge($name, $props)", type = LogType.INFO)
         }
     }
 }
