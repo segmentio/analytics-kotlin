@@ -18,7 +18,12 @@ import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 
 class Analytics(internal val configuration: Configuration) : Subscriber {
-    internal val store: Store
+
+    private val _store: Store
+    internal val store: Store get() {
+        return _store
+    }
+
     internal val timeline: Timeline
     internal val analyticsScope: CoroutineScope
     internal val storage: Storage
@@ -33,7 +38,7 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
         processingDispatcher = configuration.analyticsDispatcher
         ioDispatcher = configuration.ioDispatcher
         timeline = Timeline().also { it.analytics = this }
-        store = Store()
+        _store = Store()
 
         storage = configuration.storageProvider.getStorage(
             analytics = this,
