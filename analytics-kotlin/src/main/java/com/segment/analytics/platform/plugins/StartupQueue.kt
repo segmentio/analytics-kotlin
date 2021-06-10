@@ -44,6 +44,7 @@ class StartupQueue(): Plugin, Subscriber {
 
     // Handler to manage system update
     private fun systemUpdate(state: System) {
+        analytics.log("Analytics starting = ${state.started}")
         started.set(state.started)
         if (started.get()) {
             replayEvents()

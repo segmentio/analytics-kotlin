@@ -3,6 +3,7 @@ package com.segment.analytics
 import com.segment.analytics.platform.DestinationPlugin
 import com.segment.analytics.platform.Plugin
 import com.segment.analytics.platform.Timeline
+import com.segment.analytics.platform.plugins.StartupQueue
 import com.segment.analytics.platform.plugins.log
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -79,6 +80,7 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
         }
 
         checkSettings()
+        add(StartupQueue())
         if (configuration.autoAddSegmentDestination) {
             add(
                 SegmentDestination(
