@@ -3,6 +3,7 @@ package com.segment.analytics.main
 import android.content.Context
 import android.content.SharedPreferences
 import com.segment.analytics.*
+import com.segment.analytics.System
 import com.segment.analytics.main.utils.MemorySharedPreferences
 import com.segment.analytics.main.utils.mockAnalytics
 import com.segment.analytics.main.utils.mockContext
@@ -20,7 +21,6 @@ import java.util.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.*
-import java.io.IOException
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class StorageTests {
@@ -47,7 +47,8 @@ class StorageTests {
                 System(
                     configuration = Configuration("123"),
                     integrations = emptyJsonObject,
-                    settings = Settings()
+                    settings = Settings(),
+                    false
                 )
             )
 
@@ -103,7 +104,8 @@ class StorageTests {
                             },
                             plan = emptyJsonObject,
                             edgeFunction = emptyJsonObject
-                        )
+                        ),
+                        false
                     )
                 }
             }

@@ -16,7 +16,7 @@ data class System(
     var configuration: Configuration = Configuration(""),
     var integrations: Integrations?,
     var settings: Settings?,
-    var started: Boolean
+    var running: Boolean
 ) : State {
 
     companion object {
@@ -33,7 +33,7 @@ data class System(
                 configuration = configuration,
                 integrations = emptyJsonObject,
                 settings = settings,
-                started = false
+                running = false
             )
         }
     }
@@ -44,7 +44,7 @@ data class System(
                 state.configuration,
                 state.integrations,
                 settings,
-                state.started
+                state.running
             )
         }
     }
@@ -62,7 +62,7 @@ data class System(
                     state.configuration,
                     JsonObject(newIntegrations),
                     state.settings,
-                    state.started
+                    state.running
                 )
             }
             return state
@@ -78,20 +78,20 @@ data class System(
                     state.configuration,
                     JsonObject(newIntegrations),
                     state.settings,
-                    state.started
+                    state.running
                 )
             }
             return state
         }
     }
 
-    class SetStartedAction(var started: Boolean): Action<System> {
+    class ToggleRunningAction(var running: Boolean): Action<System> {
         override fun reduce(state: System): System {
             return System(
                 state.configuration,
                 state.integrations,
                 state.settings,
-                started
+                running
             )
         }
     }

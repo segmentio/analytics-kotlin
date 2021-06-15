@@ -6,7 +6,7 @@ import com.segment.analytics.platform.Plugin
 import com.segment.analytics.System
 import sovran.kotlin.Subscriber
 import java.util.Queue
-import java.util.LinkedList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
 class StartupQueue(): Plugin, Subscriber {
@@ -16,7 +16,7 @@ class StartupQueue(): Plugin, Subscriber {
 
     private val maxSize = 1000
     private val started: AtomicBoolean = AtomicBoolean(false)
-    private val queuedEvents: Queue<BaseEvent> = LinkedList()
+    private val queuedEvents: Queue<BaseEvent> = ConcurrentLinkedQueue()
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -24,12 +24,13 @@ class StartupQueue(): Plugin, Subscriber {
             subscriber = this,
             stateClazz = System::class,
             initialState = true,
-            handler = this::systemUpdate
+            handler = this::runningUpdate
         )
     }
 
     override fun execute(event: BaseEvent): BaseEvent? {
         if (!started.get()) {
+            analytics.log("PRAY-message-queuing")
             // timeline hasn't started, so queue it up.
             if (queuedEvents.size >= maxSize) {
                 // if we've exceeded the max queue size start dropping events
@@ -38,14 +39,15 @@ class StartupQueue(): Plugin, Subscriber {
             queuedEvents.offer(event)
             return null
         }
+        analytics.log("PRAY-message-not-queuing")
         // the timeline has started, so let the event pass.
         return event
     }
 
     // Handler to manage system update
-    private fun systemUpdate(state: System) {
-        analytics.log("Analytics starting = ${state.started}")
-        started.set(state.started)
+    private fun runningUpdate(state: System) {
+        analytics.log("Analytics starting = ${state.running}")
+        started.set(state.running)
         if (started.get()) {
             replayEvents()
         }

@@ -61,22 +61,6 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
 
             // subscribe to store after state is provided
             storage.subscribeToStore()
-
-            // check settings
-            // subscribe to ensure plugins get settings updates
-            it.subscribe(
-                this,
-                initialState = true,
-                stateClazz = System::class,
-                queue = processingDispatcher
-            ) { state: System ->
-                state.settings?.let { settings ->
-                    timeline.applyClosure { plugin -> plugin.update(settings) }
-
-                    // We received settings, mark system as started
-                    store.dispatch(System.SetStartedAction(true), System::class)
-                }
-            }
         }
 
         checkSettings()
@@ -367,29 +351,12 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
      * @param plugin [Plugin] to be added
      */
     fun add(plugin: Plugin): Analytics {
-        // we need to know if the system is already started.
-        val wasStarted = store.currentState(System::class)?.started ?: false
-        if (wasStarted) {
-            // if it was started, we need to stop it temporarily.
-            store.dispatch(System.SetStartedAction(false), System::class)
-            // adding the plugin to the timeline below will eventually call
-            // update(settings:) at which point, we can start it up again.
-        }
-
         this.timeline.add(plugin)
         if (plugin is DestinationPlugin && plugin.name != "Segment.io") {
             analyticsScope.launch(ioDispatcher) {
                 store.dispatch(System.AddIntegrationAction(plugin.name), System::class)
             }
         }
-
-        // if the timeline had started before, set it back to started since
-        // update(settings:) will have been called by now.
-        if (wasStarted) {
-            // fixme why do we need to do this manually since `update` should do it
-            store.dispatch(System.SetStartedAction(true), System::class)
-        }
-
         return this
     }
 
