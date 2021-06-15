@@ -30,7 +30,7 @@ class StartupQueue(): Plugin, Subscriber {
 
     override fun execute(event: BaseEvent): BaseEvent? {
         if (!started.get()) {
-            analytics.log("PRAY-message-queuing")
+            analytics.log("$name queueing event", event = event)
             // timeline hasn't started, so queue it up.
             if (queuedEvents.size >= maxSize) {
                 // if we've exceeded the max queue size start dropping events
@@ -39,7 +39,6 @@ class StartupQueue(): Plugin, Subscriber {
             queuedEvents.offer(event)
             return null
         }
-        analytics.log("PRAY-message-not-queuing")
         // the timeline has started, so let the event pass.
         return event
     }
