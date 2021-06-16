@@ -15,7 +15,8 @@ import kotlin.collections.set
 data class System(
     var configuration: Configuration = Configuration(""),
     var integrations: Integrations?,
-    var settings: Settings?
+    var settings: Settings?,
+    var running: Boolean
 ) : State {
 
     companion object {
@@ -32,6 +33,7 @@ data class System(
                 configuration = configuration,
                 integrations = emptyJsonObject,
                 settings = settings,
+                running = false
             )
         }
     }
@@ -41,7 +43,8 @@ data class System(
             return System(
                 state.configuration,
                 state.integrations,
-                settings
+                settings,
+                state.running
             )
         }
     }
@@ -58,7 +61,8 @@ data class System(
                 return System(
                     state.configuration,
                     JsonObject(newIntegrations),
-                    state.settings
+                    state.settings,
+                    state.running
                 )
             }
             return state
@@ -73,10 +77,22 @@ data class System(
                 return System(
                     state.configuration,
                     JsonObject(newIntegrations),
-                    state.settings
+                    state.settings,
+                    state.running
                 )
             }
             return state
+        }
+    }
+
+    class ToggleRunningAction(var running: Boolean): Action<System> {
+        override fun reduce(state: System): System {
+            return System(
+                state.configuration,
+                state.integrations,
+                state.settings,
+                running
+            )
         }
     }
 }

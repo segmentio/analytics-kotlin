@@ -3,6 +3,7 @@ package com.segment.analytics
 import com.segment.analytics.platform.DestinationPlugin
 import com.segment.analytics.platform.Plugin
 import com.segment.analytics.platform.Timeline
+import com.segment.analytics.platform.plugins.StartupQueue
 import com.segment.analytics.platform.plugins.log
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -60,22 +61,10 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
 
             // subscribe to store after state is provided
             storage.subscribeToStore()
-
-            // check settings
-            // subscribe to ensure plugins get settings updates
-            it.subscribe(
-                this,
-                initialState = true,
-                stateClazz = System::class,
-                queue = processingDispatcher
-            ) { state: System ->
-                state.settings?.let { settings ->
-                    timeline.applyClosure { plugin -> plugin.update(settings) }
-                }
-            }
         }
 
         checkSettings()
+        add(StartupQueue())
         if (configuration.autoAddSegmentDestination) {
             add(
                 SegmentDestination(
@@ -362,7 +351,6 @@ class Analytics(internal val configuration: Configuration) : Subscriber {
      * @param plugin [Plugin] to be added
      */
     fun add(plugin: Plugin): Analytics {
-        // could be done in background thread
         this.timeline.add(plugin)
         if (plugin is DestinationPlugin && plugin.name != "Segment.io") {
             analyticsScope.launch(ioDispatcher) {
