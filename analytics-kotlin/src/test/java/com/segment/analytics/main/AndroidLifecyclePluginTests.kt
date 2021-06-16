@@ -305,6 +305,78 @@ class AndroidLifecyclePluginTests {
         }
     }
 
+    @Config(sdk = [22])
+    @Test
+    fun `track deep link when enabled sdk=22`() {
+        analytics.configuration.trackApplicationLifecycleEvents = false
+        analytics.configuration.trackDeepLinks = true
+        analytics.configuration.useLifecycleObserver = false
+        analytics.add(lifecyclePlugin)
+        val mockPlugin = spyk(TestRunPlugin {})
+        analytics.add(mockPlugin)
+
+        val referrer = Uri.parse("android-app:/com.package.app")
+
+        val mockIntent = mockk<Intent>()
+        every { mockIntent.data } returns Uri.parse("app://track.com/open?utm_id=12345&gclid=abcd&nope=")
+        val mockActivity = mockk<Activity>()
+        every { mockActivity.intent } returns mockIntent
+        every { mockActivity.referrer } returns referrer
+        val mockBundle = mockk<Bundle>()
+
+        // Simulate activity startup
+        lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
+
+        assertTrue(mockPlugin.ran)
+        val track = slot<TrackEvent>()
+        verify { mockPlugin.track(capture(track)) }
+        with(track.captured) {
+            assertEquals("Deep Link Opened", event)
+            assertEquals(buildJsonObject {
+                put("url", "app://track.com/open?utm_id=12345&gclid=abcd&nope=")
+                put("utm_id", "12345")
+                put("gclid", "abcd")
+                put("referrer", "android-app:/com.package.app")
+            }, properties)
+        }
+    }
+
+    @Config(sdk = [18])
+    @Test
+    fun `track deep link when enabled sdk=18`() {
+        analytics.configuration.trackApplicationLifecycleEvents = false
+        analytics.configuration.trackDeepLinks = true
+        analytics.configuration.useLifecycleObserver = false
+        analytics.add(lifecyclePlugin)
+        val mockPlugin = spyk(TestRunPlugin {})
+        analytics.add(mockPlugin)
+
+        val referrer = Uri.parse("android-app:/com.package.app")
+
+        val mockIntent = mockk<Intent>()
+        every { mockIntent.data } returns Uri.parse("app://track.com/open?utm_id=12345&gclid=abcd&nope=")
+        every { mockIntent.getParcelableExtra<Uri>(Intent.EXTRA_REFERRER) } returns referrer
+        val mockActivity = mockk<Activity>()
+        every { mockActivity.intent } returns mockIntent
+        val mockBundle = mockk<Bundle>()
+
+        // Simulate activity startup
+        lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
+
+        assertTrue(mockPlugin.ran)
+        val track = slot<TrackEvent>()
+        verify { mockPlugin.track(capture(track)) }
+        with(track.captured) {
+            assertEquals("Deep Link Opened", event)
+            assertEquals(buildJsonObject {
+                put("url", "app://track.com/open?utm_id=12345&gclid=abcd&nope=")
+                put("utm_id", "12345")
+                put("gclid", "abcd")
+                put("referrer", "android-app:/com.package.app")
+            }, properties)
+        }
+    }
+
     @Test
     fun `do not track deep link when disabled`() {
         analytics.configuration.trackApplicationLifecycleEvents = false
