@@ -355,8 +355,7 @@ class AndroidLifecyclePluginTests {
 
         val mockIntent = mockk<Intent>()
         every { mockIntent.data } returns Uri.parse("app://track.com/open?utm_id=12345&gclid=abcd&nope=")
-        every { mockIntent.getBooleanExtra(Intent.EXTRA_REFERRER, false) } returns true
-//        every { mockIntent.getParcelableExtra<Uri>(Intent.EXTRA_REFERRER) } returns referrer
+        every { mockIntent.getParcelableExtra<Uri>(Intent.EXTRA_REFERRER) } returns referrer
         val mockActivity = mockk<Activity>()
         every { mockActivity.intent } returns mockIntent
         val mockBundle = mockk<Bundle>()
