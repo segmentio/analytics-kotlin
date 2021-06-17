@@ -318,25 +318,24 @@ fun getReferrer(activity: Activity): Uri? {
 
 // Returns the referrer on devices running SDK versions lower than 22.
 private fun getReferrerCompatible(activity: Activity): Uri? {
+    var referrerUri: Uri? = null
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
         val intent = activity.intent
-        val referrerUri: Uri? = intent.getParcelableExtra(Intent.EXTRA_REFERRER)
-        if (referrerUri != null) {
-            return referrerUri
-        }
+        referrerUri = intent.getParcelableExtra(Intent.EXTRA_REFERRER)
 
-        // Intent.EXTRA_REFERRER_NAME
-        val referrer = intent.getStringExtra("android.intent.extra.REFERRER_NAME")
-        if (referrer != null) {
-            // Try parsing the referrer URL; if it's invalid, return null
-            return try {
-                Uri.parse(referrer)
-            } catch (e: ParseException) {
-                null
+        if (referrerUri == null) {
+            // Intent.EXTRA_REFERRER_NAME
+            referrerUri = intent.getStringExtra("android.intent.extra.REFERRER_NAME")?.let {
+                // Try parsing the referrer URL; if it's invalid, return null
+                try {
+                    Uri.parse(it)
+                } catch (e: ParseException) {
+                    null
+                }
             }
         }
     }
-    return null
+    return referrerUri
 }
 
 // Basic interface for a plugin to consume lifecycle callbacks
