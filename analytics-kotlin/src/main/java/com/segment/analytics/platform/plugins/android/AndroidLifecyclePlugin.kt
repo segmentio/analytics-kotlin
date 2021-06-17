@@ -2,16 +2,17 @@ package com.segment.analytics.platform.plugins.android
 
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.net.ParseException
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.lifecycle.*
 import com.segment.analytics.Analytics
 import com.segment.analytics.Storage
 import com.segment.analytics.platform.Plugin
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.log
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -30,7 +31,6 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
     // config properties
     private var shouldTrackApplicationLifecycleEvents: Boolean = true
     private var trackDeepLinks: Boolean = true
-    private var shouldRecordScreenViews: Boolean = true
     private var useLifecycleObserver: Boolean = false
 
     // state properties
@@ -211,6 +211,11 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
             return
         }
         val properties = buildJsonObject {
+
+            getReferrer(activity)?.let {
+                put("referrer", it.toString())
+            }
+
             val uri = intent.data
             uri?.let {
                 for (parameter in uri.queryParameterNames) {
@@ -303,6 +308,35 @@ private fun PackageInfo.getVersionCode(): Number =
         @Suppress("DEPRECATION")
         this.versionCode
     }
+
+// Returns the referrer who started the Activity.
+fun getReferrer(activity: Activity): Uri? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+        activity.referrer
+    } else getReferrerCompatible(activity)
+}
+
+// Returns the referrer on devices running SDK versions lower than 22.
+private fun getReferrerCompatible(activity: Activity): Uri? {
+    var referrerUri: Uri? = null
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        val intent = activity.intent
+        referrerUri = intent.getParcelableExtra(Intent.EXTRA_REFERRER)
+
+        if (referrerUri == null) {
+            // Intent.EXTRA_REFERRER_NAME
+            referrerUri = intent.getStringExtra("android.intent.extra.REFERRER_NAME")?.let {
+                // Try parsing the referrer URL; if it's invalid, return null
+                try {
+                    Uri.parse(it)
+                } catch (e: ParseException) {
+                    null
+                }
+            }
+        }
+    }
+    return referrerUri
+}
 
 // Basic interface for a plugin to consume lifecycle callbacks
 interface AndroidLifecycle {
