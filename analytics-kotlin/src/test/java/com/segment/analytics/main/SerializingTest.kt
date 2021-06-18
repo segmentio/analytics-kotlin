@@ -1,7 +1,6 @@
 package com.segment.analytics.main
 
 import com.segment.analytics.Analytics
-import com.segment.analytics.Configuration
 import com.segment.analytics.main.utils.mockContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

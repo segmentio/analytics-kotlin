@@ -1,7 +1,8 @@
 package com.segment.analytics.destinations
 
 import android.app.Application
-import com.segment.analytics.*
+import com.segment.analytics.Analytics
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.destinations.plugins.AmplitudeSession
 import com.segment.analytics.destinations.plugins.FirebaseDestination
 import com.segment.analytics.destinations.plugins.MixpanelDestination

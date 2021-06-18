@@ -1,4 +1,4 @@
-include ':sovran-kotlin'
+include ':kotlin-core'
 include ':analytics-kotlin'
 include ':samples:kotlin-android-app'
 include ':samples:kotlin-android-app-destinations'

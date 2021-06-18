@@ -1,12 +1,10 @@
 package com.segment.analytics.main
 
-import com.segment.analytics.Analytics
 import com.segment.analytics.TrackEvent
 import com.segment.analytics.emptyJsonObject
 import com.segment.analytics.main.utils.mockAnalytics
 import com.segment.analytics.platform.DestinationPlugin
 import com.segment.analytics.platform.Plugin
-import com.segment.analytics.platform.Timeline
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.serialization.json.buildJsonObject

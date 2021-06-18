@@ -3,8 +3,8 @@ package com.segment.analytics.next.plugins
 import android.app.Activity
 import android.os.Bundle
 import android.util.Log
-import com.segment.analytics.Analytics
-import com.segment.analytics.platform.Plugin
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.platform.plugins.android.AndroidLifecycle
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

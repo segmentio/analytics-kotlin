@@ -10,10 +10,13 @@ import android.os.Build
 import android.provider.Settings.Secure
 import android.telephony.TelephonyManager
 import com.segment.analytics.*
-import com.segment.analytics.platform.EventPlugin
-import com.segment.analytics.platform.Plugin
-import com.segment.analytics.utilities.putAll
-import com.segment.analytics.utilities.putUndefinedIfNull
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.utilities.putAll
+import com.segment.analytics.kotlin.core.utilities.putUndefinedIfNull
 import kotlinx.serialization.json.*
 import java.util.*
 import java.lang.System as JavaSystem

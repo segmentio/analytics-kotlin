@@ -11,8 +11,8 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import com.segment.analytics.*
-import com.segment.analytics.platform.Plugin
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.Plugin
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 

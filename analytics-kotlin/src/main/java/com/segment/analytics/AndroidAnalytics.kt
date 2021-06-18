@@ -2,8 +2,11 @@ package com.segment.analytics
 
 import android.content.Context
 import android.util.Log
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.Logger
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.platform.plugins.LogType
+import com.segment.analytics.kotlin.core.platform.plugins.Logger
 import com.segment.analytics.platform.plugins.android.AndroidContextPlugin
 import com.segment.analytics.platform.plugins.android.AndroidLifecyclePlugin
 import kotlinx.coroutines.CoroutineDispatcher
@@ -31,7 +34,8 @@ public fun Analytics(
         analyticsScope = coroutineScope,
         analyticsDispatcher = analyticsDispatcher,
         ioDispatcher = ioDispatcher,
-        application = context
+        application = context,
+        storageProvider = AndroidStorageProvider
     )
     return Analytics(conf).apply {
         startup()
@@ -53,7 +57,8 @@ public fun Analytics(
     require(writeKey.isNotBlank()) { "writeKey cannot be blank " }
     val conf = Configuration(
         writeKey = writeKey,
-        application = context
+        application = context,
+        storageProvider = AndroidStorageProvider
     )
     configs.invoke(conf)
     return Analytics(conf).apply {

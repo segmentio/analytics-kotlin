@@ -74,7 +74,7 @@ fun JsonPrimitive.toContent(): Any? {
     this.doubleOrNull?.let {
         return it
     }
-    
+
     return contentOrNull
 }
 

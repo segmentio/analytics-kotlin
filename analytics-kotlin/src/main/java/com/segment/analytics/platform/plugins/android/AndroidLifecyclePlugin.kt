@@ -10,9 +10,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.lifecycle.*
-import com.segment.analytics.Analytics
-import com.segment.analytics.Storage
-import com.segment.analytics.platform.Plugin
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.platform.Plugin
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 // Android specific class that mediates lifecycle plugin callbacks
-class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, Plugin {
+class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver,
+    Plugin {
 
     override val type: Plugin.Type = Plugin.Type.Utility
     override val name: String = "AnalyticsActivityLifecycleCallbacks"

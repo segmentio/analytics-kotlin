@@ -2,11 +2,11 @@ package com.segment.analytics.next.plugins
 
 import android.content.Context
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
-import com.segment.analytics.Analytics
-import com.segment.analytics.BaseEvent
-import com.segment.analytics.platform.Plugin
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.log
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.LogType
+import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch

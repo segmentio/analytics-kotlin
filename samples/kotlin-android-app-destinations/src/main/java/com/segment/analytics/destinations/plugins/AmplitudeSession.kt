@@ -4,11 +4,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.segment.analytics.*
-import com.segment.analytics.platform.DestinationPlugin
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.log
-import com.segment.analytics.utilities.putIntegrations
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.LogType
+import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.utilities.putIntegrations
 import java.util.*
 import kotlin.concurrent.schedule
 

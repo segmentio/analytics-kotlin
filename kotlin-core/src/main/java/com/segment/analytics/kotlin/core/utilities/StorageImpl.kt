@@ -1,29 +1,49 @@
-package com.segment.analytics
+package com.segment.analytics.kotlin.core.utilities
 
-import android.content.Context
-import android.content.SharedPreferences
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.Storage.Companion.MAX_PAYLOAD_SIZE
-import com.segment.analytics.kotlin.core.utilities.EventsFileManager
-import com.segment.analytics.utilities.AndroidKVS
 import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.Date
+import java.util.Properties
 
-// Android specific
-class AndroidStorage(
-    internal val analytics: Analytics,
-    context: Context,
+class PropertiesKVS(private val properties: Properties): KVS {
+    override fun getInt(key: String, defaultVal: Int): Int =
+        properties.getProperty(key).toIntOrNull() ?: defaultVal
+
+    override fun putInt(key: String, value: Int): Boolean {
+        properties.setProperty(key, value.toString())
+        return true
+    }
+
+}
+
+class StorageImpl(
     private val store: Store,
     writeKey: String,
     private val ioDispatcher: CoroutineDispatcher
 ) : Subscriber, Storage {
 
-    private val sharedPreferences: SharedPreferences =
-        context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)
-    private val storageDirectory: File = context.getDir("segment-disk-queue", Context.MODE_PRIVATE)
-    internal val eventsFile = EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences))
+    private val propertiesFileName = "analytics-kotlin-$writeKey.properties"
+    private val propertiesFile: Properties = Properties()
+    private val storageDirectory = File("~/analytics-kotlin")
+    private val eventsFile = EventsFileManager(storageDirectory, writeKey, PropertiesKVS(propertiesFile))
+
+    init {
+        // check if file exists and load properties from it
+        val file = File(storageDirectory, propertiesFileName)
+        if (file.exists()) {
+            propertiesFile.load(FileInputStream(propertiesFileName))
+        }
+    }
+
+    private fun syncPropertiesFile() {
+        propertiesFile.store(FileOutputStream(propertiesFileName), "last saved at ${Date()}")
+    }
 
     override fun subscribeToStore() {
         store.subscribe(
@@ -53,22 +73,18 @@ class AndroidStorage(
                 }
             }
             else -> {
-                sharedPreferences.edit().putString(key.rawVal, value).apply()
+                propertiesFile.setProperty(key.rawVal, value).also { syncPropertiesFile() }
             }
         }
     }
 
-    /**
-     * @returns the String value for the associated key
-     * for Constants.Events it will return a file url that can be used to read the contents of the events
-     */
     override fun read(key: Storage.Constants): String? {
         return when (key) {
             Storage.Constants.Events -> {
                 eventsFile.read().joinToString()
             }
             else -> {
-                sharedPreferences.getString(key.rawVal, null)
+                propertiesFile.getProperty(key.rawVal, null)
             }
         }
     }
@@ -79,7 +95,7 @@ class AndroidStorage(
                 true
             }
             else -> {
-                sharedPreferences.edit().putString(key.rawVal, null).apply()
+                propertiesFile.remove(key.rawVal).also { syncPropertiesFile() }
                 true
             }
         }
@@ -88,9 +104,10 @@ class AndroidStorage(
     override fun removeFile(filePath: String): Boolean {
         return eventsFile.remove(filePath)
     }
+
 }
 
-object AndroidStorageProvider: StorageProvider {
+object ConcreteStorageProvider: StorageProvider {
     override fun getStorage(
         analytics: Analytics,
         store: Store,
@@ -98,12 +115,10 @@ object AndroidStorageProvider: StorageProvider {
         ioDispatcher: CoroutineDispatcher,
         application: Any
     ): Storage {
-        return AndroidStorage(
-            analytics = analytics,
-            store = store,
-            writeKey = writeKey,
+        return StorageImpl(
             ioDispatcher = ioDispatcher,
-            context = application as Context
+            writeKey = writeKey,
+            store = store
         )
     }
 }
