@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
+import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.CoroutineDispatcher
@@ -65,6 +66,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
 
         checkSettings()
         add(StartupQueue())
+        add(ContextPlugin())
         if (configuration.autoAddSegmentDestination) {
             add(
                 SegmentDestination(

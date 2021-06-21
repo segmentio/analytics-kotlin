@@ -119,6 +119,7 @@ class SegmentDestination(
         if (eventCount.get() < 1) {
             return
         }
+        analytics.log("Segment.io performing flush")
         val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
         if (fileUrls.isEmpty()) {
             analytics.log("No events to upload")
@@ -146,6 +147,7 @@ class SegmentDestination(
                 // Cleanup uploaded payloads
                 storage.removeFile(fileUrl)
             } catch (e: HTTPException) {
+                analytics.log("Segment.io exception while uploading, ${e.message}")
                 if (e.is4xx() && e.responseCode != 429) {
                     // Simply log and proceed to remove the rejected payloads from the queue.
                     analytics.log(

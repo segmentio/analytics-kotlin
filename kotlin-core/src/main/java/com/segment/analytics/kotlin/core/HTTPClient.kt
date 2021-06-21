@@ -28,7 +28,8 @@ class HTTPClient {
     }
 
     private fun authorizationHeader(writeKey: String): String {
-        return "Basic " + Base64.getEncoder().encodeToString(writeKey.toByteArray())
+        val auth = "$writeKey:"
+        return "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
     }
 
     /**
@@ -49,7 +50,7 @@ class HTTPClient {
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
         connection.setRequestProperty(
             "User-Agent",
-            "analytics-android/1.0.0"
+            "analytics-kotlin/1.0.0"
         )
         connection.doInput = true
         return connection

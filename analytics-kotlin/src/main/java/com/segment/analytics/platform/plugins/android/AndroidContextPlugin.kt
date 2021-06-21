@@ -33,7 +33,6 @@ class AndroidContextPlugin : Plugin {
     private lateinit var app: JsonObject
     private lateinit var os: JsonObject
     private lateinit var device: JsonObject
-    private lateinit var library: JsonObject
     private lateinit var screen: JsonObject
 
     companion object {
@@ -55,11 +54,6 @@ class AndroidContextPlugin : Plugin {
         const val DEVICE_MODEL_KEY = "model"
         const val DEVICE_NAME_KEY = "name"
         const val DEVICE_TYPE_KEY = "type"
-
-        // Library
-        const val LIBRARY_KEY = "library"
-        const val LIBRARY_NAME_KEY = "name"
-        const val LIBRARY_VERSION_KEY = "version"
 
         // Network
         const val NETWORK_KEY = "network"
@@ -90,11 +84,6 @@ class AndroidContextPlugin : Plugin {
         os = buildJsonObject {
             put(OS_NAME_KEY, "Android")
             put(OS_VERSION_KEY, Build.VERSION.RELEASE)
-        }
-
-        library = buildJsonObject {
-            put(LIBRARY_NAME_KEY, "analytics-kotlin")
-            put(LIBRARY_VERSION_KEY, BuildConfig.SEGMENT_VERSION_NAME)
         }
 
         screen = buildJsonObject {
@@ -190,9 +179,6 @@ class AndroidContextPlugin : Plugin {
 
             // putApp
             put(APP_KEY, app)
-
-            // putLibrary
-            put(LIBRARY_KEY, library)
 
             // putDevice
             put(DEVICE_KEY, device)

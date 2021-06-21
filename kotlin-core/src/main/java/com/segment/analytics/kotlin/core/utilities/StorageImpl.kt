@@ -6,21 +6,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.util.Date
-import java.util.Properties
-
-class PropertiesKVS(private val properties: Properties): KVS {
-    override fun getInt(key: String, defaultVal: Int): Int =
-        properties.getProperty(key).toIntOrNull() ?: defaultVal
-
-    override fun putInt(key: String, value: Int): Boolean {
-        properties.setProperty(key, value.toString())
-        return true
-    }
-
-}
 
 class StorageImpl(
     private val store: Store,
@@ -28,21 +13,14 @@ class StorageImpl(
     private val ioDispatcher: CoroutineDispatcher
 ) : Subscriber, Storage {
 
-    private val propertiesFileName = "analytics-kotlin-$writeKey.properties"
-    private val propertiesFile: Properties = Properties()
-    private val storageDirectory = File("~/analytics-kotlin")
-    private val eventsFile = EventsFileManager(storageDirectory, writeKey, PropertiesKVS(propertiesFile))
+    private val storageDirectory = File("/tmp/analytics-kotlin/$writeKey")
+    private val storageDirectoryEvents = File(storageDirectory, "events")
+
+    private val propertiesFile = PropertiesFile(storageDirectory, writeKey)
+    private val eventsFile = EventsFileManager(storageDirectoryEvents, writeKey, propertiesFile)
 
     init {
-        // check if file exists and load properties from it
-        val file = File(storageDirectory, propertiesFileName)
-        if (file.exists()) {
-            propertiesFile.load(FileInputStream(propertiesFileName))
-        }
-    }
-
-    private fun syncPropertiesFile() {
-        propertiesFile.store(FileOutputStream(propertiesFileName), "last saved at ${Date()}")
+        propertiesFile.load()
     }
 
     override fun subscribeToStore() {
@@ -73,7 +51,7 @@ class StorageImpl(
                 }
             }
             else -> {
-                propertiesFile.setProperty(key.rawVal, value).also { syncPropertiesFile() }
+                propertiesFile.putString(key.rawVal, value)
             }
         }
     }
@@ -84,7 +62,7 @@ class StorageImpl(
                 eventsFile.read().joinToString()
             }
             else -> {
-                propertiesFile.getProperty(key.rawVal, null)
+                propertiesFile.getString(key.rawVal, null)
             }
         }
     }
@@ -95,7 +73,7 @@ class StorageImpl(
                 true
             }
             else -> {
-                propertiesFile.remove(key.rawVal).also { syncPropertiesFile() }
+                propertiesFile.remove(key.rawVal)
                 true
             }
         }
@@ -107,7 +85,7 @@ class StorageImpl(
 
 }
 
-object ConcreteStorageProvider: StorageProvider {
+object ConcreteStorageProvider : StorageProvider {
     override fun getStorage(
         analytics: Analytics,
         store: Store,

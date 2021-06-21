@@ -89,6 +89,5 @@ object AndroidLogger: Logger("AndroidLogger") {
 private fun Analytics.startup() {
     add(AndroidLogger)
     add(AndroidContextPlugin())
-
     add(AndroidLifecyclePlugin())
 }
