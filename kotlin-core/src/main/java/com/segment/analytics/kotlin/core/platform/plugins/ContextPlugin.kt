@@ -27,7 +27,7 @@ class ContextPlugin: Plugin {
         super.setup(analytics)
         library = buildJsonObject {
             put(LIBRARY_NAME_KEY, "analytics-kotlin")
-            put(LIBRARY_VERSION_KEY, LIBRARY_VERSION) // TODO
+            put(LIBRARY_VERSION_KEY, LIBRARY_VERSION)
         }
     }
 
