@@ -1,4 +1,4 @@
-package com.segment.analytics.platform.plugins.android
+package com.segment.analytics.kotlin.android.plugins
 
 import android.app.Activity
 import android.app.Application

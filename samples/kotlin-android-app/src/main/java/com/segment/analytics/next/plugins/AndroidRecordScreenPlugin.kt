@@ -5,7 +5,7 @@ import android.content.pm.PackageManager
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.android.AndroidLifecycle
+import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.core.platform.plugins.log
 
 class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {

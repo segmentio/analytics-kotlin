@@ -1,4 +1,4 @@
-package com.segment.analytics
+package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.util.Log
@@ -7,8 +7,8 @@ import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.Logger
-import com.segment.analytics.platform.plugins.android.AndroidContextPlugin
-import com.segment.analytics.platform.plugins.android.AndroidLifecyclePlugin
+import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
+import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

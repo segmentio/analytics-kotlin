@@ -3,7 +3,7 @@ package com.segment.analytics.main
 import android.content.Context
 import android.content.SharedPreferences
 import com.segment.analytics.*
-import com.segment.analytics.System
+import com.segment.analytics.kotlin.android.AndroidStorage
 import com.segment.analytics.main.utils.MemorySharedPreferences
 import com.segment.analytics.main.utils.mockAnalytics
 import com.segment.analytics.main.utils.mockContext

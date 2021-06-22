@@ -10,13 +10,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.*
 import com.segment.analytics.main.utils.TestRunPlugin
 import com.segment.analytics.platform.Plugin
-import com.segment.analytics.platform.plugins.android.AndroidLifecycle
-import com.segment.analytics.platform.plugins.android.AndroidLifecyclePlugin
+import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
+import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import io.mockk.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

@@ -1,4 +1,4 @@
-package com.segment.analytics.utilities
+package com.segment.analytics.kotlin.android.utilities
 
 import kotlinx.serialization.json.*
 import org.json.JSONArray

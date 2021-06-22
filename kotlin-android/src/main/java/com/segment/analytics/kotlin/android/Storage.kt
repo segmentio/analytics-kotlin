@@ -1,11 +1,11 @@
-package com.segment.analytics
+package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.content.SharedPreferences
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.Storage.Companion.MAX_PAYLOAD_SIZE
 import com.segment.analytics.kotlin.core.utilities.EventsFileManager
-import com.segment.analytics.utilities.AndroidKVS
+import com.segment.analytics.kotlin.android.utilities.AndroidKVS
 import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
