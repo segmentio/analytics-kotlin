@@ -44,7 +44,7 @@ dependencies {
     // Firebase
     implementation 'com.google.firebase:firebase-core:15.0.2'
 
-    implementation project(':analytics-kotlin')
+    implementation project(':kotlin-android')
 
     implementation 'androidx.multidex:multidex:2.0.1'
 
