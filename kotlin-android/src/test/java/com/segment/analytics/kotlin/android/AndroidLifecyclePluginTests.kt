@@ -1,4 +1,4 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.android
 
 import android.app.Activity
 import android.content.Intent
@@ -7,14 +7,16 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import androidx.test.platform.app.InstrumentationRegistry
-import com.segment.analytics.*
-import com.segment.analytics.main.utils.TestRunPlugin
-import com.segment.analytics.platform.Plugin
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.android.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import io.mockk.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

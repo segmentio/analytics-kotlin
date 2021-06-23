@@ -2,9 +2,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.Logger
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.coroutines.ContinuationInterceptor
@@ -16,7 +14,6 @@ fun main(args: Array<String>) {
             application = "MainApp"
             flushInterval = 0
             flushAt = 1
-            autoAddSegmentDestination = true
             analyticsScope = MainScope()
             analyticsDispatcher = dispatcher
             ioDispatcher = dispatcher

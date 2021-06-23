@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.Json
@@ -67,11 +68,11 @@ class SegmentDestination(
         analytics.log("Segment.io running $stringVal")
         try {
             storage.write(Storage.Constants.Events, stringVal)
+            if (eventCount.incrementAndGet() >= flushCount) {
+                flush()
+            }
         } catch (ex: Exception) {
             analytics.log("Error adding payload", type = LogType.ERROR, event = payload)
-        }
-        if (eventCount.incrementAndGet() >= flushCount) {
-            flush()
         }
     }
 
@@ -86,7 +87,7 @@ class SegmentDestination(
 
             // If we have events in queue flush them
             val eventFilePaths =
-                parseFilePaths(storage.read(Storage.Constants.Events)) // should we switch to extension function?
+                parseFilePaths(storage.read(Storage.Constants.Events))
             if (eventFilePaths.isNotEmpty()) {
                 initialDelay = 0
             }

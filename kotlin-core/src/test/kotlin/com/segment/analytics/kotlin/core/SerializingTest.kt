@@ -1,7 +1,5 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.Analytics
-import com.segment.analytics.main.utils.mockContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -9,11 +7,12 @@ import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import java.lang.Exception
 
 class SerializingTest {
-    val analytics = Analytics(Configuration(writeKey = "123", application = mockContext()))
+    val analytics = Analytics(Configuration(writeKey = "123", application = "Test"))
 
     @Serializable
     data class Foo(val name: String)
@@ -63,6 +62,7 @@ class SerializingTest {
                 encoder.encodeStructure(descriptor) {
                     encodeIntElement(descriptor, 0, value.count)
                 }
+
             override fun deserialize(decoder: Decoder): Bar =
                 decoder.decodeStructure(descriptor) {
                     var count = -1
@@ -85,7 +85,14 @@ class SerializingTest {
 
     @Test
     fun `test whether api fails`() {
-        assertThrows<SerializationException> { analytics.track("bar", Bar(123)) }
+        try {
+            analytics.track("bar", Bar(123))
+            Assertions.fail()
+        } catch (ex: SerializationException) {
+
+        } catch (ex: Exception) {
+            Assertions.fail()
+        }
     }
 
 }

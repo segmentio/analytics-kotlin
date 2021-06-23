@@ -16,8 +16,8 @@ class StorageImpl(
     private val storageDirectory = File("/tmp/analytics-kotlin/$writeKey")
     private val storageDirectoryEvents = File(storageDirectory, "events")
 
-    private val propertiesFile = PropertiesFile(storageDirectory, writeKey)
-    private val eventsFile = EventsFileManager(storageDirectoryEvents, writeKey, propertiesFile)
+    internal val propertiesFile = PropertiesFile(storageDirectory, writeKey)
+    internal val eventsFile = EventsFileManager(storageDirectoryEvents, writeKey, propertiesFile)
 
     init {
         propertiesFile.load()
@@ -59,7 +59,8 @@ class StorageImpl(
     override fun read(key: Storage.Constants): String? {
         return when (key) {
             Storage.Constants.Events -> {
-                eventsFile.read().joinToString()
+                val read = eventsFile.read()
+                read.joinToString()
             }
             else -> {
                 propertiesFile.getString(key.rawVal, null)

@@ -1,8 +1,7 @@
-package com.segment.analytics.main.utils
+package com.segment.analytics.kotlin.core.utils
 
-import com.segment.analytics.*
-import com.segment.analytics.platform.EventPlugin
-import com.segment.analytics.platform.Plugin
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.*
 
 class TestRunPlugin(override val name: String = "TestRunPlugin", var closure: (BaseEvent?) -> Unit): EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Before

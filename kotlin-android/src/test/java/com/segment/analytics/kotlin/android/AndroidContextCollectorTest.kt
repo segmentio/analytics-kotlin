@@ -1,11 +1,9 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
-import com.segment.analytics.*
-import com.segment.analytics.platform.plugins.android.AndroidContextPlugin
-import io.mockk.every
-import io.mockk.mockkStatic
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.*
@@ -14,7 +12,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.time.Instant
 import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
@@ -54,11 +51,6 @@ class AndroidContextCollectorTest {
                 assertEquals("undefined", it["version"].asString())
                 assertEquals("org.robolectric.default", it["namespace"].asString())
                 assertEquals("0", it["build"].asString())
-            }
-            assertTrue(this.containsKey("library"))
-            this["library"]?.jsonObject?.let {
-                assertEquals("analytics-kotlin", it["name"].asString())
-                assertEquals("1.0.0", it["version"].asString())
             }
             assertTrue(this.containsKey("device"))
             this["device"]?.jsonObject?.let {

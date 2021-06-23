@@ -1,30 +1,24 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import android.content.Context
-import android.util.Base64
 import com.segment.analytics.*
-import com.segment.analytics.main.utils.TestRunPlugin
-import com.segment.analytics.main.utils.mockContext
-import com.segment.analytics.platform.plugins.DeviceToken
-import com.segment.analytics.platform.plugins.setDeviceToken
+import com.segment.analytics.kotlin.core.platform.plugins.DeviceToken
+import com.segment.analytics.kotlin.core.platform.plugins.setDeviceToken
+import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import io.mockk.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.junit.Assert
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.io.File
 import java.time.Instant
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DeviceTokenPluginTest {
-    private var mockContext: Context = mockContext()
     private lateinit var analytics: Analytics
 
     private val testDispatcher = TestCoroutineDispatcher()
@@ -37,8 +31,6 @@ class DeviceTokenPluginTest {
         every { Instant.now() } returns Date(0).toInstant()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
-        mockkStatic(Base64::class)
-        every { Base64.encodeToString(any(), any()) } returns "123"
         mockkConstructor(HTTPClient::class)
     }
 
@@ -50,7 +42,7 @@ class DeviceTokenPluginTest {
                 analyticsScope = testScope,
                 ioDispatcher = testDispatcher,
                 analyticsDispatcher = testDispatcher,
-                application = mockContext,
+                application = "Test",
                 autoAddSegmentDestination = false
             )
         )

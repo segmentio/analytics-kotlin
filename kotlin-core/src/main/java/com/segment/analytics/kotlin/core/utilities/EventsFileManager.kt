@@ -2,7 +2,7 @@ package com.segment.analytics.kotlin.core.utilities
 
 import java.io.File
 import java.io.FileOutputStream
-import java.util.*
+import java.time.Instant
 
 /**
  * Responsible for storing events in a batch payload style
@@ -117,7 +117,7 @@ class EventsFileManager(
             return
         }
         // close events array and batch object
-        val contents = """],"sentAt":"${Date()}"}"""
+        val contents = """],"sentAt":"${Instant.now()}"}"""
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
         incrementFileIndex()

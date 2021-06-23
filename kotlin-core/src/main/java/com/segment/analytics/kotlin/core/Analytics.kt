@@ -32,7 +32,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
 
     // Coroutine context used for analytics timeline processing
     val processingDispatcher: CoroutineDispatcher
-    internal val ioDispatcher: CoroutineDispatcher
+    val ioDispatcher: CoroutineDispatcher
 
     init {
         require(configuration.isValid()) { "invalid configuration" }

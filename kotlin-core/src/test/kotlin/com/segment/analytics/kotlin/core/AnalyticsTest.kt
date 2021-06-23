@@ -1,33 +1,34 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import android.content.Context
-import com.segment.analytics.*
-import com.segment.analytics.main.utils.StubPlugin
-import com.segment.analytics.main.utils.TestRunPlugin
-import com.segment.analytics.main.utils.mockContext
-import com.segment.analytics.platform.DestinationPlugin
-import com.segment.analytics.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
+import com.segment.analytics.kotlin.core.utils.StubPlugin
+import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import io.mockk.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
-import sovran.kotlin.Action
 import java.time.Instant
-import java.util.UUID
-import java.util.Date
+import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnalyticsTest {
-    private var mockContext: Context = mockContext()
     private lateinit var analytics: Analytics
 
     private val testDispatcher = TestCoroutineDispatcher()
     private val testScope = TestCoroutineScope(testDispatcher)
 
     private val epochTimestamp = Date(0).toInstant().toString()
+    private val context = buildJsonObject {
+        val lib = buildJsonObject {
+            put(ContextPlugin.LIBRARY_NAME_KEY, "analytics-kotlin")
+            put(ContextPlugin.LIBRARY_VERSION_KEY, Constants.LIBRARY_VERSION)
+        }
+        put(ContextPlugin.LIBRARY_KEY, lib)
+    }
 
     init {
         mockkStatic(Instant::class)
@@ -38,14 +39,13 @@ class AnalyticsTest {
 
     @BeforeEach
     fun setup() {
-        mockContext.getSharedPreferences("", 12).edit().clear()
         analytics = Analytics(
             Configuration(
                 writeKey = "123",
                 analyticsScope = testScope,
                 ioDispatcher = testDispatcher,
                 analyticsDispatcher = testDispatcher,
-                application = mockContext
+                application = "Test"
             )
         )
         analytics.configuration.autoAddSegmentDestination = false
@@ -65,11 +65,11 @@ class AnalyticsTest {
             }
             analytics.add(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
-                assertEquals(
+                Assertions.assertEquals(
                     1,
                     it.size
                 )
-            } ?: fail()
+            } ?: Assertions.fail()
         }
 
         @Test
@@ -84,11 +84,11 @@ class AnalyticsTest {
             analytics.add(middleware)
             analytics.remove("middlewarePlugin")
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
-                assertEquals(
+                Assertions.assertEquals(
                     0,
                     it.size
                 )
-            } ?: fail()
+            } ?: Assertions.fail()
         }
 
         @Test
@@ -99,8 +99,8 @@ class AnalyticsTest {
                 .add(testPlugin1)
                 .add(testPlugin2)
                 .process(TrackEvent(event = "track", properties = emptyJsonObject))
-            assertTrue(testPlugin1.ran)
-            assertTrue(testPlugin2.ran)
+            Assertions.assertTrue(testPlugin1.ran)
+            Assertions.assertTrue(testPlugin2.ran)
         }
 
         @Test
@@ -113,7 +113,7 @@ class AnalyticsTest {
 
             val system = analytics.store.currentState(System::class)
             val curIntegrations = system?.integrations
-            assertEquals(
+            Assertions.assertEquals(
                 buildJsonObject {
                     put("TestDestination", false)
                 },
@@ -131,7 +131,7 @@ class AnalyticsTest {
 
             val system = analytics.store.currentState(System::class)
             val curIntegrations = system?.integrations
-            assertEquals(
+            Assertions.assertEquals(
                 emptyJsonObject,
                 curIntegrations
             )
@@ -148,11 +148,11 @@ class AnalyticsTest {
             val track = slot<TrackEvent>()
             verify { mockPlugin.track(capture(track)) }
             track.captured.let {
-                assertTrue(it.anonymousId.isNotBlank())
-                assertTrue(it.messageId.isNotBlank())
-                assertTrue(it.timestamp == epochTimestamp)
-                assertTrue(it.context == emptyJsonObject)
-                assertTrue(it.integrations == emptyJsonObject)
+                Assertions.assertTrue(it.anonymousId.isNotBlank())
+                Assertions.assertTrue(it.messageId.isNotBlank())
+                Assertions.assertEquals(epochTimestamp, it.timestamp)
+                Assertions.assertEquals(context, it.context)
+                Assertions.assertEquals(emptyJsonObject, it.integrations)
             }
         }
 
@@ -164,11 +164,11 @@ class AnalyticsTest {
             val track = slot<TrackEvent>()
             verify { mockPlugin.track(capture(track)) }
             track.captured.let {
-                assertTrue(it.anonymousId.isNotBlank())
-                assertTrue(it.messageId.isNotBlank())
-                assertTrue(it.timestamp == epochTimestamp)
-                assertEquals(emptyJsonObject, it.integrations)
-                assertEquals(emptyJsonObject, it.context)
+                Assertions.assertTrue(it.anonymousId.isNotBlank())
+                Assertions.assertTrue(it.messageId.isNotBlank())
+                Assertions.assertTrue(it.timestamp == epochTimestamp)
+                Assertions.assertEquals(emptyJsonObject, it.integrations)
+                Assertions.assertEquals(context, it.context)
             }
         }
 
@@ -181,11 +181,11 @@ class AnalyticsTest {
             val track = slot<TrackEvent>()
             verify { mockPlugin.track(capture(track)) }
             track.captured.let {
-                assertTrue(it.anonymousId.isNotBlank())
-                assertTrue(it.messageId.isNotBlank())
-                assertTrue(it.timestamp == epochTimestamp)
-                assertEquals(emptyJsonObject, it.context)
-                assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
+                Assertions.assertTrue(it.anonymousId.isNotBlank())
+                Assertions.assertTrue(it.messageId.isNotBlank())
+                Assertions.assertTrue(it.timestamp == epochTimestamp)
+                Assertions.assertEquals(it.context, context)
+                Assertions.assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
             }
         }
 
@@ -198,7 +198,7 @@ class AnalyticsTest {
                 analytics.track("track", buildJsonObject { put("foo", "bar") })
                 val track = slot<TrackEvent>()
                 verify { mockPlugin.track(capture(track)) }
-                assertEquals(
+                Assertions.assertEquals(
                     TrackEvent(
                         properties = buildJsonObject { put("foo", "bar") },
                         event = "track"
@@ -218,7 +218,7 @@ class AnalyticsTest {
                 analytics.identify("foobar", buildJsonObject { put("name", "bar") })
                 val identify = slot<IdentifyEvent>()
                 verify { mockPlugin.identify(capture(identify)) }
-                assertEquals(
+                Assertions.assertEquals(
                     IdentifyEvent(
                         traits = buildJsonObject { put("name", "bar") },
                         userId = "foobar"
@@ -236,7 +236,7 @@ class AnalyticsTest {
                     UserInfo::class
                 )
                 val curUserInfo = analytics.store.currentState(UserInfo::class)
-                assertEquals(
+                Assertions.assertEquals(
                     UserInfo(
                         userId = "oldUserId",
                         traits = buildJsonObject { put("behaviour", "bad") },
@@ -247,7 +247,7 @@ class AnalyticsTest {
                 analytics.identify("newUserId", buildJsonObject { put("behaviour", "good") })
 
                 val newUserInfo = analytics.store.currentState(UserInfo::class)
-                assertEquals(
+                Assertions.assertEquals(
                     UserInfo(
                         userId = "newUserId",
                         traits = buildJsonObject { put("behaviour", "good") },
@@ -269,7 +269,7 @@ class AnalyticsTest {
                     properties = buildJsonObject { put("foo", "bar") })
                 val screen = slot<ScreenEvent>()
                 verify { mockPlugin.screen(capture(screen)) }
-                assertEquals(
+                Assertions.assertEquals(
                     ScreenEvent(
                         properties = buildJsonObject { put("foo", "bar") },
                         name = "main",
@@ -289,7 +289,7 @@ class AnalyticsTest {
                 analytics.group("high school", buildJsonObject { put("foo", "bar") })
                 val group = slot<GroupEvent>()
                 verify { mockPlugin.group(capture(group)) }
-                assertEquals(
+                Assertions.assertEquals(
                     GroupEvent(
                         traits = buildJsonObject { put("foo", "bar") },
                         groupId = "high school"

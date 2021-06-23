@@ -1,4 +1,4 @@
-package com.segment.analytics.main.utils
+package com.segment.analytics.kotlin.core.utils
 
 import java.util.concurrent.AbstractExecutorService
 import java.util.concurrent.TimeUnit

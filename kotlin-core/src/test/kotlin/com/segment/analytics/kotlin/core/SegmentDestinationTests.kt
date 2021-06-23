@@ -1,12 +1,9 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import android.content.Context
-import android.util.Base64
-import com.segment.analytics.*
-import com.segment.analytics.kotlin.android.AndroidStorage
-import com.segment.analytics.main.utils.mockContext
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.Logger
+import com.segment.analytics.kotlin.core.platform.plugins.LogType
+import com.segment.analytics.kotlin.core.platform.plugins.Logger
+import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
+import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import io.mockk.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -28,7 +25,6 @@ import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SegmentDestinationTests {
-    private var mockContext: Context = mockContext()
     private lateinit var analytics: Analytics
 
     private val testDispatcher = TestCoroutineDispatcher()
@@ -46,14 +42,12 @@ class SegmentDestinationTests {
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
         mockkStatic(Base64::class)
-        every { Base64.encodeToString(any(), any()) } returns "123"
         mockkConstructor(HTTPClient::class)
     }
 
     @BeforeEach
     fun setup() {
-        File("/tmp/analytics-android").deleteRecursively()
-        File("/tmp/analytics-android").mkdir()
+        File("/tmp/analytics-kotlin/123").deleteRecursively()
         segmentDestination = SegmentDestination("123", 2, 0)
         analytics = Analytics(
             Configuration(
@@ -61,7 +55,8 @@ class SegmentDestinationTests {
                 analyticsScope = testScope,
                 ioDispatcher = testDispatcher,
                 analyticsDispatcher = testDispatcher,
-                application = mockContext
+                application = "Test",
+                storageProvider = ConcreteStorageProvider
             )
         )
         segmentDestination.setup(analytics)
@@ -89,7 +84,7 @@ class SegmentDestinationTests {
             (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
         }
 
-        (analytics.storage as AndroidStorage).let {
+        (analytics.storage as StorageImpl).let {
             assertEquals(1, segmentDestination.eventCount.get())
             val storagePath = it.eventsFile.read()[0]
             val storageContents = File(storagePath).readText()
@@ -118,10 +113,8 @@ class SegmentDestinationTests {
         assertEquals(trackEvent, destSpy.track(trackEvent))
         assertEquals(trackEvent, destSpy.track(trackEvent))
 
-        (analytics.storage as AndroidStorage).let {
-            assertEquals(0, segmentDestination.eventCount.get())
-            verify { destSpy.flush() }
-        }
+        assertEquals(0, segmentDestination.eventCount.get())
+        verify { destSpy.flush() }
     }
 
     @Test
@@ -221,9 +214,7 @@ class SegmentDestinationTests {
             assertEquals(trackEvent, eventInFile2)
         }
 
-        (analytics.storage as AndroidStorage).let {
-            assertEquals(0, segmentDestination.eventCount.get())
-        }
+        assertEquals(0, segmentDestination.eventCount.get())
     }
 
     @Test
@@ -258,14 +249,10 @@ class SegmentDestinationTests {
         every { anyConstructed<HTTPClient>().upload(any(), any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        (analytics.storage as AndroidStorage).let {
-            assertEquals(1, segmentDestination.eventCount.get())
-        }
+        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
         assertTrue(payloadsRejected)
-        (analytics.storage as AndroidStorage).let {
-            assertEquals(0, segmentDestination.eventCount.get())
-        }
+        assertEquals(0, segmentDestination.eventCount.get())
     }
 
     @Test
@@ -300,12 +287,10 @@ class SegmentDestinationTests {
         every { anyConstructed<HTTPClient>().upload(any(), any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        (analytics.storage as AndroidStorage).let {
-            assertEquals(1, segmentDestination.eventCount.get())
-        }
+        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
         assertTrue(errorUploading)
-        (analytics.storage as AndroidStorage).let {
+        (analytics.storage as StorageImpl).let {
             // queued event count gets cleared
             assertEquals(0, segmentDestination.eventCount.get())
 
@@ -346,12 +331,10 @@ class SegmentDestinationTests {
         every { anyConstructed<HTTPClient>().upload(any(), any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        (analytics.storage as AndroidStorage).let {
-            assertEquals(1, segmentDestination.eventCount.get())
-        }
+        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
         assertTrue(errorUploading)
-        (analytics.storage as AndroidStorage).let {
+        (analytics.storage as StorageImpl).let {
             // queued event count gets cleared
             assertEquals(0, segmentDestination.eventCount.get())
 

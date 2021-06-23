@@ -1,12 +1,11 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.segment.analytics.*
-import com.segment.analytics.kotlin.android.AndroidStorage
-import com.segment.analytics.main.utils.MemorySharedPreferences
-import com.segment.analytics.main.utils.mockAnalytics
-import com.segment.analytics.main.utils.mockContext
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
+import com.segment.analytics.kotlin.android.utils.mockAnalytics
+import com.segment.analytics.kotlin.android.utils.mockContext
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.serialization.decodeFromString

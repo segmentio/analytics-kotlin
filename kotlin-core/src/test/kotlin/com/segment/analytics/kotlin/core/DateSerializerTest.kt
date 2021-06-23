@@ -1,6 +1,5 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.DateSerializer
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

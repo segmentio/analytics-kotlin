@@ -1,9 +1,9 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.android
 
-import com.segment.analytics.TrackEvent
-import com.segment.analytics.emptyJsonObject
-import com.segment.analytics.main.utils.MemorySharedPreferences
-import com.segment.analytics.utilities.EventsFileManager
+import com.segment.analytics.kotlin.android.utilities.AndroidKVS
+import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.utilities.EventsFileManager
 import io.mockk.every
 import io.mockk.mockkStatic
 import kotlinx.serialization.encodeToString
@@ -22,7 +22,8 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class EventsFileTest {
     private val epochTimestamp = Date(0).toInstant().toString()
-    private val sharedPreferences = MemorySharedPreferences()
+    private val _sharedPreferences = MemorySharedPreferences()
+    private val kvStore = AndroidKVS(_sharedPreferences)
     private val directory = File("/tmp/analytics-android-test/")
 
     init {
@@ -33,12 +34,12 @@ class EventsFileTest {
     @BeforeEach
     fun setup() {
         directory.deleteRecursively()
-        sharedPreferences.preferenceMap.clear()
+        _sharedPreferences.preferenceMap.clear()
     }
 
     @Test
     fun `check if event is stored correctly and creates new file`() {
-        val file = EventsFileManager(directory, "123", sharedPreferences)
+        val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -61,7 +62,7 @@ class EventsFileTest {
 
     @Test
     fun `storeEvent stores in existing file if available`() {
-        val file = EventsFileManager(directory, "123", sharedPreferences)
+        val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -85,7 +86,7 @@ class EventsFileTest {
 
     @Test
     fun `storeEvent creates new file when at capacity and closes other file`() {
-        val file = EventsFileManager(directory, "123", sharedPreferences)
+        val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -99,7 +100,9 @@ class EventsFileTest {
         val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
         file.storeEvent(eventString)
         // artificially add 500kb of data to file
-        FileOutputStream(File(directory, "123-0.tmp"), true).write("A".repeat(475_000).toByteArray())
+        FileOutputStream(File(directory, "123-0.tmp"), true).write(
+            "A".repeat(475_000).toByteArray()
+        )
 
         file.storeEvent(eventString)
         assertFalse(File(directory, "123-0.tmp").exists())
@@ -114,13 +117,13 @@ class EventsFileTest {
 
     @Test
     fun `read returns empty list when no events stored`() {
-        val file = EventsFileManager(directory, "123", sharedPreferences)
+        val file = EventsFileManager(directory, "123", kvStore)
         assertTrue(file.read().isEmpty())
     }
 
     @Test
     fun `read finishes open file and lists it`() {
-        val file = EventsFileManager(directory, "123", sharedPreferences)
+        val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -145,7 +148,7 @@ class EventsFileTest {
 
     @Test
     fun `multiple reads doesnt create extra files`() {
-        val file = EventsFileManager(directory, "123", sharedPreferences)
+        val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -189,8 +192,8 @@ class EventsFileTest {
             }
         val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
 
-        val file1 = EventsFileManager(directory, "123", sharedPreferences)
-        val file2 = EventsFileManager(directory, "qwerty", sharedPreferences)
+        val file1 = EventsFileManager(directory, "123", kvStore)
+        val file2 = EventsFileManager(directory, "qwerty", kvStore)
 
         file1.storeEvent(eventString)
         file2.storeEvent(eventString)
@@ -230,7 +233,7 @@ class EventsFileTest {
 
     @Test
     fun `remove deletes file`() {
-        val file = EventsFileManager(directory, "123", sharedPreferences)
+        val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })

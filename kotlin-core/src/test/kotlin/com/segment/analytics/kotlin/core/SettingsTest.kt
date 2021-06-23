@@ -1,10 +1,6 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import android.content.Context
-import com.segment.analytics.*
-import com.segment.analytics.main.utils.MemorySharedPreferences
-import com.segment.analytics.main.utils.StubPlugin
-import com.segment.analytics.main.utils.mockContext
+import com.segment.analytics.kotlin.core.utils.StubPlugin
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -15,17 +11,13 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
-import java.util.zip.GZIPOutputStream
-import kotlin.text.Charsets.UTF_8
 
 class SettingsTest {
 
     private lateinit var analytics: Analytics
     private val testDispatcher = TestCoroutineDispatcher()
     private val testScope = TestCoroutineScope(testDispatcher)
-    private var mockContext: Context = mockContext()
 
     init {
         mockkConstructor(HTTPClient::class)
@@ -47,7 +39,7 @@ class SettingsTest {
                 analyticsScope = testScope,
                 ioDispatcher = testDispatcher,
                 analyticsDispatcher = testDispatcher,
-                application = mockContext
+                application = "Test"
             )
         )
         analytics.configuration.autoAddSegmentDestination = false

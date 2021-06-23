@@ -1,8 +1,5 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.HTTPClient
-import com.segment.analytics.Settings
-import com.segment.analytics.emptyJsonObject
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -11,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.io.BufferedReader
-import java.util.zip.GZIPInputStream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HTTPClientTests {

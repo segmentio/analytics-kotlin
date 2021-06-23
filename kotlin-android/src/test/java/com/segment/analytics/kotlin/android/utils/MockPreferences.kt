@@ -1,9 +1,8 @@
-package com.segment.analytics.main.utils
+package com.segment.analytics.kotlin.android.utils
 
 import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import androidx.annotation.Nullable
-
 
 /**
  * Mock implementation of shared preference, which just saves data in memory using map.

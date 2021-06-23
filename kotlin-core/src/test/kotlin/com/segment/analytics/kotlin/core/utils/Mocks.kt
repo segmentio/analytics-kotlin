@@ -1,36 +1,16 @@
-package com.segment.analytics.main.utils
+package com.segment.analytics.kotlin.core.utils
 
-import android.content.Context
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
-import com.segment.analytics.Analytics
-import com.segment.analytics.Storage
-import com.segment.analytics.StorageProvider
-import com.segment.analytics.System
-import com.segment.analytics.UserInfo
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.StorageProvider
+import com.segment.analytics.kotlin.core.UserInfo
+import com.segment.analytics.kotlin.core.System
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.io.File
-
-fun mockContext(): Context {
-    val mockPrefs = MemorySharedPreferences()
-    val packageInfo = PackageInfo()
-    packageInfo.versionCode = 100
-    packageInfo.versionName = "1.0.0"
-
-    val mockPkgMgr = mockk<PackageManager>()
-    every { mockPkgMgr.getPackageInfo("com.foo", 0) } returns packageInfo
-    val mock = mockk<Context> {
-        every { getSharedPreferences(any(), any()) } returns mockPrefs
-        every { getDir(any(), any()) } returns File("/tmp/analytics-android/")
-        every { packageName } returns "com.foo"
-        every { packageManager } returns mockPkgMgr
-    }
-    return mock
-}
 
 fun mockAnalytics(): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
