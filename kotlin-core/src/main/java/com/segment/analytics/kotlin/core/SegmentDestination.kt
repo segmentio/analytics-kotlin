@@ -20,14 +20,14 @@ import java.util.concurrent.atomic.AtomicInteger
 class SegmentDestination(
     private var apiKey: String,
     private val flushCount: Int = 20,
-    private val flushIntervalInMillis: Long = 30 * 1000, // 10s
+    private val flushIntervalInMillis: Long = 30 * 1000, // 30s
     private var apiHost: String = "api.segment.io/v1"
 ) : DestinationPlugin() {
 
     override val name: String = "Segment.io"
     internal val httpClient: HTTPClient = HTTPClient()
     internal lateinit var storage: Storage
-    internal lateinit var flushScheduler: ScheduledExecutorService
+    lateinit var flushScheduler: ScheduledExecutorService
     internal val eventCount = AtomicInteger(0)
 
     override fun track(payload: TrackEvent): BaseEvent {
@@ -109,6 +109,7 @@ class SegmentDestination(
     }
 
     override fun flush() {
+        println("flush")
         analytics.run {
             analyticsScope.launch(ioDispatcher) {
                 performFlush()

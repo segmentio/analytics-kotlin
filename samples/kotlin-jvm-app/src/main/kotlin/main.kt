@@ -1,5 +1,6 @@
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.Logger
 import kotlinx.coroutines.*
@@ -12,8 +13,7 @@ fun main(args: Array<String>) {
         val dispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher
         val analytics = Analytics("gNHARErhCjBxvBErXOMrTTuwoIlxKkCg") {
             application = "MainApp"
-            flushInterval = 0
-            flushAt = 1
+//            flushInterval = 0
             analyticsScope = MainScope()
             analyticsDispatcher = dispatcher
             ioDispatcher = dispatcher
@@ -25,6 +25,15 @@ fun main(args: Array<String>) {
                 put("app_name", "Kotlin JVM Sample CLI")
             }
         )
+        analytics.track(
+            "Application Started",
+            buildJsonObject {
+                put("app_name", "Kotlin JVM Sample CLI")
+            }
+        )
+        analytics.flush()
+        delay(30 * 1000)
+        (analytics.find("Segment.io") as SegmentDestination).flushScheduler.shutdown()
     }
 }
 
