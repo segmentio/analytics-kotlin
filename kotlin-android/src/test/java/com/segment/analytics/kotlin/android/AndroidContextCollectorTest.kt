@@ -23,7 +23,8 @@ class AndroidContextCollectorTest {
         Configuration(
             writeKey = "123",
             analyticsScope = CoroutineScope(Dispatchers.Main),
-            application = appContext
+            application = appContext,
+            storageProvider = AndroidStorageProvider
         )
     )
 

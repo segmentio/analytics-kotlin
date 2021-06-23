@@ -62,7 +62,8 @@ class AndroidLifecyclePluginTests {
                 analyticsScope = testScope,
                 ioDispatcher = testDispatcher,
                 analyticsDispatcher = testDispatcher,
-                application = mockContext
+                application = mockContext,
+                storageProvider = AndroidStorageProvider
             )
         )
     }
