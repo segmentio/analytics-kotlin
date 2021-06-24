@@ -65,7 +65,7 @@ class SegmentDestination(
         }
 
         val stringVal = Json.encodeToString(jsonVal)
-        analytics.log("Segment.io running $stringVal")
+        analytics.log("$name running $stringVal")
         try {
             storage.write(Storage.Constants.Events, stringVal)
             if (eventCount.incrementAndGet() >= flushCount) {
@@ -121,7 +121,7 @@ class SegmentDestination(
         if (eventCount.get() < 1) {
             return
         }
-        analytics.log("Segment.io performing flush")
+        analytics.log("$name performing flush")
         val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
         if (fileUrls.isEmpty()) {
             analytics.log("No events to upload")
@@ -148,8 +148,9 @@ class SegmentDestination(
                 }
                 // Cleanup uploaded payloads
                 storage.removeFile(fileUrl)
+                analytics.log("$name uploaded $fileUrl")
             } catch (e: HTTPException) {
-                analytics.log("Segment.io exception while uploading, ${e.message}")
+                analytics.log("$name exception while uploading, ${e.message}")
                 if (e.is4xx() && e.responseCode != 429) {
                     // Simply log and proceed to remove the rejected payloads from the queue.
                     analytics.log(
