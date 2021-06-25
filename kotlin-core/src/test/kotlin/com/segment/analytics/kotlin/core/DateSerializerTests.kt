@@ -7,7 +7,7 @@ import org.junit.jupiter.api.TestInstance
 import java.time.Instant
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class DateSerializerTest {
+class DateSerializerTests {
     @Test
     fun `dates are properly serialized`() {
         val d1 = Instant.EPOCH

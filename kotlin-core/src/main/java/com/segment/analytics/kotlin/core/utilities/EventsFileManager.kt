@@ -139,6 +139,9 @@ class EventsFileManager(
     }
 }
 
+/**
+ * Key-value store interface used by eventsFile
+ */
 interface KVS {
     fun getInt(key: String, defaultVal: Int): Int
     fun putInt(key: String, value: Int): Boolean

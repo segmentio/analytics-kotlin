@@ -20,10 +20,10 @@ import java.time.Instant
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class EventsFileTest {
+class EventsFileTests {
     private val epochTimestamp = Date(0).toInstant().toString()
-    private val _sharedPreferences = MemorySharedPreferences()
-    private val kvStore = AndroidKVS(_sharedPreferences)
+    private val sharedPreferences = MemorySharedPreferences()
+    private val kvStore = AndroidKVS(sharedPreferences)
     private val directory = File("/tmp/analytics-android-test/")
 
     init {
@@ -34,7 +34,7 @@ class EventsFileTest {
     @BeforeEach
     fun setup() {
         directory.deleteRecursively()
-        _sharedPreferences.preferenceMap.clear()
+        sharedPreferences.preferenceMap.clear()
     }
 
     @Test

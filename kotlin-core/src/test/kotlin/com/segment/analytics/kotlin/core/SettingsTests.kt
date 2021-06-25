@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
 
-class SettingsTest {
+class SettingsTests {
 
     private lateinit var analytics: Analytics
     private val testDispatcher = TestCoroutineDispatcher()

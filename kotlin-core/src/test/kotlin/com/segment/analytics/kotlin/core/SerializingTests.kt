@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.lang.Exception
 
-class SerializingTest {
+class SerializingTests {
     val analytics = Analytics(Configuration(writeKey = "123", application = "Test"))
 
     @Serializable

@@ -15,7 +15,7 @@ import java.time.Instant
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AnalyticsTest {
+class AnalyticsTests {
     private lateinit var analytics: Analytics
 
     private val testDispatcher = TestCoroutineDispatcher()

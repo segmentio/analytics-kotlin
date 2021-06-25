@@ -16,7 +16,7 @@ import org.junit.jupiter.api.TestInstance
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class DestinationPluginTest {
+class DestinationPluginTests {
     private val mockAnalytics = mockAnalytics()
     private val timeline: Timeline
 

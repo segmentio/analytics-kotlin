@@ -16,7 +16,7 @@ import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
-class AndroidContextCollectorTest {
+class AndroidContextCollectorTests {
 
     val appContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
     val analytics = Analytics(
