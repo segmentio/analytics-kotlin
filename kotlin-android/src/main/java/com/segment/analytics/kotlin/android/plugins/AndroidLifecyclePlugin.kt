@@ -79,7 +79,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
     /* OLD LIFECYCLE HOOKS */
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
         runOnAnalyticsThread {
-            analytics.timeline.applyClosure { plugin: Plugin? ->
+            analytics.applyClosureToPlugins { plugin: Plugin? ->
                 if (plugin is AndroidLifecycle) {
                     plugin.onActivityCreated(activity, bundle)
                 }
@@ -95,7 +95,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     override fun onActivityStarted(activity: Activity) {
         runOnAnalyticsThread {
-            analytics.timeline.applyClosure { plugin: Plugin? ->
+            analytics.applyClosureToPlugins { plugin: Plugin? ->
                 if (plugin is AndroidLifecycle) {
                     plugin.onActivityStarted(activity)
                 }
@@ -105,7 +105,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     override fun onActivityResumed(activity: Activity) {
         runOnAnalyticsThread {
-            analytics.timeline.applyClosure { plugin: Plugin? ->
+            analytics.applyClosureToPlugins { plugin: Plugin? ->
                 if (plugin is AndroidLifecycle) {
                     plugin.onActivityResumed(activity)
                 }
@@ -118,7 +118,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     override fun onActivityPaused(activity: Activity) {
         runOnAnalyticsThread {
-            analytics.timeline.applyClosure { plugin: Plugin? ->
+            analytics.applyClosureToPlugins { plugin: Plugin? ->
                 if (plugin is AndroidLifecycle) {
                     plugin.onActivityPaused(activity)
                 }
@@ -131,7 +131,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     override fun onActivityStopped(activity: Activity) {
         runOnAnalyticsThread {
-            analytics.timeline.applyClosure { plugin: Plugin? ->
+            analytics.applyClosureToPlugins { plugin: Plugin? ->
                 if (plugin is AndroidLifecycle) {
                     plugin.onActivityStopped(activity)
                 }
@@ -144,7 +144,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {
         runOnAnalyticsThread {
-            analytics.timeline.applyClosure { plugin: Plugin? ->
+            analytics.applyClosureToPlugins { plugin: Plugin? ->
                 if (plugin is AndroidLifecycle) {
                     plugin.onActivitySaveInstanceState(activity, bundle)
                 }
@@ -154,7 +154,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     override fun onActivityDestroyed(activity: Activity) {
         runOnAnalyticsThread {
-            analytics.timeline.applyClosure { plugin: Plugin? ->
+            analytics.applyClosureToPlugins { plugin: Plugin? ->
                 if (plugin is AndroidLifecycle) {
                     plugin.onActivityDestroyed(activity)
                 }

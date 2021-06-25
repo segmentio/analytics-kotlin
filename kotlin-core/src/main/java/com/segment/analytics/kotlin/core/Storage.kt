@@ -5,6 +5,18 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
 
+/**
+ * Storage interface that abstracts storage of
+ * - user data
+ * - segment settings
+ * - segment events
+ * - other configs
+ *
+ * Constraints:
+ * - Segment Events must be stored on a file, following the batch format
+ * - all storage is in terms of String (to make API simple)
+ * - storage is restricted to keys declared in `Storage.Constants`
+ */
 interface Storage {
     companion object {
         /** Our servers only accept payloads < 32KB.  */
@@ -62,6 +74,12 @@ fun parseFilePaths(filePathStr: String?): List<String> {
     }
 }
 
+/**
+ * Interface to provide a Storage Instance to the analytics client
+ * Motivation:
+ *  In order to support various platforms, plus making testing simpler, we abstract the storage
+ *  provider via this interface
+ */
 interface StorageProvider {
     fun getStorage(
         analytics: Analytics,

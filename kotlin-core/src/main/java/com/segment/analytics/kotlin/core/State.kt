@@ -12,6 +12,13 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
 
+/**
+ * Stores state related to the analytics system
+ * - configuration used to initialize the client
+ * - list of destinations that are enabled / disabled
+ * - segment settings as a json map
+ * - running state indicating the system has received settings
+ */
 data class System(
     var configuration: Configuration = Configuration(""),
     var integrations: Integrations?,
@@ -97,6 +104,12 @@ data class System(
     }
 }
 
+/**
+ * Stores state related to the user
+ * - anonymousId (String)
+ * - userId (String)
+ * - traits (Map)
+ */
 data class UserInfo(
     var anonymousId: String,
     var userId: String?,

@@ -22,11 +22,12 @@ import sovran.kotlin.Subscriber
 class Analytics(val configuration: Configuration) : Subscriber {
 
     private val _store: Store
-    val store: Store get() {
-        return _store
-    }
+    val store: Store
+        get() {
+            return _store
+        }
 
-    val timeline: Timeline
+    internal val timeline: Timeline
     val storage: Storage
     val analyticsScope: CoroutineScope
 
@@ -381,6 +382,14 @@ class Analytics(val configuration: Configuration) : Subscriber {
             }
         }
         return this
+    }
+
+    /**
+     * Apply a closure to all plugins registered to the analytics client. Ideal for invoking
+     * functions for Utility plugins
+     */
+    fun applyClosureToPlugins(closure: (Plugin) -> Unit) {
+        timeline.applyClosure(closure)
     }
 
     fun flush() {

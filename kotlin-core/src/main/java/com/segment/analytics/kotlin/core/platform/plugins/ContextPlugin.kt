@@ -9,6 +9,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/**
+ * Analytics plugin used to populate events with basic context data.
+ * Auto-added to analytics client on construction
+ */
 class ContextPlugin: Plugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override val name: String = "ContextPlugin"

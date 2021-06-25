@@ -5,6 +5,9 @@ import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.putInContextUnderKey
 
+/**
+ * Analytics plugin to add device token to events
+ */
 class DeviceToken(var token: String) : Plugin {
     companion object {
         const val SEGMENT_TOKEN_PLUGIN_NAME = "Segment_Token"

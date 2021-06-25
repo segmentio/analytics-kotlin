@@ -7,7 +7,7 @@ import com.segment.analytics.kotlin.core.System
 // Platform abstraction for managing all plugins and their execution
 // Currently the execution follows
 //      Before -> Enrichment -> Destination -> After
-class Timeline {
+internal class Timeline {
     internal val plugins: Map<Plugin.Type, Mediator> = mapOf(
         Plugin.Type.Before to Mediator(mutableListOf()),
         Plugin.Type.Enrichment to Mediator(mutableListOf()),

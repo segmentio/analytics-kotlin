@@ -7,6 +7,11 @@ import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.io.File
 
+/**
+ * Storage implementation for JVM platform, uses {@link com.segment.analytics.kotlin.core.utilities.PropertiesFile}
+ * for key-value storage and {@link com.segment.analytics.kotlin.core.utilities.EventsFileManager}
+ * for events storage
+ */
 class StorageImpl(
     private val store: Store,
     writeKey: String,

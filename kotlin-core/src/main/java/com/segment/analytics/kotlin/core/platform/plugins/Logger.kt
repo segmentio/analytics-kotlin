@@ -18,7 +18,7 @@ data class LogMessage(
     val event: BaseEvent?
 )
 
-// Simple logger plugin
+// Analytics Utility plugin for logging purposes
 open class Logger(override val name: String) : EventPlugin {
 
     override val type: Plugin.Type = Plugin.Type.Utility

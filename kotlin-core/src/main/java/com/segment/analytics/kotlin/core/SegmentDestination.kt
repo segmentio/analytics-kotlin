@@ -17,6 +17,13 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * Segment Analytics plugin that is used to send events to Segment's tracking api, in the choice of region.
+ * How it works
+ * - Plugin receives `apiHost` settings
+ * - We store events into a file with the batch api format (@link {https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#batch})
+ * - We upload events on ioDispatcher using the batch api
+ */
 class SegmentDestination(
     private var apiKey: String,
     private val flushCount: Int = 20,

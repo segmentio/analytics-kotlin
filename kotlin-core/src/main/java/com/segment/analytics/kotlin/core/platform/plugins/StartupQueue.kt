@@ -9,7 +9,12 @@ import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-class StartupQueue(): Plugin, Subscriber {
+/**
+ * Analytics plugin to manage started state of analytics client
+ * All events will be held in an in-memory queue until started state is enabled, and once enabled
+ * events will be replayed into the analytics timeline
+ */
+class StartupQueue: Plugin, Subscriber {
     override val type: Plugin.Type = Plugin.Type.Before
     override val name: String = "Segment_StartupQueue"
     override lateinit var analytics: Analytics

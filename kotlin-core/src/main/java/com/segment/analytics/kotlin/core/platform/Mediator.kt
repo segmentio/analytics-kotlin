@@ -4,7 +4,7 @@ import com.segment.analytics.kotlin.core.*
 
 // Platform abstraction for managing plugins' execution (of a specific type)
 // All operations are thread safe via the `synchronized` function
-class Mediator(internal val plugins: MutableList<Plugin>) {
+internal class Mediator(internal val plugins: MutableList<Plugin>) {
 
     fun add(plugin: Plugin) = synchronized(plugins) {
         plugins.add(plugin)
