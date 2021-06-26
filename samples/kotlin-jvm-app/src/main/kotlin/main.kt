@@ -13,7 +13,6 @@ fun main(args: Array<String>) {
         val dispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher
         val analytics = Analytics("gNHARErhCjBxvBErXOMrTTuwoIlxKkCg") {
             application = "MainApp"
-//            flushInterval = 0
             analyticsScope = MainScope()
             analyticsDispatcher = dispatcher
             ioDispatcher = dispatcher
@@ -32,6 +31,7 @@ fun main(args: Array<String>) {
             }
         )
         analytics.flush()
+        // Waiting 30s to ensure auto-flush on Segment.io destination goes through
         delay(30 * 1000)
         (analytics.find("Segment.io") as SegmentDestination).flushScheduler.shutdown()
     }
