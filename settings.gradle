@@ -1,5 +1,5 @@
-include ':kotlin-core'
-include ':kotlin-android'
+include ':core'
+include ':android'
 include ':samples:kotlin-android-app'
 include ':samples:kotlin-android-app-destinations'
 include ':samples:java-android-app'
