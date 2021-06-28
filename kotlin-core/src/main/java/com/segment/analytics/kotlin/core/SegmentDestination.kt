@@ -116,7 +116,6 @@ class SegmentDestination(
     }
 
     override fun flush() {
-        println("flush")
         analytics.run {
             analyticsScope.launch(ioDispatcher) {
                 performFlush()

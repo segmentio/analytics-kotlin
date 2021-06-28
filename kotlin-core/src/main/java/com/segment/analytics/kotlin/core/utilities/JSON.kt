@@ -2,6 +2,26 @@ package com.segment.analytics.kotlin.core.utilities
 
 import kotlinx.serialization.json.*
 
+// Utility function to convert a jsonPrimitive to its appropriate kotlin type
+fun JsonPrimitive.toContent(): Any? {
+    this.booleanOrNull?.let {
+        return it
+    }
+    this.intOrNull?.let {
+        return it
+    }
+    this.longOrNull?.let {
+        return it
+    }
+    this.floatOrNull?.let {
+        return it
+    }
+    this.doubleOrNull?.let {
+        return it
+    }
+    return contentOrNull
+}
+
 // Utility function to put all values of `obj` into current builder
 fun JsonObjectBuilder.putAll(obj: JsonObject) {
     obj.forEach { (key, value) ->
