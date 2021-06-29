@@ -1,15 +1,18 @@
-package com.segment.analytics.main
+package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.utilities.*
-import io.mockk.spyk
-import io.mockk.verify
+import com.segment.analytics.kotlin.core.utilities.getBoolean
+import com.segment.analytics.kotlin.core.utilities.getDouble
+import com.segment.analytics.kotlin.core.utilities.getInt
+import com.segment.analytics.kotlin.core.utilities.getMapSet
+import com.segment.analytics.kotlin.core.utilities.getString
+import com.segment.analytics.kotlin.core.utilities.getStringSet
 import kotlinx.serialization.json.*
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
-import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class JSONTests {
@@ -21,7 +24,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getBoolean("keyed")
 
-        Assertions.assertTrue(keyedValue ?: false)
+        assertTrue(keyedValue ?: false)
     }
 
     @Test
@@ -31,7 +34,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getBoolean("keyed")
 
-        Assertions.assertFalse(keyedValue ?: true)
+        assertFalse(keyedValue ?: true)
     }
 
     @Test
@@ -41,9 +44,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getBoolean("keyed")
-            Assertions.assertTrue(keyedValue == null)
+            assertTrue(keyedValue == null)
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when not boolean`")
+            fail("Should not throw when not boolean`")
         }
     }
 
@@ -53,9 +56,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getBoolean("keyed")
-            Assertions.assertTrue(keyedValue == null)
+            assertTrue(keyedValue == null)
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when null boolean")
+            fail("Should not throw when null boolean")
         }
     }
 
@@ -65,7 +68,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getString("keyed")
 
-        Assertions.assertTrue(keyedValue.equals("test"))
+        assertTrue(keyedValue.equals("test"))
     }
 
     @Test
@@ -74,7 +77,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getString("keyed")
 
-        Assertions.assertFalse(keyedValue.equals("test"))
+        assertFalse(keyedValue.equals("test"))
     }
 
     @Test
@@ -84,9 +87,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getString("keyed")
-            Assertions.assertTrue(keyedValue.equals("18"))
+            assertTrue(keyedValue.equals("18"))
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when not int primitive")
+            fail("Should not throw when not int primitive")
         }
     }
 
@@ -96,9 +99,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getString("keyed")
-            Assertions.assertTrue(keyedValue == null)
+            assertTrue(keyedValue == null)
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when null string")
+            fail("Should not throw when null string")
         }
     }
 
@@ -108,7 +111,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getInt("keyed")
 
-        Assertions.assertTrue(keyedValue?.equals(18) ?: false)
+        assertTrue(keyedValue?.equals(18) ?: false)
     }
 
     @Test
@@ -117,7 +120,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getInt("keyed")
 
-        Assertions.assertFalse(keyedValue?.equals(18) ?: true)
+        assertFalse(keyedValue?.equals(18) ?: true)
     }
 
     @Test
@@ -127,9 +130,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getInt("keyed")
-            Assertions.assertTrue(keyedValue?.equals(18) ?: false)
+            assertTrue(keyedValue?.equals(18) ?: false)
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when not int primitive")
+            fail("Should not throw when not int primitive")
         }
     }
 
@@ -139,9 +142,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getInt("keyed")
-            Assertions.assertTrue(keyedValue == null)
+            assertTrue(keyedValue == null)
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when null int")
+            fail("Should not throw when null int")
         }
     }
 
@@ -151,7 +154,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getDouble("keyed")
 
-        Assertions.assertTrue(keyedValue?.equals(18.0) ?: false)
+        assertTrue(keyedValue?.equals(18.0) ?: false)
     }
 
     @Test
@@ -160,7 +163,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getDouble("keyed")
 
-        Assertions.assertFalse(keyedValue?.equals(18.0) ?: true)
+        assertFalse(keyedValue?.equals(18.0) ?: true)
     }
 
     @Test
@@ -170,9 +173,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getDouble("keyed")
-            Assertions.assertTrue(keyedValue?.equals(18.0) ?: false)
+            assertTrue(keyedValue?.equals(18.0) ?: false)
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when not double primitive")
+            fail("Should not throw when not double primitive")
         }
     }
 
@@ -182,9 +185,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getDouble("keyed")
-            Assertions.assertTrue(keyedValue == null)
+            assertTrue(keyedValue == null)
         } catch (e: Exception) {
-            Assertions.fail("Should not throw when null double")
+            fail("Should not throw when null double")
         }
     }
 
@@ -194,9 +197,9 @@ class JSONTests {
 
         val keyedValue = jsonObject.getStringSet("keyed")
 
-        Assertions.assertTrue(keyedValue?.count() ?: 0 == 3)
+        assertTrue(keyedValue?.count() ?: 0 == 3)
 
-        Assertions.assertTrue(keyedValue?.contains("Mr. Freeze") ?: false)
+        assertTrue(keyedValue?.contains("Mr. Freeze") ?: false)
     }
 
     @Test
@@ -206,7 +209,7 @@ class JSONTests {
         val keyedValue = jsonObject.getStringSet("keyed")
 
         // Make sure there is still 3 and that it removed an additional batman
-        Assertions.assertTrue(keyedValue?.count() ?: 0 == 3)
+        assertTrue(keyedValue?.count() ?: 0 == 3)
     }
 
     @Test
@@ -215,7 +218,7 @@ class JSONTests {
 
         val keyedValue = jsonObject.getStringSet("keyed")
 
-        Assertions.assertFalse(keyedValue?.contains("Penguin") ?: true)
+        assertFalse(keyedValue?.contains("Penguin") ?: true)
     }
 
     @Test
@@ -224,9 +227,9 @@ class JSONTests {
 
         try {
             val keyedValue = jsonObject.getStringSet("keyed")
-            Assertions.fail("Should not return a set with the wrong primitive")
+            fail("Should not return a set with the wrong primitive")
         } catch (e: Exception) {
-            Assertions.assertTrue(e is IllegalArgumentException)
+            assertTrue(e is IllegalArgumentException)
         }
     }
 
@@ -237,9 +240,9 @@ class JSONTests {
 
         val keyedValue = jsonObject.getMapSet("keyed")
 
-        Assertions.assertTrue(keyedValue is Set<Map<*, *>>)
+        assertTrue(keyedValue is Set<Map<*, *>>)
 
-        Assertions.assertTrue(keyedValue?.contains(villainMap) ?: false)
+        assertTrue(keyedValue?.contains(villainMap) ?: false)
     }
 
     @Test
@@ -250,12 +253,12 @@ class JSONTests {
         val keyedValue = jsonObject.getMapSet("keyed")
 
         val keyedMap = keyedValue?.first() ?: run {
-            Assertions.fail("Could not find map")
+            fail("Could not find map")
         }
 
         val temp = keyedMap["villains"] as JsonPrimitive
 
-        Assertions.assertTrue(temp?.contentOrNull == "Mr. Freeze")
+        assertTrue(temp?.contentOrNull == "Mr. Freeze")
     }
 
     @Test
@@ -267,7 +270,7 @@ class JSONTests {
         val keyedValue = jsonObject.getMapSet("batman")
 
         // Make sure there is still 4 and that it did not remove an additional Bain
-        Assertions.assertTrue(keyedValue?.count() ?: 0 == 2)
+        assertTrue(keyedValue?.count() ?: 0 == 2)
     }
 
     @Test
@@ -279,10 +282,10 @@ class JSONTests {
 
         val villainNumber = keyedValue?.first() as Map<*, JsonPrimitive>
         val retrievedMap = villainNumber["villains"] ?: run {
-            Assertions.fail("Could not find villains map")
+            fail("Could not find villains map")
         }
 
         // Make sure there is still 4 and that it did not remove an additional Bain
-        Assertions.assertTrue(retrievedMap.intOrNull == 18)
+        assertTrue(retrievedMap.intOrNull == 18)
     }
 }
