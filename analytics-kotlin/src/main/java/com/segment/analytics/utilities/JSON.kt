@@ -74,6 +74,7 @@ fun JsonPrimitive.toContent(): Any? {
     this.doubleOrNull?.let {
         return it
     }
+    
     return contentOrNull
 }
 
@@ -93,6 +94,19 @@ fun JsonObject.getInt(key: String): Int? = this[key]?.jsonPrimitive?.intOrNull
 fun JsonObject.getStringSet(key: String): Set<String>? =
     this[key]?.jsonArray?.map { it.jsonPrimitive.content }?.toSet()
 
-fun JsonObject.getMapSet(key: String): Set<Map<String, JsonElement>>? {
-    return this[key]?.jsonObject?.map { mapOf(it.key to it.value) }?.toSet()
+// Utility function to retrieve a map set from a jsonObject
+fun JsonObject.getMapSet(key: String): Set<Map<String, Any>>? {
+
+    val returnList: MutableList<Map<String, Any>> = mutableListOf()
+
+    this[key]?.jsonObject?.let { jsonMap ->
+        for ((mapKey, value) in jsonMap) {
+            returnList.add(mapOf(mapKey to value))
+        }
+    }
+
+    return if (returnList.isNotEmpty())
+        returnList.toSet()
+    else
+        null
 }

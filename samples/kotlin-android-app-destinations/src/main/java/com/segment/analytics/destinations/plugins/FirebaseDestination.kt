@@ -102,7 +102,7 @@ class FirebaseDestination(
         payload.properties.let {
             val formattedProperties = formatProperties(it)
             firebaseAnalytics.logEvent(eventName, formattedProperties)
-            analytics.log("firebaseAnalytics.logEvent($eventName, $formattedProperties")
+            analytics.log("firebaseAnalytics.logEvent($eventName, $formattedProperties)")
         }
 
         return returnPayload
@@ -134,7 +134,7 @@ class FirebaseDestination(
                 }
             }
         } catch (exception: PackageManager.NameNotFoundException) {
-            throw AssertionError("Activity Not Found: " + exception.toString())
+            analytics.log("Activity Not Found: " + exception.toString())
         }
     }
 
@@ -170,7 +170,7 @@ class FirebaseDestination(
             }
 
             if (finalProperty.equals(FirebaseAnalytics.Param.ITEM_LIST)) {
-                val products = properties.getMapSet("products")?.toList() ?: continue
+                val products = properties.getMapSet("products") ?: continue
                 val formattedProducts = formatProducts(products)
                 bundle?.putParcelableArrayList(finalProperty, formattedProducts)
             } else if (bundle != null) {
@@ -187,7 +187,7 @@ class FirebaseDestination(
         return bundle
     }
 
-    private fun formatProducts(products: List<Map<String, JsonElement>>): ArrayList<Bundle>? {
+    private fun formatProducts(products: Set<Map<String, Any>>): ArrayList<Bundle>? {
 
         val mappedProducts: ArrayList<Bundle> = ArrayList()
 
@@ -211,6 +211,7 @@ class FirebaseDestination(
     // Make sure keys do not contain ".", "-", " ", ":"
     private fun makeKey(key: String): String {
         val charsToFilter = ".- :"
+        // only filter out the characters in charsToFilter by relying on the other characters not being found
         return key.filter { charsToFilter.indexOf(it) == -1 }
     }
 
