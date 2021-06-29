@@ -41,6 +41,8 @@ dependencies {
     // Mixpanel
     api 'com.mixpanel.android:mixpanel-android:5.8.7'
 
+    // Firebase
+    implementation 'com.google.firebase:firebase-core:15.0.2'
 
     implementation project(':analytics-kotlin')
 
