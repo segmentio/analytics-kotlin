@@ -1,7 +1,11 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.Executors
 
 /**

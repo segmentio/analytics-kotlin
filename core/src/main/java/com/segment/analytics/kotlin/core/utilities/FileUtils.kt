@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core.utilities
 
-import java.io.*
+import java.io.File
+import java.io.IOException
 
 /**
  * Ensures that a directory is created in the given location, throws an IOException otherwise.

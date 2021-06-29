@@ -3,7 +3,10 @@ package com.segment.analytics.kotlin.core.utilities
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 
 // Mark integration as enabled, for this event
@@ -69,7 +72,11 @@ fun <T : Any> BaseEvent.putInContextUnderKey(
     return this
 }
 
-inline fun <reified T : Any> BaseEvent.putInContextUnderKey(parentKey: String,key: String, value: T): BaseEvent {
+inline fun <reified T : Any> BaseEvent.putInContextUnderKey(
+    parentKey: String,
+    key: String,
+    value: T
+): BaseEvent {
     return putInContextUnderKey(parentKey, key, value, Json.serializersModule.serializer())
 }
 

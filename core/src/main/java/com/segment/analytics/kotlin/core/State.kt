@@ -6,8 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import sovran.kotlin.Action
 import sovran.kotlin.State
-import java.util.*
-import kotlin.collections.LinkedHashMap
+import java.util.UUID
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -92,7 +91,7 @@ data class System(
         }
     }
 
-    class ToggleRunningAction(var running: Boolean): Action<System> {
+    class ToggleRunningAction(var running: Boolean) : Action<System> {
         override fun reduce(state: System): System {
             return System(
                 state.configuration,

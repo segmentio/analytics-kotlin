@@ -3,14 +3,14 @@ package com.segment.analytics.kotlin.core.utilities
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.util.*
+import java.util.Properties
 
 /**
  * A key-value storage built on top of {@link java.util.Properties}
  * conforming to {@link com.segment.analytics.kotlin.core.utilities.KVS} interface.
  * Ideal for use on JVM systems to store k-v pairs on a file.
  */
-class PropertiesFile(private val directory: File, writeKey: String): KVS {
+class PropertiesFile(private val directory: File, writeKey: String) : KVS {
     private val underlyingProperties: Properties = Properties()
     private val propertiesFileName = "analytics-kotlin-$writeKey.properties"
     private val propertiesFile = File(directory, propertiesFileName)
@@ -43,7 +43,8 @@ class PropertiesFile(private val directory: File, writeKey: String): KVS {
         return true
     }
 
-    fun getString(key: String, defaultVal: String?): String? = underlyingProperties.getProperty(key, defaultVal)
+    fun getString(key: String, defaultVal: String?): String? =
+        underlyingProperties.getProperty(key, defaultVal)
 
     fun remove(key: String): Boolean {
         underlyingProperties.setProperty(key, null)

@@ -1,15 +1,20 @@
 package com.segment.analytics.kotlin.core
 
-import java.io.*
+import java.io.BufferedReader
+import java.io.Closeable
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
-import java.util.zip.GZIPOutputStream
 import java.util.Base64
+import java.util.zip.GZIPOutputStream
 
 class HTTPClient {
     fun settings(writeKey: String): Connection {
-        val connection: HttpURLConnection = openConnection("https://cdn-settings.segment.com/v1/projects/$writeKey/settings")
+        val connection: HttpURLConnection =
+            openConnection("https://cdn-settings.segment.com/v1/projects/$writeKey/settings")
         val responseCode = connection.responseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
             connection.disconnect()
@@ -71,7 +76,7 @@ abstract class Connection(
     }
 }
 
-fun safeGetInputStream(connection: HttpURLConnection):InputStream {
+fun safeGetInputStream(connection: HttpURLConnection): InputStream {
     return try {
         connection.inputStream
     } catch (ignored: IOException) {

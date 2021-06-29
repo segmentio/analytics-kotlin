@@ -10,7 +10,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 typealias AnalyticsContext = JsonObject
 typealias Integrations = JsonObject
@@ -35,12 +35,16 @@ class DateSerializer : KSerializer<Instant> {
 enum class EventType {
     @SerialName("track")
     Track,
+
     @SerialName("screen")
     Screen,
+
     @SerialName("alias")
     Alias,
+
     @SerialName("identify")
     Identify,
+
     @SerialName("group")
     Group
 }
@@ -56,16 +60,22 @@ enum class EventType {
 sealed class BaseEvent {
     // The type of event
     abstract var type: EventType
+
     // the anonymousId tied to the event
     abstract var anonymousId: String
+
     // the UUID for the event
     abstract var messageId: String
+
     // timestamp of when the event was generated
     abstract var timestamp: String
+
     // a JsonObject describing additional values related to the event
     abstract var context: AnalyticsContext
+
     // a JsonObject describing the integrations that the event will interact with
     abstract var integrations: Integrations
+
     // the userId tied to the event
     abstract var userId: String
 

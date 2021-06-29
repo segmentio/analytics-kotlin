@@ -2,13 +2,13 @@ package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.util.Log
+import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
+import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.Logger
-import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
-import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +67,7 @@ public fun Analytics(
 }
 
 // Logger instance that uses the android `Log` class
-object AndroidLogger: Logger("AndroidLogger") {
+object AndroidLogger : Logger("AndroidLogger") {
     override fun log(type: LogType, message: String, event: BaseEvent?) {
         when (type) {
             LogType.ERROR -> {

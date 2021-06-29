@@ -7,18 +7,22 @@ import android.os.Bundle
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.FirebaseAnalytics.Event
 import com.google.firebase.analytics.FirebaseAnalytics.Param
-import com.segment.analytics.*
-import com.segment.analytics.platform.DestinationPlugin
-import com.segment.analytics.platform.plugins.android.AndroidLifecycle
-import com.segment.analytics.platform.plugins.log
-import com.segment.analytics.utilities.getDouble
-import com.segment.analytics.utilities.getMapSet
-import com.segment.analytics.utilities.getString
-import kotlinx.serialization.json.JsonElement
+import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.IdentifyEvent
+import com.segment.analytics.kotlin.core.Properties
+import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.utilities.getDouble
+import com.segment.analytics.kotlin.core.utilities.getMapSet
+import com.segment.analytics.kotlin.core.utilities.getString
 import kotlinx.serialization.json.JsonPrimitive
 
 class FirebaseDestination(
-        private val context: Context
+    private val context: Context
 ) : DestinationPlugin(), AndroidLifecycle {
 
     override val name: String = "Firebase"
@@ -27,43 +31,43 @@ class FirebaseDestination(
 
     companion object {
         private val EVENT_MAPPER: Map<String, String> = mapOf(
-                "Product Added" to Event.ADD_TO_CART,
-                "Checkout Started" to Event.BEGIN_CHECKOUT,
-                "Order Completed" to Event.ECOMMERCE_PURCHASE,
-                "Order Refunded" to Event.PURCHASE_REFUND,
-                "Product Viewed" to Event.VIEW_ITEM,
-                "Product List Viewed" to Event.VIEW_ITEM_LIST,
-                "Payment Info Entered" to Event.ADD_PAYMENT_INFO,
-                "Promotion Viewed" to Event.PRESENT_OFFER,
-                "Product Added to Wishlist" to Event.ADD_TO_WISHLIST,
-                "Product Shared" to Event.SHARE,
-                "Product Clicked" to Event.SELECT_CONTENT,
-                "Products Searched" to Event.SEARCH
+            "Product Added" to Event.ADD_TO_CART,
+            "Checkout Started" to Event.BEGIN_CHECKOUT,
+            "Order Completed" to Event.ECOMMERCE_PURCHASE,
+            "Order Refunded" to Event.PURCHASE_REFUND,
+            "Product Viewed" to Event.VIEW_ITEM,
+            "Product List Viewed" to Event.VIEW_ITEM_LIST,
+            "Payment Info Entered" to Event.ADD_PAYMENT_INFO,
+            "Promotion Viewed" to Event.PRESENT_OFFER,
+            "Product Added to Wishlist" to Event.ADD_TO_WISHLIST,
+            "Product Shared" to Event.SHARE,
+            "Product Clicked" to Event.SELECT_CONTENT,
+            "Products Searched" to Event.SEARCH
         )
 
         private val PROPERTY_MAPPER: Map<String, String> = mapOf(
-                "category" to Param.ITEM_CATEGORY,
-                "product_id" to Param.ITEM_ID,
-                "name" to Param.ITEM_NAME,
-                "price" to Param.PRICE,
-                "quantity" to Param.QUANTITY,
-                "query" to Param.SEARCH_TERM,
-                "shipping" to Param.SHIPPING,
-                "tax" to Param.TAX,
-                "total" to Param.VALUE,
-                "revenue" to Param.VALUE,
-                "order_id" to Param.TRANSACTION_ID,
-                "currency" to Param.CURRENCY,
-                "products" to Param.ITEM_LIST
+            "category" to Param.ITEM_CATEGORY,
+            "product_id" to Param.ITEM_ID,
+            "name" to Param.ITEM_NAME,
+            "price" to Param.PRICE,
+            "quantity" to Param.QUANTITY,
+            "query" to Param.SEARCH_TERM,
+            "shipping" to Param.SHIPPING,
+            "tax" to Param.TAX,
+            "total" to Param.VALUE,
+            "revenue" to Param.VALUE,
+            "order_id" to Param.TRANSACTION_ID,
+            "currency" to Param.CURRENCY,
+            "products" to Param.ITEM_LIST
         )
 
         private val PRODUCT_MAPPER: Map<String, String> = mapOf(
-                "category" to Param.ITEM_CATEGORY,
-                "product_id" to Param.ITEM_ID,
-                "id" to Param.ITEM_ID,
-                "name" to Param.ITEM_NAME,
-                "price" to Param.PRICE,
-                "quantity" to Param.QUANTITY
+            "category" to Param.ITEM_CATEGORY,
+            "product_id" to Param.ITEM_ID,
+            "id" to Param.ITEM_ID,
+            "name" to Param.ITEM_NAME,
+            "price" to Param.PRICE,
+            "quantity" to Param.QUANTITY
         )
     }
 
@@ -127,12 +131,15 @@ class FirebaseDestination(
         try {
             val packageManager = activity?.packageManager ?: return
 
-            packageManager.getActivityInfo(activity.componentName, PackageManager.GET_META_DATA).let {
-                it.loadLabel(packageManager).toString().let {
-                    firebaseAnalytics.setCurrentScreen(activity, it, null)
-                    analytics.log("firebaseAnalytics.setCurrentScreen(activity, $it, null")
+            packageManager.getActivityInfo(activity.componentName, PackageManager.GET_META_DATA)
+                .let {
+                    it.loadLabel(packageManager).toString().let { activityName ->
+                        firebaseAnalytics.setCurrentScreen(activity, activityName, null)
+                        analytics.log(
+                            "firebaseAnalytics.setCurrentScreen(activity, $activityName, null"
+                        )
+                    }
                 }
-            }
         } catch (exception: PackageManager.NameNotFoundException) {
             analytics.log("Activity Not Found: " + exception.toString())
         }
@@ -158,8 +165,7 @@ class FirebaseDestination(
         val revenue = properties.getDouble("revenue") ?: 0.0
         val total = properties.getDouble("total") ?: 0.0
         val currency = properties.getString("currency") ?: ""
-        if ((revenue != 0.0 || total != 0.0) &&
-            currency.isEmpty() == false) {
+        if ((revenue != 0.0 || total != 0.0) && currency.isNotEmpty()) {
             bundle?.putString(Param.CURRENCY, "USD")
         }
 
@@ -169,7 +175,7 @@ class FirebaseDestination(
                 finalProperty = PROPERTY_MAPPER.get(property).toString()
             }
 
-            if (finalProperty.equals(FirebaseAnalytics.Param.ITEM_LIST)) {
+            if (finalProperty == Param.ITEM_LIST) {
                 val products = properties.getMapSet("products") ?: continue
                 val formattedProducts = formatProducts(products)
                 bundle?.putParcelableArrayList(finalProperty, formattedProducts)

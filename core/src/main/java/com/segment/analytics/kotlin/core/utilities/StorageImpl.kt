@@ -1,7 +1,11 @@
 package com.segment.analytics.kotlin.core.utilities
 
-import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.Storage.Companion.MAX_PAYLOAD_SIZE
+import com.segment.analytics.kotlin.core.StorageProvider
+import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.UserInfo
 import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber

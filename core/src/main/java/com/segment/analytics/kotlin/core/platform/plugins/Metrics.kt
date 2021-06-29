@@ -2,10 +2,11 @@ package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.DateSerializer
-import com.segment.analytics.kotlin.core.utilities.putAll
 import com.segment.analytics.kotlin.core.utilities.putInContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.jsonArray
 import java.time.Instant
 
 enum class MetricType(val type: Int) {

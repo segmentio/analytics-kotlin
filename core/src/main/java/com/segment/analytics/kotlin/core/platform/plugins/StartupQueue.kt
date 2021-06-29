@@ -2,8 +2,8 @@ package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.platform.Plugin
 import sovran.kotlin.Subscriber
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * All events will be held in an in-memory queue until started state is enabled, and once enabled
  * events will be replayed into the analytics timeline
  */
-class StartupQueue: Plugin, Subscriber {
+class StartupQueue : Plugin, Subscriber {
     override val type: Plugin.Type = Plugin.Type.Before
     override val name: String = "Segment_StartupQueue"
     override lateinit var analytics: Analytics

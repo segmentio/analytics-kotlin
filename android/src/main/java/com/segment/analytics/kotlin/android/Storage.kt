@@ -2,10 +2,14 @@ package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.Storage.Companion.MAX_PAYLOAD_SIZE
-import com.segment.analytics.kotlin.core.utilities.EventsFileManager
 import com.segment.analytics.kotlin.android.utilities.AndroidKVS
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.Storage.Companion.MAX_PAYLOAD_SIZE
+import com.segment.analytics.kotlin.core.StorageProvider
+import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.UserInfo
+import com.segment.analytics.kotlin.core.utilities.EventsFileManager
 import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
@@ -23,7 +27,8 @@ class AndroidStorage(
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)
     private val storageDirectory: File = context.getDir("segment-disk-queue", Context.MODE_PRIVATE)
-    internal val eventsFile = EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences))
+    internal val eventsFile =
+        EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences))
 
     override fun subscribeToStore() {
         store.subscribe(
@@ -90,7 +95,7 @@ class AndroidStorage(
     }
 }
 
-object AndroidStorageProvider: StorageProvider {
+object AndroidStorageProvider : StorageProvider {
     override fun getStorage(
         analytics: Analytics,
         store: Store,

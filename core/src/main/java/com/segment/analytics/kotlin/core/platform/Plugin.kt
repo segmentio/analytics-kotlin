@@ -1,6 +1,13 @@
 package com.segment.analytics.kotlin.core.platform
 
-import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.AliasEvent
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.GroupEvent
+import com.segment.analytics.kotlin.core.IdentifyEvent
+import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.Settings
+import com.segment.analytics.kotlin.core.TrackEvent
 
 
 // Most simple interface for an plugin
@@ -113,7 +120,9 @@ abstract class DestinationPlugin : EventPlugin {
         return afterResult
     }
 
-    final override fun execute(event: BaseEvent): BaseEvent? { return null }
+    final override fun execute(event: BaseEvent): BaseEvent? {
+        return null
+    }
 
     open fun flush() {}
 
