@@ -1,5 +1,5 @@
 // Needed for Jitpack (ref: https://github.com/jitpack/gradle-modular/blob/6816f11/build.gradle)
-apply plugin: 'maven'
+apply plugin: 'com.github.dcendents.android-maven'
 
 task sourcesJar(type: Jar) {
     classifier = 'sources'
