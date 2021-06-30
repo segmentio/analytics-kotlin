@@ -76,3 +76,5 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.5'
     testImplementation 'androidx.test:core:1.3.0'
 }
+
+apply from: rootProject.file('gradle/jitpack-android.gradle')
