@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+    id 'kotlin'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+test {
+    useJUnitPlatform()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    // MAIN DEPS
+    api 'com.github.segmentio:sovran-kotlin:0.1.0'
+    api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9'
+
+    // TESTING
+    repositories { mavenCentral() }
+    testImplementation 'io.mockk:mockk:1.10.6'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.2'
+
+    testImplementation platform("org.junit:junit-bom:5.7.2")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+}

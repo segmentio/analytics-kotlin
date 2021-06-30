@@ -4,12 +4,13 @@ import android.app.Application
 import android.util.Log
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
-import com.segment.analytics.*
+import com.segment.analytics.kotlin.android.Analytics
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.next.plugins.AndroidAdvertisingIdPlugin
 import com.segment.analytics.next.plugins.AndroidRecordScreenPlugin
 import com.segment.analytics.next.plugins.PushNotificationTracking
-import com.segment.analytics.platform.Plugin
-import com.segment.analytics.utilities.*
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.utilities.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

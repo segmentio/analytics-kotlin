@@ -2,11 +2,11 @@ package com.segment.analytics.next.plugins
 
 import android.app.AlertDialog
 import android.content.Context
-import com.segment.analytics.Analytics
-import com.segment.analytics.BaseEvent
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.next.R
-import com.segment.analytics.platform.Plugin
-import com.segment.analytics.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.log
 
 object ConsentTracking : Plugin {
     override val type: Plugin.Type = Plugin.Type.Before

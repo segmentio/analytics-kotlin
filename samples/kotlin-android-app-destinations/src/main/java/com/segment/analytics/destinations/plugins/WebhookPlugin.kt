@@ -1,9 +1,9 @@
 package com.segment.analytics.destinations.plugins
 
-import com.segment.analytics.*
-import com.segment.analytics.platform.DestinationPlugin
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.log
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.LogType
+import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.DataOutputStream

@@ -1,9 +1,9 @@
 package com.segment.analytics.next.plugins
 
-import com.segment.analytics.*
-import com.segment.analytics.platform.DestinationPlugin
-import com.segment.analytics.platform.plugins.LogType
-import com.segment.analytics.platform.plugins.log
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.LogType
+import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.DataOutputStream
@@ -15,8 +15,10 @@ import java.net.URL
 import java.util.concurrent.ExecutorService
 
 // A Destination plugin that doesnt modify the incoming payload, and sends it to the configured webhook
-class WebhookPlugin(private val webhookUrl: String, private val networkExecutor: ExecutorService) :
-    DestinationPlugin() {
+class WebhookPlugin(
+    private val webhookUrl: String,
+    private val networkExecutor: ExecutorService
+) : DestinationPlugin() {
     override val name: String = "WebhookDestination-$webhookUrl"
 
     /**

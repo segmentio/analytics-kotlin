@@ -2,8 +2,8 @@ package com.segment.analytics.javaandroidapp;
 
 import android.app.Application;
 
-import com.segment.analytics.Analytics;
-import com.segment.analytics.AndroidAnalyticsKt;
+import com.segment.analytics.kotlin.android.AndroidAnalyticsKt;
+import com.segment.analytics.kotlin.core.Analytics;
 
 import kotlin.Unit;
 

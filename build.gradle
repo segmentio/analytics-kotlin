@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     ext.kotlin_version = "1.4.10"
-    ext.writeKey = "O98AexE6AWIMZaxJN37Wg1UIfrI4IX4J"
+    ext.writeKey = "hAh3QxoRCsQsnyabTLMpWbpxoIN4O2mU"
     repositories {
         google()
         jcenter()
@@ -23,6 +23,8 @@ allprojects {
     repositories {
         google()
         jcenter()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
         maven { url "https://kotlin.bintray.com/kotlinx" }
         maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     }
