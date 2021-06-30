@@ -1,0 +1,18 @@
+// Needed for Jitpack (ref: https://github.com/jitpack/gradle-modular/blob/6816f11/build.gradle)
+apply plugin: 'maven'
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+// Attach Javadocs and Sources jar
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
