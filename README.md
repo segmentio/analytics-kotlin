@@ -1,5 +1,6 @@
 # Analytics-Kotlin
 [![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
+
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM).
 
 NOTE: This project is currently in the Pilot phase and is covered by Segment's [First Access & Beta Preview Terms](https://segment.com/legal/first-access-beta-preview/).  We encourage you
