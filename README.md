@@ -1,3 +1,4 @@
+[![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
 # Analytics-Kotlin
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM).
 
@@ -28,6 +29,27 @@ supplant our `analytics-android` library.
 
 ## Installation
 For our pilot phase, we will be using [jitpack](https://jitpack.io/#segmentio/analytics-kotlin) to distribute the library
+<details open>
+<summary>Android</summary>
+<br>
+In your app's build.gradle file add the following
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.segmentio.analytics-kotlin:android:+'
+}
+```
+
+</details>
+
+<details>
+<summary>JVM</summary>
+<br>
+
 In your app's build.gradle file add the following
 ```groovy
 repositories {
@@ -35,9 +57,10 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.segmentio:analytics-kotlin:1.0.0'
+    implementation 'com.github.segmentio.analytics-kotlin:core:+'
 }
 ```
+</details>
 
 ### Permissions
 Ensure that you add these permissions to your `AndroidManifest.xml`
@@ -77,7 +100,7 @@ Analytics("SEGMENT_API_KEY", applicationContext) {
 }
 ```
 
-Generic
+JVM
 ```kotlin
 Analytics("SEGMENT_API_KEY") {
     collectDeviceId = true
