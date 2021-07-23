@@ -103,11 +103,10 @@ class FirebaseDestination(
             eventName = makeKey(eventName)
         }
 
-        payload.properties.let {
-            val formattedProperties = formatProperties(it)
-            firebaseAnalytics.logEvent(eventName, formattedProperties)
-            analytics.log("firebaseAnalytics.logEvent($eventName, $formattedProperties)")
-        }
+        val bundledProperties = formatProperties(payload.properties)
+
+        firebaseAnalytics.logEvent(eventName, bundledProperties)
+        analytics.log("firebaseAnalytics.logEvent($eventName, $bundledProperties)")
 
         return returnPayload
     }
@@ -117,7 +116,9 @@ class FirebaseDestination(
 
         val tempActivity = activity
         if (tempActivity != null) {
-            firebaseAnalytics.setCurrentScreen(tempActivity, payload.name, null);
+            val bundle = Bundle()
+            bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.name)
+            firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
         }
 
         return returnPayload
@@ -134,7 +135,9 @@ class FirebaseDestination(
             packageManager.getActivityInfo(activity.componentName, PackageManager.GET_META_DATA)
                 .let {
                     it.loadLabel(packageManager).toString().let { activityName ->
-                        firebaseAnalytics.setCurrentScreen(activity, activityName, null)
+                        val bundle = Bundle()
+                        bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, activityName)
+                        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
                         analytics.log(
                             "firebaseAnalytics.setCurrentScreen(activity, $activityName, null"
                         )
@@ -184,7 +187,6 @@ class FirebaseDestination(
             }
         }
 
-
         // Don't return a valid bundle if there wasn't anything added
         if (bundle?.isEmpty == true) {
             bundle = null
@@ -214,11 +216,10 @@ class FirebaseDestination(
         return mappedProducts
     }
 
-    // Make sure keys do not contain ".", "-", " ", ":"
+    // Make sure keys do not contain ".", "-", " ", ":" and are replaced with _
     private fun makeKey(key: String): String {
-        val charsToFilter = ".- :"
-        // only filter out the characters in charsToFilter by relying on the other characters not being found
-        return key.filter { charsToFilter.indexOf(it) == -1 }
+        val charsToFilter = """[\. \-:]""".toRegex()
+        return key.replace(charsToFilter, "_")
     }
 
     // Adds the appropriate value & type to a supplied bundle
