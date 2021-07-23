@@ -103,10 +103,7 @@ class FirebaseDestination(
             eventName = makeKey(eventName)
         }
 
-        var bundledProperties: Bundle?
-        payload.properties.let {
-            bundledProperties = formatProperties(it)
-        }
+        val bundledProperties = formatProperties(payload.properties)
 
         firebaseAnalytics.logEvent(eventName, bundledProperties)
         analytics.log("firebaseAnalytics.logEvent($eventName, $bundledProperties)")
@@ -219,11 +216,10 @@ class FirebaseDestination(
         return mappedProducts
     }
 
-    // Make sure keys do not contain ".", "-", " ", ":"
+    // Make sure keys do not contain ".", "-", " ", ":" and are replaced with _
     private fun makeKey(key: String): String {
-        val charsToFilter = ".- :"
-        // only filter out the characters in charsToFilter by relying on the other characters not being found
-        return key.filter { charsToFilter.indexOf(it) == -1 }
+        val charsToFilter = """[\. \-:]""".toRegex()
+        return key.replace(charsToFilter, "_")
     }
 
     // Adds the appropriate value & type to a supplied bundle
