@@ -103,11 +103,13 @@ class FirebaseDestination(
             eventName = makeKey(eventName)
         }
 
+        var bundledProperties: Bundle?
         payload.properties.let {
-            val formattedProperties = formatProperties(it)
-            firebaseAnalytics.logEvent(eventName, formattedProperties)
-            analytics.log("firebaseAnalytics.logEvent($eventName, $formattedProperties)")
+            bundledProperties = formatProperties(it)
         }
+
+        firebaseAnalytics.logEvent(eventName, bundledProperties)
+        analytics.log("firebaseAnalytics.logEvent($eventName, $bundledProperties)")
 
         return returnPayload
     }
@@ -117,7 +119,9 @@ class FirebaseDestination(
 
         val tempActivity = activity
         if (tempActivity != null) {
-            firebaseAnalytics.setCurrentScreen(tempActivity, payload.name, null);
+            val bundle = Bundle()
+            bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.name)
+            firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
         }
 
         return returnPayload
@@ -134,7 +138,9 @@ class FirebaseDestination(
             packageManager.getActivityInfo(activity.componentName, PackageManager.GET_META_DATA)
                 .let {
                     it.loadLabel(packageManager).toString().let { activityName ->
-                        firebaseAnalytics.setCurrentScreen(activity, activityName, null)
+                        val bundle = Bundle()
+                        bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, activityName)
+                        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
                         analytics.log(
                             "firebaseAnalytics.setCurrentScreen(activity, $activityName, null"
                         )
@@ -183,7 +189,6 @@ class FirebaseDestination(
                 putValue(bundle, finalProperty, value)
             }
         }
-
 
         // Don't return a valid bundle if there wasn't anything added
         if (bundle?.isEmpty == true) {

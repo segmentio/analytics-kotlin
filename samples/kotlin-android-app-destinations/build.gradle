@@ -42,7 +42,10 @@ dependencies {
     api 'com.mixpanel.android:mixpanel-android:5.8.7'
 
     // Firebase
-    implementation 'com.google.firebase:firebase-core:15.0.2'
+    implementation platform('com.google.firebase:firebase-bom:28.2.1')
+    // Declare the dependency for the Analytics library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation 'com.google.firebase:firebase-analytics-ktx'
 
     implementation project(':android')
 
