@@ -3,10 +3,13 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.launch
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.serializer
 import java.io.BufferedReader
 
 @Serializable
@@ -14,7 +17,20 @@ data class Settings(
     var integrations: JsonObject = emptyJsonObject,
     var plan: JsonObject = emptyJsonObject,
     var edgeFunction: JsonObject = emptyJsonObject,
-)
+) {
+    inline fun <reified T : Any> destinationSettings(
+        name: String,
+        strategy: DeserializationStrategy<T> = Json.serializersModule.serializer()
+    ): T? {
+        val integrationData = integrations[name]?.jsonObject ?: return null
+        val typedSettings = Json.decodeFromJsonElement(strategy, integrationData)
+        return typedSettings
+    }
+
+    fun isDestinationEnabled(name: String): Boolean {
+        return integrations.containsKey(name)
+    }
+}
 
 internal fun Analytics.update(settings: Settings) {
     timeline.applyClosure { plugin ->
