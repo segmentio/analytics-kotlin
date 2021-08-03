@@ -9,7 +9,6 @@ import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.TrackEvent
 
-
 // Most simple interface for an plugin
 interface Plugin {
     enum class Type {
@@ -68,6 +67,7 @@ abstract class DestinationPlugin : EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Destination
     private val timeline: Timeline = Timeline()
     override lateinit var analytics: Analytics
+    internal var enabled = true
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -92,6 +92,10 @@ abstract class DestinationPlugin : EventPlugin {
 
     // Special function for DestinationPlugin that manages its own timeline execution
     fun process(event: BaseEvent?): BaseEvent? {
+        // Skip this destination if it is disabled via settings
+        if (!enabled) {
+            return null
+        }
         val beforeResult = timeline.applyPlugins(Plugin.Type.Before, event)
         val enrichmentResult = timeline.applyPlugins(Plugin.Type.Enrichment, beforeResult)
 

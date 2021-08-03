@@ -119,4 +119,25 @@ class DestinationPluginTests {
         verify(exactly = 1) { enrichmentPlugin.execute(trackEvent) }
         verify(exactly = 1) { afterPlugin.execute(trackEvent) }
     }
+
+    @Test
+    fun `destination processing is skipped when disabled via settings`() {
+        val destinationPlugin = spyk(object: DestinationPlugin() {
+            override val name: String = "TestDestination"
+        })
+        // Disable destination via settings
+        destinationPlugin.enabled = false
+        val trackEvent = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = Date(0).toInstant().toString()
+            }
+        val result = destinationPlugin.process(trackEvent)
+        assertEquals(null, result)
+    }
 }

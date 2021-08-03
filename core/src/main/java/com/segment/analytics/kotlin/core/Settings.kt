@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.launch
@@ -34,6 +35,9 @@ data class Settings(
 
 internal fun Analytics.update(settings: Settings) {
     timeline.applyClosure { plugin ->
+        if (plugin is DestinationPlugin) {
+            plugin.enabled = settings.isDestinationEnabled(plugin.name)
+        }
         // tell all top level plugins to update.
         // For destination plugins they auto-handle propagation to sub-plugins
         plugin.update(settings)

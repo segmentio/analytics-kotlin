@@ -36,7 +36,7 @@ class PluginTests {
     }
 
     @Test
-    fun `execute runs the destination timeline`() {
+    fun `plugin processes the event correctly`() {
         val plugin = spyk(object : Plugin {
             override val type: Plugin.Type = Plugin.Type.Before
             override val name: String = "plugin"
