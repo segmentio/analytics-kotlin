@@ -82,3 +82,13 @@ fun JsonObject.getMapSet(key: String): Set<Map<String, Any>>? {
     else
         null
 }
+
+// Utility function to transform keys in JsonObject. Only acts on root level keys
+fun JsonObject.transformKeys(transform: (String) -> String): JsonObject {
+    return JsonObject(this.mapKeys { transform(it.key) })
+}
+
+// Utility function to transform values in JsonObject. Only acts on root level values
+fun JsonObject.transformValues(transform: (JsonElement) -> JsonElement): JsonObject {
+    return JsonObject(this.mapValues { transform(it.value) })
+}

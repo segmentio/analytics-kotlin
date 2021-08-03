@@ -6,7 +6,10 @@ import com.segment.analytics.kotlin.core.utilities.getInt
 import com.segment.analytics.kotlin.core.utilities.getMapSet
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.getStringSet
+import com.segment.analytics.kotlin.core.utilities.transformKeys
+import com.segment.analytics.kotlin.core.utilities.transformValues
 import kotlinx.serialization.json.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.fail
@@ -193,7 +196,8 @@ class JSONTests {
 
     @Test
     fun `get normal string set`() {
-        val jsonObject = JsonObject(mapOf("keyed" to buildJsonArray { add("joker"); add("batman"); add("Mr. Freeze") }))
+        val jsonObject =
+            JsonObject(mapOf("keyed" to buildJsonArray { add("joker"); add("batman"); add("Mr. Freeze") }))
 
         val keyedValue = jsonObject.getStringSet("keyed")
 
@@ -204,7 +208,9 @@ class JSONTests {
 
     @Test
     fun `get normal string set with duplicate`() {
-        val jsonObject = JsonObject(mapOf("keyed" to buildJsonArray { add("joker"); add("batman"); add("Mr. Freeze"); add("batman") }))
+        val jsonObject = JsonObject(mapOf("keyed" to buildJsonArray {
+            add("joker"); add("batman"); add("Mr. Freeze"); add("batman")
+        }))
 
         val keyedValue = jsonObject.getStringSet("keyed")
 
@@ -214,7 +220,9 @@ class JSONTests {
 
     @Test
     fun `get normal string set with improper lookup`() {
-        val jsonObject = JsonObject(mapOf("keyed" to buildJsonArray { add("joker"); add("batman"); add("Mr. Freeze"); add("batman") }))
+        val jsonObject = JsonObject(mapOf("keyed" to buildJsonArray {
+            add("joker"); add("batman"); add("Mr. Freeze"); add("batman")
+        }))
 
         val keyedValue = jsonObject.getStringSet("keyed")
 
@@ -263,7 +271,8 @@ class JSONTests {
 
     @Test
     fun `get normal string set map with duplicate`() {
-        val batmanMap = mapOf("villains" to buildJsonArray { add("Joker"); add("Bain"); add("Mr. Freeze"); add("Bain") },
+        val batmanMap =
+            mapOf("villains" to buildJsonArray { add("Joker"); add("Bain"); add("Mr. Freeze"); add("Bain") },
                 "heroes" to buildJsonArray { add("Batman"); add("Robin"); add("James Gordon"); add("Catwoman") })
         val jsonObject = JsonObject(mapOf("batman" to JsonObject(batmanMap)))
 
@@ -287,5 +296,45 @@ class JSONTests {
 
         // Make sure there is still 4 and that it did not remove an additional Bain
         assertTrue(retrievedMap.intOrNull == 18)
+    }
+
+    @Test
+    fun `transformKeys transforms keys correctly`() {
+        val map = buildJsonObject {
+            put("Joker", true)
+            put("Catwoman", false)
+            put("Mr. Freeze", true)
+        }
+
+        val newMap = map.transformKeys { it.toUpperCase() }
+
+        with(newMap) {
+            assertTrue(containsKey("JOKER"))
+            assertTrue(containsKey("CATWOMAN"))
+            assertTrue(containsKey("MR. FREEZE"))
+        }
+    }
+
+    @Test
+    fun `transformValues transforms values correctly`() {
+        val map = buildJsonObject {
+            put("Joker", true)
+            put("Catwoman", false)
+            put("Mr. Freeze", true)
+        }
+
+        val newMap = map.transformValues {
+            if (it.jsonPrimitive.boolean) {
+                JsonPrimitive("M")
+            } else {
+                JsonPrimitive("F")
+            }
+        }
+
+        with(newMap) {
+            assertEquals("M", getString("Joker"))
+            assertEquals("F", getString("Catwoman"))
+            assertEquals("M", getString("Mr. Freeze"))
+        }
     }
 }
