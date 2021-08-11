@@ -1,11 +1,7 @@
 package com.segment.analytics.destinations.plugins
 
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
-import androidx.lifecycle.ProcessLifecycleOwner
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.putIntegrations
@@ -13,29 +9,63 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 // A Destination plugin that adds session tracking to Amplitude cloud mode.
-class AmplitudeSession() : DestinationPlugin() {
+class AmplitudeSession : Plugin {
 
-    override val name: String = "AmplitudeSession"
+    override val type: Plugin.Type = Plugin.Type.Enrichment
+    override lateinit var analytics: Analytics
     var sessionID: Long = -1
+    private val key = "Amplitude"
+    private var active = false
 
     private var timer: TimerTask? = null
     private val fireTime: Long = 300000
 
-    override fun setup(analytics: Analytics) {
-        super.setup(analytics)
+    override fun update(settings: Settings) {
+        active = settings.isDestinationEnabled(key)
     }
 
     // Add the session_id to the Amplitude payload for cloud mode to handle.
-    private inline fun <reified T: BaseEvent?> insertSession(payload: T?): BaseEvent? {
+    private inline fun <reified T : BaseEvent?> insertSession(payload: T?): BaseEvent? {
         var returnPayload = payload
         payload?.let {
-            analytics.log(message = "Running ${payload.type} payload through $name", event = payload, type = LogType.INFO)
-            returnPayload = payload.putIntegrations("Amplitude", mapOf("session_id" to sessionID)) as T?
+            analytics.log(
+                message = "Running ${payload.type} payload through AmplitudeSession",
+                event = payload,
+                type = LogType.INFO
+            )
+            returnPayload =
+                payload.putIntegrations(key, mapOf("session_id" to sessionID)) as T?
         }
         return returnPayload
     }
 
-    override fun track(payload: TrackEvent): BaseEvent? {
+    override fun execute(event: BaseEvent): BaseEvent? {
+        if (!active) { // If amplitude destination is disabled, no need to do this enrichment
+            return event
+        }
+
+        var result: BaseEvent? = event
+        when (result) {
+            is IdentifyEvent -> {
+                result = identify(result)
+            }
+            is TrackEvent -> {
+                result = track(result)
+            }
+            is GroupEvent -> {
+                result = group(result)
+            }
+            is ScreenEvent -> {
+                result = screen(result)
+            }
+            is AliasEvent -> {
+                result = alias(result)
+            }
+        }
+        return result
+    }
+
+    private fun track(payload: TrackEvent): BaseEvent? {
         if (payload.event == "Application Backgrounded") {
             onBackground()
         } else if (payload.event == "Application Opened") {
@@ -45,35 +75,35 @@ class AmplitudeSession() : DestinationPlugin() {
         return payload
     }
 
-    override fun identify(payload: IdentifyEvent): BaseEvent? {
+    private fun identify(payload: IdentifyEvent): BaseEvent? {
         insertSession(payload)
         return payload
     }
 
-    override fun screen(payload: ScreenEvent): BaseEvent? {
+    private fun screen(payload: ScreenEvent): BaseEvent? {
         insertSession(payload)
         return payload
     }
 
-    override fun group(payload: GroupEvent): BaseEvent? {
+    private fun group(payload: GroupEvent): BaseEvent? {
         insertSession(payload)
         return payload
     }
 
-    override fun alias(payload: AliasEvent): BaseEvent? {
+    private fun alias(payload: AliasEvent): BaseEvent? {
         insertSession(payload)
         return payload
     }
 
-    fun onBackground() {
+    private fun onBackground() {
         stopTimer()
     }
 
-    fun onForeground() {
+    private fun onForeground() {
         startTimer()
     }
 
-    fun startTimer() {
+    private fun startTimer() {
 
         // Set the session id
         sessionID = Calendar.getInstance().timeInMillis
@@ -84,7 +114,7 @@ class AmplitudeSession() : DestinationPlugin() {
         }
     }
 
-    fun stopTimer() {
+    private fun stopTimer() {
         timer?.cancel()
         sessionID = -1
     }
