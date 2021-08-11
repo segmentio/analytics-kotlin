@@ -36,7 +36,6 @@ class MainApplication : Application() {
         analytics.add(AndroidRecordScreenPlugin())
         analytics.add(object : Plugin {
             override val type: Plugin.Type = Plugin.Type.Enrichment
-            override val name: String = "Foo"
             override lateinit var analytics: Analytics
 
             override fun execute(event: BaseEvent): BaseEvent? {
