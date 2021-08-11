@@ -19,7 +19,7 @@ data class LogMessage(
 )
 
 // Analytics Utility plugin for logging purposes
-open class Logger(override val name: String) : EventPlugin {
+open class Logger : EventPlugin {
 
     override val type: Plugin.Type = Plugin.Type.Utility
     override lateinit var analytics: Analytics

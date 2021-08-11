@@ -57,10 +57,7 @@ class AnalyticsTests {
         @Test
         fun `Can add plugins to analytics`() {
             val middleware = object : Plugin {
-                override val type: Plugin.Type
-                    get() = Plugin.Type.Utility
-                override val name: String
-                    get() = "middlewarePlugin"
+                override val type = Plugin.Type.Utility
                 override lateinit var analytics: Analytics
             }
             analytics.add(middleware)
@@ -75,14 +72,11 @@ class AnalyticsTests {
         @Test
         fun `Can remove plugins from analytics`() {
             val middleware = object : Plugin {
-                override val type: Plugin.Type
-                    get() = Plugin.Type.Utility
-                override val name: String
-                    get() = "middlewarePlugin"
+                override val type = Plugin.Type.Utility
                 override lateinit var analytics: Analytics
             }
             analytics.add(middleware)
-            analytics.remove("middlewarePlugin")
+            analytics.remove(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
                 Assertions.assertEquals(
                     0,
@@ -93,8 +87,8 @@ class AnalyticsTests {
 
         @Test
         fun `event runs through chain of plugins`() {
-            val testPlugin1 = TestRunPlugin("plugin1") {}
-            val testPlugin2 = TestRunPlugin("plugin1") {}
+            val testPlugin1 = TestRunPlugin {}
+            val testPlugin2 = TestRunPlugin {}
             analytics
                 .add(testPlugin1)
                 .add(testPlugin2)
@@ -106,7 +100,7 @@ class AnalyticsTests {
         @Test
         fun `adding destination plugin modifies integrations object`() {
             val testPlugin1 = object : DestinationPlugin() {
-                override val name: String = "TestDestination"
+                override val key: String = "TestDestination"
             }
             analytics
                 .add(testPlugin1)
@@ -124,10 +118,10 @@ class AnalyticsTests {
         @Test
         fun `removing destination plugin modifies integrations object`() {
             val testPlugin1 = object : DestinationPlugin() {
-                override val name: String = "TestDestination"
+                override val key: String = "TestDestination"
             }
             analytics.add(testPlugin1)
-            analytics.remove(testPlugin1.name)
+            analytics.remove(testPlugin1)
 
             val system = analytics.store.currentState(System::class)
             val curIntegrations = system?.integrations

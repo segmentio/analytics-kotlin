@@ -15,7 +15,6 @@ import kotlinx.serialization.json.put
  */
 class ContextPlugin : Plugin {
     override val type: Plugin.Type = Plugin.Type.Before
-    override val name: String = "ContextPlugin"
     override lateinit var analytics: Analytics
 
     private lateinit var library: JsonObject

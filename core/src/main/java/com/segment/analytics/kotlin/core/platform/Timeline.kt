@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.platform
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
+import kotlin.reflect.KClass
 
 // Platform abstraction for managing all plugins and their execution
 // Currently the execution follows
@@ -66,17 +67,17 @@ internal class Timeline {
     }
 
     // Remove a registered plugin
-    fun remove(pluginName: String) {
+    fun remove(plugin: Plugin) {
         // remove all plugins with this name in every category
         plugins.forEach { (_, list) ->
-            list.remove(pluginName)
+            list.remove(plugin)
         }
     }
 
     // Find a registered plugin
-    fun find(pluginName: String): Plugin? {
+    fun <T: Plugin> find(pluginClass: KClass<T>): T? {
         plugins.forEach { (_, list) ->
-            val found = list.find(pluginName)
+            val found = list.find(pluginClass)
             if (found != null) {
                 return found
             }

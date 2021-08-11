@@ -17,7 +17,7 @@ import java.util.*
 class MixpanelDestination(
     private val context: Context
 ) : DestinationPlugin(), AndroidLifecycle {
-    override val name: String = "Mixpanel"
+    override val key: String = "Mixpanel"
     private var token: String = ""
     private lateinit var mixpanel: MixpanelAPI
 
@@ -165,7 +165,7 @@ class MixpanelDestination(
 
     override fun update(settings: Settings) {
         super.update(settings)
-        val mixpanelSettings = settings.integrations[name]
+        val mixpanelSettings = settings.integrations[key]
         mixpanelSettings?.jsonObject?.let {
             analytics.log("mixpanel.received settings=$it", type = LogType.INFO)
             consolidatedPageCalls = it.getBoolean("consolidatedPageCalls") ?: true

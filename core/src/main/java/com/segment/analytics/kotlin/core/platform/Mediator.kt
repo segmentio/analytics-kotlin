@@ -6,6 +6,7 @@ import com.segment.analytics.kotlin.core.GroupEvent
 import com.segment.analytics.kotlin.core.IdentifyEvent
 import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.TrackEvent
+import kotlin.reflect.KClass
 
 // Platform abstraction for managing plugins' execution (of a specific type)
 // All operations are thread safe via the `synchronized` function
@@ -15,8 +16,8 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         plugins.add(plugin)
     }
 
-    fun remove(pluginName: String) = synchronized(plugins) {
-        plugins.removeAll { it.name == pluginName }
+    fun remove(plugin: Plugin) = synchronized(plugins) {
+        plugins.removeAll { it === plugin } // remove only if reference is the same
     }
 
     fun execute(event: BaseEvent): BaseEvent? = synchronized(plugins) {
@@ -62,10 +63,10 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         }
     }
 
-    fun find(pluginName: String): Plugin? = synchronized(plugins) {
+    fun <T: Plugin> find(pluginClass: KClass<T>): T? = synchronized(plugins) {
         plugins.forEach {
-            if (it.name == pluginName) {
-                return it
+            if (it::class == pluginClass) {
+                return it as T
             }
         }
         return null

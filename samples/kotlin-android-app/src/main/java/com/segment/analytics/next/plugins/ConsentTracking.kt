@@ -10,7 +10,6 @@ import com.segment.analytics.kotlin.core.platform.plugins.log
 
 object ConsentTracking : Plugin {
     override val type: Plugin.Type = Plugin.Type.Before
-    override val name: String = "ConsentTracking"
     override lateinit var analytics: Analytics
     var queuedEvents = mutableListOf<BaseEvent>()
 

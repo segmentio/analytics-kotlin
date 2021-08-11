@@ -18,6 +18,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
+import kotlin.reflect.KClass
 
 class Analytics(val configuration: Configuration) : Subscriber {
 
@@ -355,30 +356,29 @@ class Analytics(val configuration: Configuration) : Subscriber {
      */
     fun add(plugin: Plugin): Analytics {
         this.timeline.add(plugin)
-        if (plugin is DestinationPlugin && plugin.name != "Segment.io") {
+        if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
             analyticsScope.launch(ioDispatcher) {
-                store.dispatch(System.AddIntegrationAction(plugin.name), System::class)
+                store.dispatch(System.AddIntegrationAction(plugin.key), System::class)
             }
         }
         return this
     }
 
     /**
-     * Retrieve a registered plugin by name
-     * @param pluginName [String]
+     * Retrieve a registered plugin by reference
+     * @param plugin [Plugin]
      */
-    fun find(pluginName: String): Plugin? = this.timeline.find(pluginName)
+    fun <T: Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
 
     /**
      * Remove a plugin from the analytics timeline using its name
      * @param pluginName [Plugin] to be remove
      */
-    fun remove(pluginName: String): Analytics {
-        val pluginToRemove = find(pluginName)
-        this.timeline.remove(pluginName)
-        if (pluginToRemove is DestinationPlugin && pluginToRemove.name != "Segment.io") {
+    fun remove(plugin: Plugin): Analytics {
+        this.timeline.remove(plugin)
+        if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
             analyticsScope.launch(ioDispatcher) {
-                store.dispatch(System.RemoveIntegrationAction(pluginToRemove.name), System::class)
+                store.dispatch(System.RemoveIntegrationAction(plugin.key), System::class)
             }
         }
         return this

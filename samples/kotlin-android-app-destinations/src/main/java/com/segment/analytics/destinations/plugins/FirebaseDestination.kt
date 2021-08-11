@@ -25,7 +25,7 @@ class FirebaseDestination(
     private val context: Context
 ) : DestinationPlugin(), AndroidLifecycle {
 
-    override val name: String = "Firebase"
+    override val key: String = "Firebase"
     private lateinit var firebaseAnalytics: FirebaseAnalytics
     private var activity: Activity? = null
 

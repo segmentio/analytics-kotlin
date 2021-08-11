@@ -28,7 +28,6 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
     Plugin {
 
     override val type: Plugin.Type = Plugin.Type.Utility
-    override val name: String = "AnalyticsActivityLifecycleCallbacks"
     override lateinit var analytics: Analytics
     private lateinit var packageInfo: PackageInfo
     private lateinit var application: Application

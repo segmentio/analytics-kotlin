@@ -32,12 +32,12 @@ fun main(args: Array<String>) {
         )
         analytics.flush()
         // Waiting 30s to ensure auto-flush on Segment.io destination goes through
-        delay(30 * 1000)
-        (analytics.find("Segment.io") as SegmentDestination).flushScheduler.shutdown()
+        delay(30L * 1000)
+        analytics.find(SegmentDestination::class)?.flushScheduler?.shutdown()
     }
 }
 
-object ConsoleLogger : Logger("ConsoleLogger") {
+object ConsoleLogger : Logger() {
     override fun log(type: LogType, message: String, event: BaseEvent?) {
         println("[$type] - $message::$event")
     }

@@ -50,9 +50,9 @@ class DeviceTokenPluginTests {
 
     @Test
     fun `setting device token adds the device token plugin`() {
-        assertEquals(null, analytics.find(DeviceToken.SEGMENT_TOKEN_PLUGIN_NAME))
+        assertEquals(null, analytics.find(DeviceToken::class))
         analytics.setDeviceToken("deviceToken")
-        val deviceTokenPlugin = analytics.find(DeviceToken.SEGMENT_TOKEN_PLUGIN_NAME) as DeviceToken
+        val deviceTokenPlugin = analytics.find(DeviceToken::class) as DeviceToken
         assertNotEquals(null, deviceTokenPlugin)
         assertEquals("deviceToken", deviceTokenPlugin.token)
     }

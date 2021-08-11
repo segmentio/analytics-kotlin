@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class StartupQueue : Plugin, Subscriber {
     override val type: Plugin.Type = Plugin.Type.Before
-    override val name: String = "Segment_StartupQueue"
     override lateinit var analytics: Analytics
 
     private val maxSize = 1000
@@ -35,7 +34,7 @@ class StartupQueue : Plugin, Subscriber {
 
     override fun execute(event: BaseEvent): BaseEvent? {
         if (!started.get()) {
-            analytics.log("$name queueing event", event = event)
+            analytics.log("SegmentStartupQueue queueing event", event = event)
             // timeline hasn't started, so queue it up.
             if (queuedEvents.size >= maxSize) {
                 // if we've exceeded the max queue size start dropping events

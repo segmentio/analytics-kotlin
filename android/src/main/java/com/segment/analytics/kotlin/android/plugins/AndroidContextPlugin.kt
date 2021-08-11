@@ -29,7 +29,6 @@ import java.lang.System as JavaSystem
 // Plugin that applies context related changes. Auto-added to system on build
 class AndroidContextPlugin : Plugin {
     override val type: Plugin.Type = Plugin.Type.Before
-    override val name: String = "AndroidContextCollector"
     override lateinit var analytics: Analytics
     private lateinit var context: Context
     private lateinit var storage: Storage

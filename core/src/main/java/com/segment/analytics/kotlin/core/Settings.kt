@@ -36,7 +36,7 @@ data class Settings(
 internal fun Analytics.update(settings: Settings) {
     timeline.applyClosure { plugin ->
         if (plugin is DestinationPlugin) {
-            plugin.enabled = settings.isDestinationEnabled(plugin.name)
+            plugin.enabled = settings.isDestinationEnabled(plugin.key)
         }
         // tell all top level plugins to update.
         // For destination plugins they auto-handle propagation to sub-plugins

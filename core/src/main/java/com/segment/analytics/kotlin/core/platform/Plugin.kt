@@ -20,7 +20,6 @@ interface Plugin {
     }
 
     val type: Type
-    val name: String
     var analytics: Analytics // ideally will be auto-assigned by setup(), and can be declared as lateinit
 
     // A simple setup function thats executed when plugin is attached to analytics
@@ -68,6 +67,7 @@ abstract class DestinationPlugin : EventPlugin {
     private val timeline: Timeline = Timeline()
     override lateinit var analytics: Analytics
     internal var enabled = true
+    abstract val key: String
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
@@ -79,8 +79,8 @@ abstract class DestinationPlugin : EventPlugin {
         timeline.add(plugin)
     }
 
-    fun remove(pluginName: String) {
-        timeline.remove(pluginName)
+    fun remove(plugin: Plugin) {
+        timeline.remove(plugin)
     }
 
     override fun update(settings: Settings) {

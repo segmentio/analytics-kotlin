@@ -67,7 +67,7 @@ public fun Analytics(
 }
 
 // Logger instance that uses the android `Log` class
-object AndroidLogger : Logger("AndroidLogger") {
+object AndroidLogger : Logger() {
     override fun log(type: LogType, message: String, event: BaseEvent?) {
         when (type) {
             LogType.ERROR -> {

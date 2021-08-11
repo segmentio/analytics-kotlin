@@ -30,7 +30,7 @@ class SegmentDestination(
     private var apiHost: String = "api.segment.io/v1"
 ) : DestinationPlugin() {
 
-    override val name: String = "Segment.io"
+    override val key: String = "Segment.io"
     internal val httpClient: HTTPClient = HTTPClient()
     internal lateinit var storage: Storage
     lateinit var flushScheduler: ScheduledExecutorService
@@ -71,7 +71,7 @@ class SegmentDestination(
         }
 
         val stringVal = Json.encodeToString(jsonVal)
-        analytics.log("$name running $stringVal")
+        analytics.log("$key running $stringVal")
         try {
             storage.write(Storage.Constants.Events, stringVal)
             if (eventCount.incrementAndGet() >= flushCount) {
@@ -108,7 +108,7 @@ class SegmentDestination(
     }
 
     override fun update(settings: Settings) {
-        settings.integrations[name]?.jsonObject?.let {
+        settings.integrations[key]?.jsonObject?.let {
             apiKey = it["apiKey"]?.jsonPrimitive?.content ?: apiKey
             apiHost = it["apiHost"]?.jsonPrimitive?.content ?: apiHost
         }
@@ -126,7 +126,7 @@ class SegmentDestination(
         if (eventCount.get() < 1) {
             return
         }
-        analytics.log("$name performing flush")
+        analytics.log("$key performing flush")
         val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
         if (fileUrls.isEmpty()) {
             analytics.log("No events to upload")
@@ -153,9 +153,9 @@ class SegmentDestination(
                 }
                 // Cleanup uploaded payloads
                 storage.removeFile(fileUrl)
-                analytics.log("$name uploaded $fileUrl")
+                analytics.log("$key uploaded $fileUrl")
             } catch (e: HTTPException) {
-                analytics.log("$name exception while uploading, ${e.message}")
+                analytics.log("$key exception while uploading, ${e.message}")
                 if (e.is4xx() && e.responseCode != 429) {
                     // Simply log and proceed to remove the rejected payloads from the queue.
                     analytics.log(

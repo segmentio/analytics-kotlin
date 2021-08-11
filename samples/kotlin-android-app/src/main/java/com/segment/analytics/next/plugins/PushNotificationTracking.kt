@@ -10,7 +10,6 @@ import kotlinx.serialization.json.put
 
 object PushNotificationTracking: Plugin, AndroidLifecycle {
     override val type: Plugin.Type = Plugin.Type.Utility
-    override val name: String = "PushNotificationTracking"
     override lateinit var analytics: Analytics
 
     override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) {
