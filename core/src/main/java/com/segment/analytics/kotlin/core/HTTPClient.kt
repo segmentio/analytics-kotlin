@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.utilities.encodeToBase64
 import java.io.BufferedReader
 import java.io.Closeable
 import java.io.IOException
@@ -34,7 +35,7 @@ class HTTPClient {
 
     private fun authorizationHeader(writeKey: String): String {
         val auth = "$writeKey:"
-        return "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
+        return "Basic ${encodeToBase64(auth)}"
     }
 
     /**
