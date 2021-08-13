@@ -11,7 +11,6 @@ import com.segment.analytics.kotlin.core.platform.plugins.log
 class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {
 
     override val type: Plugin.Type = Plugin.Type.Utility
-    override val name: String = "AndroidRecordScreen"
     override lateinit var analytics: Analytics
 
     override fun onActivityStarted(activity: Activity?) {

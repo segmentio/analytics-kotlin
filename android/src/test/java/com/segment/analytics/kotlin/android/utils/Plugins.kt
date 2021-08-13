@@ -3,7 +3,7 @@ package com.segment.analytics.kotlin.android.utils
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.*
 
-class TestRunPlugin(override val name: String = "TestRunPlugin", var closure: (BaseEvent?) -> Unit): EventPlugin {
+class TestRunPlugin(var closure: (BaseEvent?) -> Unit): EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
     var ran = false
@@ -48,7 +48,7 @@ class TestRunPlugin(override val name: String = "TestRunPlugin", var closure: (B
     }
 }
 
-class StubPlugin(override val name: String = "StubPlugin") : EventPlugin {
+class StubPlugin : EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
 }

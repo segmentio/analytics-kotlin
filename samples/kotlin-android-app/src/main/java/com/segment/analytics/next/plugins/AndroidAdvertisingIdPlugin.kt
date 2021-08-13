@@ -22,7 +22,6 @@ import kotlinx.serialization.json.put
 class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
 
     override val type: Plugin.Type = Plugin.Type.Enrichment
-    override val name: String = "AttachAdvertisingIdPlugin"
     override lateinit var analytics: Analytics
 
     companion object {

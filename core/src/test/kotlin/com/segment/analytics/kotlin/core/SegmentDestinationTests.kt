@@ -130,7 +130,7 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorAddingPayload = false
-        val testLogger = object : Logger("test") {
+        val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message == "Error adding payload") {
                     errorAddingPayload = true
@@ -182,7 +182,7 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val testLogger = object : Logger("test") {
+        val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
             }
         }
@@ -230,7 +230,7 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var payloadsRejected = false
-        val testLogger = object : Logger("test") {
+        val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message == "Payloads were rejected by server. Marked for removal.") {
                     payloadsRejected = true
@@ -268,7 +268,7 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorUploading = false
-        val testLogger = object : Logger("test") {
+        val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message == "Error while uploading payloads") {
                     errorUploading = true
@@ -312,7 +312,7 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorUploading = false
-        val testLogger = object : Logger("test") {
+        val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message == "Error while uploading payloads") {
                     errorUploading = true

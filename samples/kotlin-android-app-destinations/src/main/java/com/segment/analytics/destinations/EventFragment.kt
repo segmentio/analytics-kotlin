@@ -62,7 +62,6 @@ class EventFragment(val type: EventType, val analytics: Analytics) : Fragment() 
 
         analytics.add(object : Plugin {
             override val type: Plugin.Type = Plugin.Type.After
-            override val name: String = "TempResult-$type"
             override lateinit var analytics: Analytics
             override fun execute(event: BaseEvent): BaseEvent? {
                 val eventStr = when (event.type) {

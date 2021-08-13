@@ -105,7 +105,6 @@ JVM
 ```kotlin
 Analytics("SEGMENT_API_KEY") {
     collectDeviceId = true
-    recordScreenViews = true
     trackApplicationLifecycleEvents = true
     trackDeepLinks = true
     flushAt = 1
@@ -115,7 +114,6 @@ Analytics("SEGMENT_API_KEY") {
 Analytics(Configuration (
     writeKey = "123",
     collectDeviceId = true,
-    recordScreenViews = true,
     trackApplicationLifecycleEvents = true,
     trackDeepLinks = true,
     flushAt = 1,
@@ -132,7 +130,6 @@ Analytics(Configuration (
 | ioDispatcher | `Dispatchers.IO` |  Dispatcher running IO tasks |
 | storageProvider | `ConcreteStorageProvider` |  Provider for storage class, generally do not want to modify |
 | collectDeviceId | `false` |  automatically collect deviceId |
-| recordScreenViews | `false` |  automatically trigger screen events on Activity Start |
 | trackApplicationLifecycleEvents | `false` |  automatically track Lifecycle events |
 | trackDeepLinks | `false` |  automatically track [Deep link](https://developer.android.com/training/app-links/deep-linking) opened based on intents |
 | useLifecycleObserver | `false` |  enables the use of LifecycleObserver to track Application lifecycle events |
@@ -200,7 +197,7 @@ analytics.screen("ScreenName", buildJsonObject {
     put("productSlug", "example-product-123")
 });
 ```
-You can enable automatic screen tracking using the Config option `autoRecordScreenViews = true`
+You can also opt-into auto screen tracking by adding this [plugin](https://github.com/segmentio/analytics-kotlin/blob/main/samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins/AndroidRecordScreenPlugin.kt)
 
 ### group
 The group API call is how you associate an individual user with a group—be it a company, organization, account, project, team or whatever other crazy name you came up with for the same concept! This includes a unique group ID and any optional group traits you know about them like the company name industry, number of employees, etc. The traits option can include any information you might want to tie to the group, but when using any of the reserved group traits, you should make sure to only use them for their intended meaning.

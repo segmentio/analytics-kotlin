@@ -11,7 +11,7 @@ import com.segment.analytics.kotlin.core.platform.*
  * - has a boolean state `ran` that can be used to verify if a particular hook was executed
  * - has a `reset()` function to reset state between tests
  */
-class TestRunPlugin(override val name: String = "TestRunPlugin", var closure: (BaseEvent?) -> Unit): EventPlugin {
+class TestRunPlugin(var closure: (BaseEvent?) -> Unit): EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
     var ran = false
@@ -60,7 +60,7 @@ class TestRunPlugin(override val name: String = "TestRunPlugin", var closure: (B
  * An analytics plugin that is a simple pass-through plugin. Ideally to be used to verify
  * if particular hooks are run via mockk's `verify`
  */
-class StubPlugin(override val name: String = "StubPlugin") : EventPlugin {
+class StubPlugin : EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
 }

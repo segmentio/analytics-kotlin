@@ -26,7 +26,6 @@ class PluginTests {
     fun `setup is called`() {
         val plugin = object : Plugin {
             override val type: Plugin.Type = Plugin.Type.Before
-            override val name: String = "plugin"
             override lateinit var analytics: Analytics
         }
         val spy = spyk(plugin)
@@ -36,10 +35,9 @@ class PluginTests {
     }
 
     @Test
-    fun `execute runs the destination timeline`() {
+    fun `plugin processes the event correctly`() {
         val plugin = spyk(object : Plugin {
             override val type: Plugin.Type = Plugin.Type.Before
-            override val name: String = "plugin"
             override lateinit var analytics: Analytics
         })
         timeline.add(plugin)

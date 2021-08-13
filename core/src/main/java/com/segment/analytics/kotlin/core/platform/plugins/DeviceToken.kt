@@ -9,12 +9,7 @@ import com.segment.analytics.kotlin.core.utilities.putInContextUnderKey
  * Analytics plugin to add device token to events
  */
 class DeviceToken(var token: String) : Plugin {
-    companion object {
-        const val SEGMENT_TOKEN_PLUGIN_NAME = "Segment_Token"
-    }
-
     override var type = Plugin.Type.Before
-    override var name = SEGMENT_TOKEN_PLUGIN_NAME
     override lateinit var analytics: Analytics
 
     override fun execute(event: BaseEvent): BaseEvent {
@@ -28,7 +23,7 @@ class DeviceToken(var token: String) : Plugin {
  * @param token [String] Device Token to add to payloads
  */
 fun Analytics.setDeviceToken(token: String) {
-    var tokenPlugin = find(DeviceToken.SEGMENT_TOKEN_PLUGIN_NAME) as? DeviceToken
+    var tokenPlugin = find(DeviceToken::class)
     if (tokenPlugin != null) {
         tokenPlugin.token = token
     } else {

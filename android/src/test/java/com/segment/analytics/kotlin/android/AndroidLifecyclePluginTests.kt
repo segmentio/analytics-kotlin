@@ -83,7 +83,6 @@ class AndroidLifecyclePluginTests {
         var invokedSaveInstance = false
         val test = object : Plugin, AndroidLifecycle {
             override val type: Plugin.Type = Plugin.Type.Utility
-            override val name: String = "TestPlugin"
             override lateinit var analytics: Analytics
 
             override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) {
