@@ -1,10 +1,15 @@
 package com.segment.analytics.kotlin.core.utilities
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.floatOrNull
@@ -81,6 +86,50 @@ fun JsonObject.getMapSet(key: String): Set<Map<String, Any>>? {
         returnList.toSet()
     else
         null
+}
+
+inline fun <reified T> asJsonElement(element: T): JsonElement = Json.encodeToJsonElement(element)
+
+fun JsonObject.mapTransform(
+    keyMapper: Map<String, String>,
+    valueTransform: ((key: String, value: JsonElement) -> JsonElement)? = null
+): JsonObject = buildJsonObject {
+    val original = this@mapTransform
+    original.forEach { (key, value) ->
+        var newKey: String = key
+        var newVal: JsonElement = value
+        // does this key1 have a mapping?
+        keyMapper[key]?.let { mappedKey ->
+            newKey = mappedKey
+        }
+
+        // is this value a dictionary?
+        if (value is JsonObject) {
+            // if so, lets recurse...
+            newVal = value.mapTransform(keyMapper, valueTransform)
+        } else if (value is JsonArray) {
+            // if it's an array, we need to see if any dictionaries are within and process
+            // those as well.
+            newVal = buildJsonArray {
+                value.forEach { item ->
+                    var newValue = item
+                    if (item is JsonObject) {
+                        newValue = item.mapTransform(keyMapper, valueTransform)
+                    }
+                    add(newValue)
+                }
+            }
+        }
+        if (newVal !is JsonObject && valueTransform != null) {
+            // it's not a dictionary apply our transform.
+            // note: if it's an array, we've processed any dictionaries inside
+            // already, but this gives the opportunity to apply a transform to the other
+            // items in the array that weren't dictionaries.
+
+            newVal = valueTransform(newKey, newVal)
+        }
+        put(newKey, newVal)
+    }
 }
 
 // Utility function to transform keys in JsonObject. Only acts on root level keys

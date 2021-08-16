@@ -6,6 +6,8 @@ import com.segment.analytics.kotlin.core.utilities.getInt
 import com.segment.analytics.kotlin.core.utilities.getMapSet
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.getStringSet
+import com.segment.analytics.kotlin.core.utilities.mapTransform
+import com.segment.analytics.kotlin.core.utilities.toContent
 import com.segment.analytics.kotlin.core.utilities.transformKeys
 import com.segment.analytics.kotlin.core.utilities.transformValues
 import kotlinx.serialization.json.*
@@ -335,6 +337,120 @@ class JSONTests {
             assertEquals("M", getString("Joker"))
             assertEquals("F", getString("Catwoman"))
             assertEquals("M", getString("Mr. Freeze"))
+        }
+    }
+
+    @Test
+    fun `can map keys + nested keys using mapKeys`() {
+        val keyMapper = mapOf(
+            "item" to "\$item",
+            "phone" to "\$phone",
+            "name" to "\$name",
+        )
+        val map = buildJsonObject {
+            put("company", buildJsonObject {
+                put("phone", "123-456-7890")
+                put("name", "Wayne Industries")
+            })
+            put("family", buildJsonArray {
+                add(buildJsonObject { put("name", "Mary") })
+                add(buildJsonObject { put("name", "Thomas") })
+            })
+            put("name", "Bruce")
+            put("last_name", "wayne")
+            put("item", "Grapple")
+        }
+        val newMap = map.mapTransform(keyMapper)
+        with(newMap) {
+            assertTrue(containsKey("\$name"))
+            assertTrue(containsKey("\$item"))
+            assertTrue(containsKey("last_name"))
+            with(get("company")!!.jsonObject) {
+                assertTrue(containsKey("\$phone"))
+                assertTrue(containsKey("\$name"))
+            }
+            with(get("family")!!.jsonArray) {
+                assertTrue(get(0).jsonObject.containsKey("\$name"))
+                assertTrue(get(1).jsonObject.containsKey("\$name"))
+            }
+        }
+    }
+
+    @Test
+    fun `can transform values using mapKeys`() {
+        val map = buildJsonObject {
+            put("company", buildJsonObject {
+                put("phone", "123-456-7890")
+                put("name", "Wayne Industries")
+            })
+            put("family", buildJsonArray {
+                add(buildJsonObject { put("name", "Mary") })
+                add(buildJsonObject { put("name", "Thomas") })
+            })
+            put("name", "Bruce")
+            put("last_name", "wayne")
+            put("item", "Grapple")
+        }
+        val newMap = map.mapTransform(emptyMap()) { newKey, value ->
+            var newVal = value
+            if (newKey == "phone") {
+                val foo = value.jsonPrimitive.toContent()
+                if (foo is String) {
+                    newVal = JsonPrimitive(foo.replace("-", ""))
+                }
+            }
+            newVal
+        }
+        with(newMap) {
+            with(get("company")!!.jsonObject) {
+                assertEquals("1234567890", getString("phone"))
+            }
+        }
+    }
+
+    @Test
+    fun `can map keys + transform values using mapKeys`() {
+        val keyMapper = mapOf(
+            "item" to "\$item",
+            "phone" to "\$phone",
+            "name" to "\$name",
+        )
+        val map = buildJsonObject {
+            put("company", buildJsonObject {
+                put("phone", "123-456-7890")
+                put("name", "Wayne Industries")
+            })
+            put("family", buildJsonArray {
+                add(buildJsonObject { put("name", "Mary") })
+                add(buildJsonObject { put("name", "Thomas") })
+            })
+            put("name", "Bruce")
+            put("last_name", "wayne")
+            put("item", "Grapple")
+        }
+        val newMap = map.mapTransform(keyMapper) { newKey, value ->
+            var newVal = value
+            if (newKey == "\$phone") {
+                val foo = value.jsonPrimitive.toContent()
+                if (foo is String) {
+                    newVal = JsonPrimitive(foo.replace("-", ""))
+                }
+            }
+            newVal
+        }
+        with(newMap) {
+            assertTrue(containsKey("\$name"))
+            assertTrue(containsKey("\$item"))
+            assertTrue(containsKey("last_name"))
+            with(get("company")!!.jsonObject) {
+                assertTrue(containsKey("\$phone"))
+                assertTrue(containsKey("\$name"))
+                assertEquals("1234567890", getString("\$phone"))
+            }
+            with(get("family")!!.jsonArray) {
+                assertTrue(get(0).jsonObject.containsKey("\$name"))
+                assertTrue(get(1).jsonObject.containsKey("\$name"))
+            }
         }
     }
 }
