@@ -1,5 +1,7 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
+import com.segment.analytics.kotlin.core.utilities.encodeToBase64
 import java.io.BufferedReader
 import java.io.Closeable
 import java.io.IOException
@@ -8,11 +10,12 @@ import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
-import java.util.Base64
 import java.util.zip.GZIPOutputStream
 
-class HTTPClient {
-    fun settings(writeKey: String): Connection {
+class HTTPClient(private val writeKey: String) {
+    internal val authHeader = authorizationHeader(writeKey)
+
+    fun settings(): Connection {
         val connection: HttpURLConnection =
             openConnection("https://cdn-settings.segment.com/v1/projects/$writeKey/settings")
         val responseCode = connection.responseCode
@@ -23,9 +26,9 @@ class HTTPClient {
         return connection.createGetConnection()
     }
 
-    fun upload(apiHost: String, writeKey: String): Connection {
-        val connection: HttpURLConnection = openConnection("https://$apiHost/import")
-        connection.setRequestProperty("Authorization", authorizationHeader(writeKey))
+    fun upload(apiHost: String): Connection {
+        val connection: HttpURLConnection = openConnection("https://$apiHost/batch")
+        connection.setRequestProperty("Authorization", authHeader)
         connection.setRequestProperty("Content-Encoding", "gzip")
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
@@ -34,7 +37,7 @@ class HTTPClient {
 
     private fun authorizationHeader(writeKey: String): String {
         val auth = "$writeKey:"
-        return "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
+        return "Basic ${encodeToBase64(auth)}"
     }
 
     /**
@@ -42,8 +45,7 @@ class HTTPClient {
      */
     @Throws(IOException::class)
     private fun openConnection(url: String): HttpURLConnection {
-        val requestedURL: URL
-        requestedURL = try {
+        val requestedURL: URL = try {
             URL(url)
         } catch (e: MalformedURLException) {
             throw IOException("Attempted to use malformed url: $url", e)
@@ -55,7 +57,7 @@ class HTTPClient {
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
         connection.setRequestProperty(
             "User-Agent",
-            "analytics-kotlin/1.0.0"
+            "analytics-kotlin/$LIBRARY_VERSION"
         )
         connection.doInput = true
         return connection

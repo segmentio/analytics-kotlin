@@ -56,7 +56,7 @@ fun Analytics.checkSettings() {
     analyticsScope.launch(ioDispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
         val settingsObj: Settings? = try {
-            val connection = HTTPClient().settings(writeKey)
+            val connection = HTTPClient(writeKey).settings()
             val settingsString =
                 connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
             log("Fetched Settings: $settingsString")

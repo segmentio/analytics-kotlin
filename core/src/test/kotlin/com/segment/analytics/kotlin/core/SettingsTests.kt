@@ -33,7 +33,7 @@ class SettingsTests {
         )
         val httpConnection: HttpURLConnection = mockk()
         val connection = object : Connection(httpConnection, settingsStream, null) {}
-        every { anyConstructed<HTTPClient>().settings(any()) } returns connection
+        every { anyConstructed<HTTPClient>().settings() } returns connection
     }
 
     @BeforeEach
