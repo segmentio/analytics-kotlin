@@ -1,18 +1,15 @@
 package com.segment.analytics.kotlin.core
 
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
+import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.io.BufferedReader
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HTTPClientTests {
 
-    private val httpClient = HTTPClient()
+    private val httpClient = HTTPClient("1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ")
 
     @BeforeEach
     fun setup() {
@@ -20,12 +17,38 @@ class HTTPClientTests {
     }
 
     @Test
-    fun `fetch settings works`() = runBlocking {
-        val connection = httpClient.settings("1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ")
-        val settingsString = connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-        val settingsObj: Settings = Json { ignoreUnknownKeys = true }.decodeFromString(settingsString)
-        assertEquals(emptyJsonObject, settingsObj.edgeFunction)
-        assertNotEquals(emptyJsonObject, settingsObj.integrations)
-        assertEquals(1, settingsObj.integrations.size)
+    fun `authHeader is correctly computed`() {
+        assertEquals("Basic MXZOZ1Vxd0plQ0htcWdJOVMxc09tOVVIQ3lmWXFiYVE6", httpClient.authHeader)
+    }
+
+    @Test
+    fun `upload connection has correct configuration`()  {
+        httpClient.settings().connection.let {
+            assertEquals(
+                "https://cdn-settings.segment.com/v1/projects/1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ/settings",
+                it.url.toString()
+            )
+            assertEquals(
+                "analytics-kotlin/$LIBRARY_VERSION",
+                it.getRequestProperty("User-Agent")
+            )
+        }
+    }
+
+    @Test
+    fun `settings connection has correct configuration`() {
+        httpClient.upload("api.segment.io/v1").connection.let {
+            assertEquals(
+                "https://api.segment.io/v1/batch",
+                it.url.toString()
+            )
+            assertEquals(
+                "analytics-kotlin/$LIBRARY_VERSION",
+                it.getRequestProperty("User-Agent")
+            )
+            assertEquals("gzip", it.getRequestProperty("Content-Encoding"))
+            // ideally we would also test if auth Header is set, but due to security concerns this
+            // is not possible https://bit.ly/3CVpR3J
+        }
     }
 }

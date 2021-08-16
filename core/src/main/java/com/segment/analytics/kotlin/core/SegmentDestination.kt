@@ -31,7 +31,7 @@ class SegmentDestination(
 ) : DestinationPlugin() {
 
     override val key: String = "Segment.io"
-    internal val httpClient: HTTPClient = HTTPClient()
+    internal val httpClient: HTTPClient = HTTPClient(apiKey)
     internal lateinit var storage: Storage
     lateinit var flushScheduler: ScheduledExecutorService
     internal val eventCount = AtomicInteger(0)
@@ -135,7 +135,7 @@ class SegmentDestination(
         eventCount.set(0)
         for (fileUrl in fileUrls) {
             try {
-                val connection = httpClient.upload(apiHost, apiKey)
+                val connection = httpClient.upload(apiHost)
                 val file = File(fileUrl)
                 // flush is executed in a thread pool and file could have been deleted by another thread
                 if (!file.exists()) {

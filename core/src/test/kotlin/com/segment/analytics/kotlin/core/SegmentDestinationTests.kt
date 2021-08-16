@@ -196,7 +196,7 @@ class SegmentDestinationTests {
                 outputBytes = (outputStream as ByteArrayOutputStream).toByteArray()
             }
         }
-        every { anyConstructed<HTTPClient>().upload(any(), any()) } returns connection
+        every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         assertEquals(1, segmentDestination.eventCount.get())
@@ -246,7 +246,7 @@ class SegmentDestinationTests {
                 throw HTTPException(400, "", null)
             }
         }
-        every { anyConstructed<HTTPClient>().upload(any(), any()) } returns connection
+        every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         assertEquals(1, segmentDestination.eventCount.get())
@@ -284,7 +284,7 @@ class SegmentDestinationTests {
                 throw HTTPException(429, "", null)
             }
         }
-        every { anyConstructed<HTTPClient>().upload(any(), any()) } returns connection
+        every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         assertEquals(1, segmentDestination.eventCount.get())
@@ -328,7 +328,7 @@ class SegmentDestinationTests {
                 throw HTTPException(500, "", null)
             }
         }
-        every { anyConstructed<HTTPClient>().upload(any(), any()) } returns connection
+        every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         assertEquals(1, segmentDestination.eventCount.get())
