@@ -341,7 +341,7 @@ class JSONTests {
     }
 
     @Test
-    fun `can map keys + nested keys using mapKeys`() {
+    fun `can map keys + nested keys using mapTransform`() {
         val keyMapper = mapOf(
             "item" to "\$item",
             "phone" to "\$phone",
@@ -377,7 +377,7 @@ class JSONTests {
     }
 
     @Test
-    fun `can transform values using mapKeys`() {
+    fun `can transform values using mapTransform`() {
         val map = buildJsonObject {
             put("company", buildJsonObject {
                 put("phone", "123-456-7890")
@@ -409,7 +409,7 @@ class JSONTests {
     }
 
     @Test
-    fun `can map keys + transform values using mapKeys`() {
+    fun `can map keys + transform values using mapTransform`() {
         val keyMapper = mapOf(
             "item" to "\$item",
             "phone" to "\$phone",
@@ -450,6 +450,55 @@ class JSONTests {
             with(get("family")!!.jsonArray) {
                 assertTrue(get(0).jsonObject.containsKey("\$name"))
                 assertTrue(get(1).jsonObject.containsKey("\$name"))
+            }
+        }
+    }
+
+    @Test
+    fun `can map keys + transform values using mapTransform on JsonArray`() {
+        val keyMapper = mapOf(
+            "item" to "\$item",
+            "phone" to "\$phone",
+            "name" to "\$name",
+        )
+        val list = buildJsonArray {
+            add(buildJsonObject {
+                put("phone", "123-456-7890")
+                put("name", "Wayne Industries")
+            })
+            add(buildJsonArray {
+                add(buildJsonObject { put("name", "Mary") })
+                add(buildJsonObject { put("name", "Thomas") })
+            })
+            add(buildJsonObject {
+                put("name", "Bruce")
+                put("last_name", "wayne")
+                put("item", "Grapple")
+            })
+        }
+        val newList = list.mapTransform(keyMapper) { newKey, value ->
+            var newVal = value
+            if (newKey == "\$phone") {
+                val foo = value.jsonPrimitive.toContent()
+                if (foo is String) {
+                    newVal = JsonPrimitive(foo.replace("-", ""))
+                }
+            }
+            newVal
+        }
+        with(newList) {
+            get(0).jsonObject.let {
+                assertTrue(it.containsKey("\$phone"))
+                assertTrue(it.containsKey("\$name"))
+            }
+            get(1).jsonArray.let {
+                assertEquals(buildJsonObject { put("\$name", "Mary") }, it[0])
+                assertEquals(buildJsonObject { put("\$name", "Thomas") }, it[1])
+            }
+            get(2).jsonObject.let {
+                assertTrue(it.containsKey("\$name"))
+                assertTrue(it.containsKey("\$item"))
+                assertTrue(it.containsKey("last_name"))
             }
         }
     }

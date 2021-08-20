@@ -105,17 +105,7 @@ fun JsonObject.mapTransform(
             // if so, lets recurse...
             newVal = value.mapTransform(keyMapper, valueTransform)
         } else if (value is JsonArray) {
-            // if it's an array, we need to see if any dictionaries are within and process
-            // those as well.
-            newVal = buildJsonArray {
-                value.forEach { item ->
-                    var newValue = item
-                    if (item is JsonObject) {
-                        newValue = item.mapTransform(keyMapper, valueTransform)
-                    }
-                    add(newValue)
-                }
-            }
+            newVal = value.mapTransform(keyMapper, valueTransform)
         }
         if (newVal !is JsonObject && valueTransform != null) {
             // it's not a dictionary apply our transform.
@@ -128,6 +118,24 @@ fun JsonObject.mapTransform(
         put(newKey, newVal)
     }
 }
+
+// Utility function to apply key-mappings (deep traversal) and an optional value transform
+fun JsonArray.mapTransform(
+    keyMapper: Map<String, String>,
+    valueTransform: ((key: String, value: JsonElement) -> JsonElement)? = null
+): JsonArray = buildJsonArray {
+    val original = this@mapTransform
+    original.forEach { item: JsonElement ->
+        var newValue = item
+        if (item is JsonObject) {
+            newValue = item.mapTransform(keyMapper, valueTransform)
+        } else if (item is JsonArray) {
+            newValue = item.mapTransform(keyMapper, valueTransform)
+        }
+        add(newValue)
+    }
+}
+
 
 // Utility function to transform keys in JsonObject. Only acts on root level keys
 fun JsonObject.transformKeys(transform: (String) -> String): JsonObject {
