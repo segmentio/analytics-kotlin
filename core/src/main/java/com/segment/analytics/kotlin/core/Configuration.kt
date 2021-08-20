@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
  * @property ioDispatcher Dispatcher running IO tasks, defaults to `Dispatchers.IO`
  * @property storageProvider Provider for storage class, defaults to `ConcreteStorageProvider`
  * @property collectDeviceId collect deviceId, defaults to `false`
- * @property trackApplicationLifecycleEvents automatically track Lifecycle events, defaults to `false`
+ * @property trackApplicationLifecycleEvents automatically send track for Lifecycle events (eg: Application Opened, Application Backgrounded, etc.), defaults to `false`
  * @property useLifecycleObserver enables the use of LifecycleObserver to track Application lifecycle events. Defaults to `false`.
  * @property trackDeepLinks automatically track [Deep link][https://developer.android.com/training/app-links/deep-linking] opened based on intents, defaults to `false`
  * @property flushAt count of events at which we flush events, defaults to `20`

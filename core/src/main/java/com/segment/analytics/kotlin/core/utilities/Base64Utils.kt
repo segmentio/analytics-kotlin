@@ -3,7 +3,7 @@ package com.segment.analytics.kotlin.core.utilities
 // Encode string to base64
 fun encodeToBase64(str: String) = encodeToBase64(str.toByteArray())
 
-// Encode byte-array to base64
+// Encode byte-array to base64, this implementation is not url-safe
 fun encodeToBase64(bytes: ByteArray) = buildString {
     val wData = ByteArray(3) // working data
     var i = 0
