@@ -17,7 +17,6 @@ import java.io.File
 
 // Android specific
 class AndroidStorage(
-    internal val analytics: Analytics,
     context: Context,
     private val store: Store,
     writeKey: String,
@@ -104,7 +103,6 @@ object AndroidStorageProvider : StorageProvider {
         application: Any
     ): Storage {
         return AndroidStorage(
-            analytics = analytics,
             store = store,
             writeKey = writeKey,
             ioDispatcher = ioDispatcher,

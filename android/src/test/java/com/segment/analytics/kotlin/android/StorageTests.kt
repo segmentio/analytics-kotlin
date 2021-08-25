@@ -52,7 +52,6 @@ class StorageTests {
             )
 
             androidStorage = AndroidStorage(
-                mockAnalytics(),
                 mockContext,
                 store,
                 "123",
