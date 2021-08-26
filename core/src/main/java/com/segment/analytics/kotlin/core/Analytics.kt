@@ -201,18 +201,18 @@ class Analytics(val configuration: Configuration) : Subscriber {
      * attach a name, category or properties to the screen. Either category or name must be
      * provided.
      *
-     * @param screenTitle A name for the screen.
+     * @param title A name for the screen.
      * @param category A category to describe the screen.
      * @param properties [Properties] to add extra information to this call.
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
     @JvmOverloads
     fun screen(
-        screenTitle: String,
+        title: String,
         properties: JsonObject = emptyJsonObject,
         category: String = ""
     ) {
-        val event = ScreenEvent(name = screenTitle, category = category, properties = properties)
+        val event = ScreenEvent(name = title, category = category, properties = properties)
         process(event)
     }
 
@@ -221,20 +221,20 @@ class Analytics(val configuration: Configuration) : Subscriber {
      * attach a name, category or properties to the screen. Either category or name must be
      * provided.
      *
-     * @param screenTitle A name for the screen.
+     * @param title A name for the screen.
      * @param category A category to describe the screen.
      * @param properties [Properties] to add extra information to this call. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @param serializationStrategy strategy to serialize [properties]
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
     fun <T : Any> screen(
-        screenTitle: String,
+        title: String,
         properties: T,
         serializationStrategy: SerializationStrategy<T>,
         category: String = ""
     ) {
         screen(
-            screenTitle,
+            title,
             Json.encodeToJsonElement(serializationStrategy, properties).jsonObject,
             category
         )
@@ -245,17 +245,17 @@ class Analytics(val configuration: Configuration) : Subscriber {
      * attach a name, category or properties to the screen. Either category or name must be
      * provided.
      *
-     * @param screenTitle A name for the screen.
+     * @param title A name for the screen.
      * @param category A category to describe the screen.
      * @param properties [Properties] to add extra information to this call. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
     inline fun <reified T : Any> screen(
-        screenTitle: String,
+        title: String,
         properties: T,
         category: String = "",
     ) {
-        screen(screenTitle, properties, Json.serializersModule.serializer(), category)
+        screen(title, properties, Json.serializersModule.serializer(), category)
     }
 
     /**

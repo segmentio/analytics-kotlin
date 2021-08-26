@@ -185,10 +185,10 @@ The screen call lets you record whenever a user sees a screen in your mobile app
 
 Method signature:
 ```kotlin
-fun screen(screenTitle: String, properties: JsonObject = emptyJsonObject, category: String = "")
+fun screen(title: String, properties: JsonObject = emptyJsonObject, category: String = "")
 
 // If <T> is annotated with @Serializable you will not need to provide a serializationStrategy
-fun <T> screen(screenTitle: String, properties: T, category: String = "", serializationStrategy: KSerializer<T>)
+fun <T> screen(title: String, properties: T, category: String = "", serializationStrategy: KSerializer<T>)
 ```
 
 Example Usage:
