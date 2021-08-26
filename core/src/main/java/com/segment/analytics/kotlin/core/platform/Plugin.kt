@@ -38,7 +38,7 @@ interface Plugin {
         return event
     }
 
-    fun update(settings: Settings) {
+    fun update(settings: Settings, type: UpdateType) {
         // empty body default
     }
 }
@@ -88,10 +88,10 @@ abstract class DestinationPlugin : EventPlugin {
         timeline.remove(plugin)
     }
 
-    override fun update(settings: Settings) {
+    override fun update(settings: Settings, type: Plugin.UpdateType) {
         // Apply settings update to its own plugins
         timeline.applyClosure {
-            it.update(settings)
+            it.update(settings, type)
         }
     }
 

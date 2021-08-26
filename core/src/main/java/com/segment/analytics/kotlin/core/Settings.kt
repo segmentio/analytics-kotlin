@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.launch
@@ -33,14 +34,14 @@ data class Settings(
     }
 }
 
-internal fun Analytics.update(settings: Settings) {
+internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
     timeline.applyClosure { plugin ->
         if (plugin is DestinationPlugin) {
             plugin.enabled = settings.isDestinationEnabled(plugin.key)
         }
         // tell all top level plugins to update.
         // For destination plugins they auto-handle propagation to sub-plugins
-        plugin.update(settings)
+        plugin.update(settings, type)
     }
 }
 
@@ -67,8 +68,15 @@ fun Analytics.checkSettings() {
         }
         settingsObj?.let {
             log("Dispatching update settings on ${Thread.currentThread().name}")
+
+            // check current system state to determine whether it's initial or refresh
+            val systemState = store.currentState(System::class)
+            val hasSettings = systemState?.settings?.integrations != null &&
+                                systemState.settings?.plan != null
+            val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial
+
             store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
-            update(settingsObj)
+            update(settingsObj, updateType)
         }
 
         // we're good to go back to a running state.

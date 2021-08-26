@@ -62,7 +62,7 @@ internal class Timeline {
         plugins[plugin.type]?.add(plugin)
         analytics.store.currentState(System::class)?.settings?.let {
             // if we have settings then update plugin with it
-            plugin.update(it)
+            plugin.update(it, Plugin.UpdateType.Initial)
         }
     }
 

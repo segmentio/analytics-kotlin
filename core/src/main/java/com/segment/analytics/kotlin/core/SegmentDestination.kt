@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.launch
@@ -107,7 +108,7 @@ class SegmentDestination(
         }
     }
 
-    override fun update(settings: Settings) {
+    override fun update(settings: Settings, type: Plugin.UpdateType) {
         settings.integrations[key]?.jsonObject?.let {
             apiKey = it["apiKey"]?.jsonPrimitive?.content ?: apiKey
             apiHost = it["apiHost"]?.jsonPrimitive?.content ?: apiHost
