@@ -75,7 +75,7 @@ class FirebaseDestination(
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         // if we've already set up this singleton SDK, can't do it again, so skip.
-        if (type == Plugin.UpdateType.Initial) return
+        if (type != Plugin.UpdateType.Initial) return
 
         super.update(settings, type)
     }
