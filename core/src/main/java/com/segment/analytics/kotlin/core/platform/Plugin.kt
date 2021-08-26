@@ -19,6 +19,11 @@ interface Plugin {
         Utility // Executed only when called manually, such as Logging.
     }
 
+    enum class UpdateType {
+        Initial,
+        Refresh
+    }
+
     val type: Type
     var analytics: Analytics // ideally will be auto-assigned by setup(), and can be declared as lateinit
 
