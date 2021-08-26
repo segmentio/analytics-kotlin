@@ -9,6 +9,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.android.utilities.toJSONObject
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.*
 import kotlinx.serialization.json.*
@@ -163,8 +164,11 @@ class MixpanelDestination(
         return payload
     }
 
-    override fun update(settings: Settings) {
-        super.update(settings)
+    override fun update(settings: Settings, type:Plugin.UpdateType) {
+        // if we've already set up this singleton SDK, can't do it again, so skip.
+        if (type == Plugin.UpdateType.Initial) return
+
+        super.update(settings, type)
         val mixpanelSettings = settings.integrations[key]
         mixpanelSettings?.jsonObject?.let {
             analytics.log("mixpanel.received settings=$it", type = LogType.INFO)
