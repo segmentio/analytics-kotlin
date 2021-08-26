@@ -20,7 +20,7 @@ class AmplitudeSession : Plugin {
     private var timer: TimerTask? = null
     private val fireTime: Long = 300000
 
-    override fun update(settings: Settings) {
+    override fun update(settings: Settings, type:Plugin.UpdateType) {
         active = settings.isDestinationEnabled(key)
     }
 

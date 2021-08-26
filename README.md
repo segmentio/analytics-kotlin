@@ -336,8 +336,9 @@ class AmplitudePlugin: DestinationPlugin() {
 ### Advanced concepts
 - [`setup(Analytics)`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt#L20-L24)
 Use this function to setup your plugin. This will be implicitly called once the plugin is registered
-- [`update(Settings)`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt#L31-L33)
-Use this function to react to any settings updates. This will be implicitly called when settings are updated.
+- [`update(Settings, UpdateType)`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt#L31-L33)
+Use this function to react to any settings updates. This will be implicitly called when settings are updated. The `UpdateType` is used to indicate whether the settings change
+is for initialization or refreshment, and you can use it to decide whether to update your plugins accordingly.
 You can force a settings update by calling `analytics.checkSettings()`
 - AndroidLifecycle hooks
 Plugins can also hook into [`AndroidLifecycle`]() functions by implementing an interface. These functions will get called implicitly as the lifecycle events are processed.

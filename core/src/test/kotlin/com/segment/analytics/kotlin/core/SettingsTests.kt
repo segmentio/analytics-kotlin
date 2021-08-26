@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
@@ -87,7 +88,8 @@ class SettingsTests {
                     },
                     plan = emptyJsonObject,
                     edgeFunction = emptyJsonObject
-                )
+                ),
+                Plugin.UpdateType.Initial
             )
         }
     }

@@ -8,13 +8,9 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.FirebaseAnalytics.Event
 import com.google.firebase.analytics.FirebaseAnalytics.Param
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.Properties
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.getDouble
 import com.segment.analytics.kotlin.core.utilities.getMapSet
@@ -75,6 +71,13 @@ class FirebaseDestination(
         super.setup(analytics)
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(context)
+    }
+
+    override fun update(settings: Settings, type: Plugin.UpdateType) {
+        // if we've already set up this singleton SDK, can't do it again, so skip.
+        if (type != Plugin.UpdateType.Initial) return
+
+        super.update(settings, type)
     }
 
     override fun identify(payload: IdentifyEvent): BaseEvent? {
