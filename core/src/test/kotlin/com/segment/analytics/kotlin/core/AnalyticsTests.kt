@@ -258,7 +258,7 @@ class AnalyticsTests {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.screen(
-                    screenTitle = "main",
+                    title = "main",
                     category = "mobile",
                     properties = buildJsonObject { put("foo", "bar") })
                 val screen = slot<ScreenEvent>()
