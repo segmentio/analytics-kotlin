@@ -72,10 +72,10 @@ class XElementBuilders {
         fun add(element: String?): XsonArrayBuilder = apply { add(JsonPrimitive(element)) }
 
         @Suppress("NewApi")
-        fun XsonArrayBuilder.addXsonObject(action: java.util.function.Consumer<in XsonObjectBuilder>): XsonArrayBuilder = apply{ add(buildXsonObject(action)) }
+        fun addXsonObject(action: java.util.function.Consumer<in XsonObjectBuilder>): XsonArrayBuilder = apply{ add(buildXsonObject(action)) }
 
         @Suppress("NewApi")
-        fun XsonArrayBuilder.addXsonArray(action: java.util.function.Consumer<in XsonArrayBuilder>): XsonArrayBuilder = apply{ add(buildXsonArray(action)) }
+        fun addXsonArray(action: java.util.function.Consumer<in XsonArrayBuilder>): XsonArrayBuilder = apply{ add(buildXsonArray(action)) }
 
         internal fun build(): JsonArray = JsonArray(content)
     }
