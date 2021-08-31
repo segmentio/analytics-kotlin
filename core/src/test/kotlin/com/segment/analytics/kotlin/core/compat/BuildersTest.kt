@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class XElementBuildersTest {
+internal class BuildersTest {
 
     @Test
-    fun `xson object can put xson object`() {
-        val jsonObject = buildJsonObject {
+    fun `json object can put json object`() {
+        val expected = buildJsonObject {
             put("object", buildJsonObject {
                 put("int", 1)
                 put("long", 1L)
@@ -21,8 +21,8 @@ internal class XElementBuildersTest {
             })
         }
 
-        val xsonObject = XElementBuilders.XsonObjectBuilder()
-            .putXsonObject("object") {
+        val actual = Builders.JsonObjectBuilder()
+            .putJsonObject("object") {
                 it.put("int", 1)
                     .put("long", 1L)
                     .put("float", 1.0f)
@@ -31,12 +31,12 @@ internal class XElementBuildersTest {
                     .put("boolean", true)
             }.build()
 
-        assertEquals(jsonObject, xsonObject)
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun `xson object can put xson array`() {
-        val jsonObject = buildJsonObject {
+    fun `json object can put json array`() {
+        val expected = buildJsonObject {
             put("array", buildJsonArray {
                 add(1)
                 add(1L)
@@ -47,8 +47,8 @@ internal class XElementBuildersTest {
             })
         }
 
-        val xsonObject = XElementBuilders.XsonObjectBuilder()
-            .putXsonArray("array") {
+        val actual = Builders.JsonObjectBuilder()
+            .putJsonArray("array") {
                 it.add(1)
                     .add(1L)
                     .add(1.0f)
@@ -57,12 +57,12 @@ internal class XElementBuildersTest {
                     .add(true)
             }.build()
 
-        assertEquals(jsonObject, xsonObject)
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun `xson array can add xsonObject`() {
-        val jsonArray = buildJsonArray {
+    fun `json array can add jsonObject`() {
+        val expected = buildJsonArray {
             add(buildJsonObject {
                 put("int", 1)
                 put("long", 1L)
@@ -73,8 +73,8 @@ internal class XElementBuildersTest {
             })
         }
 
-        val xsonArray = XElementBuilders.XsonArrayBuilder()
-            .addXsonObject() {
+        val actual = Builders.JsonArrayBuilder()
+            .addJsonObject() {
                 it.put("int", 1)
                     .put("long", 1L)
                     .put("float", 1.0f)
@@ -83,12 +83,12 @@ internal class XElementBuildersTest {
                     .put("boolean", true)
             }.build()
 
-        assertEquals(jsonArray, xsonArray)
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun `xson array can add xson array`() {
-        val jsonArray = buildJsonArray {
+    fun `json array can add json array`() {
+        val expected = buildJsonArray {
             addJsonArray {
                 add(1)
                 add(1L)
@@ -99,8 +99,8 @@ internal class XElementBuildersTest {
             }
         }
 
-        val xsonArray = XElementBuilders.XsonArrayBuilder()
-            .addXsonArray() {
+        val actual = Builders.JsonArrayBuilder()
+            .addJsonArray() {
                 it.add(1)
                     .add(1L)
                     .add(1.0f)
@@ -109,87 +109,87 @@ internal class XElementBuildersTest {
                     .add(true)
             }.build()
 
-        assertEquals(jsonArray, xsonArray)
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun `test buildXsonObjectFunc`() {
-        val xsonObject = XElementBuilders.buildXsonObjectFunc {
+    fun `test buildJsonObjectFunc`() {
+        val actual = Builders.buildJsonObjectFunc {
             put("int", 1)
             put("long", 1L)
             put("float", 1.0f)
             put("double", 1.0)
             put("string", "1")
             put("boolean", true)
-            putXsonObject("object") {
+            putJsonObject("object") {
                 it.put("string", "this is object")
             }
-            putXsonArray("array") {
+            putJsonArray("array") {
                 it.add("this is array")
             }
         }
 
-        assertEquals(fullJsonObject(), xsonObject)
+        assertEquals(fullJsonObject(), actual)
     }
 
     @Test
-    fun `test buildXsonObject`() {
-        val xsonObject = XElementBuilders.buildXsonObject() {
+    fun `test buildJsonObject`() {
+        val actual = Builders.buildJsonObject() {
             it.put("int", 1)
                 .put("long", 1L)
                 .put("float", 1.0f)
                 .put("double", 1.0)
                 .put("string", "1")
                 .put("boolean", true)
-                .put("object", XElementBuilders.buildXsonObject() {
+                .put("object", Builders.buildJsonObject() {
                     it.put("string", "this is object")
                 })
-                .put("array", XElementBuilders.buildXsonArray() {
+                .put("array", Builders.buildJsonArray() {
                     it.add("this is array")
                 })
         }
 
-        assertEquals(fullJsonObject(), xsonObject)
+        assertEquals(fullJsonObject(), actual)
     }
 
     @Test
-    fun `test buildXsonArrayFunc`() {
-        val xsonArray = XElementBuilders.buildXsonArrayFunc {
+    fun `test buildJsonArrayFunc`() {
+        val actual = Builders.buildJsonArrayFunc {
             add(1)
             add(1L)
             add(1.0f)
             add(1.0)
             add("1")
             add(true)
-            addXsonObject() {
+            addJsonObject() {
                 it.put("string", "this is object")
             }
-            addXsonArray() {
+            addJsonArray() {
                 it.add("this is array")
             }
         }
 
-        assertEquals(fullJsonArray(), xsonArray)
+        assertEquals(fullJsonArray(), actual)
     }
 
     @Test
-    fun `test buildXsonArray`() {
-        val xsonArray = XElementBuilders.buildXsonArray() {
+    fun `test buildJsonArray`() {
+        val actual = Builders.buildJsonArray() {
             it.add(1)
                 .add(1L)
                 .add(1.0f)
                 .add(1.0)
                 .add("1")
                 .add(true)
-                .addXsonObject() {
+                .addJsonObject() {
                     it.put("string", "this is object")
                 }
-                .addXsonArray() {
+                .addJsonArray() {
                     it.add("this is array")
                 }
         }
 
-        assertEquals(fullJsonArray(), xsonArray)
+        assertEquals(fullJsonArray(), actual)
     }
 
     private fun fullJsonObject() = buildJsonObject {
