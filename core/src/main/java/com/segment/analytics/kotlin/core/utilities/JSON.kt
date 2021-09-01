@@ -1,4 +1,5 @@
 @file:JvmName("JsonUtils")
+
 package com.segment.analytics.kotlin.core.utilities
 
 import kotlinx.serialization.json.Json
@@ -25,6 +26,22 @@ val LenientJson = Json {
     ignoreUnknownKeys = true
     isLenient = true
 }
+
+/**
+ * Convenience method to get current element as [JsonPrimitive?]
+ */
+public val JsonElement.safeJsonPrimitive get() = this as? JsonPrimitive
+
+/**
+ * Convenience method to get current element as [JsonObject?]
+ */
+public val JsonElement.safeJsonObject get() = this as? JsonObject
+
+/**
+ * Convenience method to get current element as [JsonArray?]
+ */
+public val JsonElement.safeJsonArray get() = this as? JsonArray
+
 
 // Utility function to convert a jsonPrimitive to its appropriate kotlin type
 fun JsonPrimitive.toContent(): Any? {
@@ -80,31 +97,29 @@ fun JsonObjectBuilder.putUndefinedIfNull(key: String, value: CharSequence?): Jso
     }
 
 // Utility function to retrieve a boolean value from a jsonObject
-fun JsonObject.getBoolean(key: String): Boolean? = (this[key] as? JsonPrimitive)?.booleanOrNull
+fun JsonObject.getBoolean(key: String): Boolean? = this[key]?.safeJsonPrimitive?.booleanOrNull
 
 // Utility function to retrieve a string value from a jsonObject
-fun JsonObject.getString(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
+fun JsonObject.getString(key: String): String? = this[key]?.safeJsonPrimitive?.contentOrNull
 
 // Utility function to retrieve a double value from a jsonObject
-fun JsonObject.getDouble(key: String): Double? = (this[key] as? JsonPrimitive)?.doubleOrNull
+fun JsonObject.getDouble(key: String): Double? = this[key]?.safeJsonPrimitive?.doubleOrNull
 
 // Utility function to retrieve a int value from a jsonObject
-fun JsonObject.getInt(key: String): Int? = (this[key] as? JsonPrimitive)?.intOrNull
+fun JsonObject.getInt(key: String): Int? = this[key]?.safeJsonPrimitive?.intOrNull
 
 // Utility function to retrieve a long value from a jsonObject
-fun JsonObject.getLong(key: String): Long? = (this[key] as? JsonPrimitive)?.longOrNull
+fun JsonObject.getLong(key: String): Long? = this[key]?.safeJsonPrimitive?.longOrNull
 
 // Utility function to retrieve a string set (from jsonArray) from a jsonObject
-fun JsonObject.getStringSet(key: String): Set<String>? {
-    val value = this[key] as? JsonArray
-    return value?.map { it.toContent().toString() }?.toSet()
-}
+fun JsonObject.getStringSet(key: String): Set<String>? =
+    this[key]?.safeJsonArray?.map { it.toContent().toString() }?.toSet()
+
 
 // Utility function to retrieve a list of Map<String, Any?> from a jsonObject, skips any non-map elements
-fun JsonObject.getMapList(key: String): List<Map<String, Any?>>? {
-    val value = this[key] as? JsonArray
-    return value?.filterIsInstance<JsonObject>()?.map { it.jsonObject.toContent() }
-}
+fun JsonObject.getMapList(key: String): List<Map<String, Any?>>? =
+    this[key]?.safeJsonArray?.filterIsInstance<JsonObject>()?.map { it.jsonObject.toContent() }
+
 
 // Utility function to apply key-mappings (deep traversal) and an optional value transform
 fun JsonObject.mapTransform(
