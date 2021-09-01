@@ -5,12 +5,15 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import io.mockk.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import java.time.Instant
 import java.util.*
 
@@ -39,6 +42,7 @@ class AnalyticsTests {
 
     @BeforeEach
     fun setup() {
+        clearPersistentStorage()
         analytics = Analytics(
             Configuration(
                 writeKey = "123",
@@ -62,7 +66,7 @@ class AnalyticsTests {
             }
             analytics.add(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
-                Assertions.assertEquals(
+                assertEquals(
                     1,
                     it.size
                 )
@@ -78,7 +82,7 @@ class AnalyticsTests {
             analytics.add(middleware)
             analytics.remove(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
-                Assertions.assertEquals(
+                assertEquals(
                     0,
                     it.size
                 )
@@ -93,8 +97,8 @@ class AnalyticsTests {
                 .add(testPlugin1)
                 .add(testPlugin2)
                 .process(TrackEvent(event = "track", properties = emptyJsonObject))
-            Assertions.assertTrue(testPlugin1.ran)
-            Assertions.assertTrue(testPlugin2.ran)
+            assertTrue(testPlugin1.ran)
+            assertTrue(testPlugin2.ran)
         }
 
         @Test
@@ -107,7 +111,7 @@ class AnalyticsTests {
 
             val system = analytics.store.currentState(System::class)
             val curIntegrations = system?.integrations
-            Assertions.assertEquals(
+            assertEquals(
                 buildJsonObject {
                     put("TestDestination", false)
                 },
@@ -125,7 +129,7 @@ class AnalyticsTests {
 
             val system = analytics.store.currentState(System::class)
             val curIntegrations = system?.integrations
-            Assertions.assertEquals(
+            assertEquals(
                 emptyJsonObject,
                 curIntegrations
             )
@@ -142,11 +146,11 @@ class AnalyticsTests {
             val track = slot<TrackEvent>()
             verify { mockPlugin.track(capture(track)) }
             track.captured.let {
-                Assertions.assertTrue(it.anonymousId.isNotBlank())
-                Assertions.assertTrue(it.messageId.isNotBlank())
-                Assertions.assertEquals(epochTimestamp, it.timestamp)
-                Assertions.assertEquals(context, it.context)
-                Assertions.assertEquals(emptyJsonObject, it.integrations)
+                assertTrue(it.anonymousId.isNotBlank())
+                assertTrue(it.messageId.isNotBlank())
+                assertEquals(epochTimestamp, it.timestamp)
+                assertEquals(context, it.context)
+                assertEquals(emptyJsonObject, it.integrations)
             }
         }
 
@@ -158,11 +162,11 @@ class AnalyticsTests {
             val track = slot<TrackEvent>()
             verify { mockPlugin.track(capture(track)) }
             track.captured.let {
-                Assertions.assertTrue(it.anonymousId.isNotBlank())
-                Assertions.assertTrue(it.messageId.isNotBlank())
-                Assertions.assertTrue(it.timestamp == epochTimestamp)
-                Assertions.assertEquals(emptyJsonObject, it.integrations)
-                Assertions.assertEquals(context, it.context)
+                assertTrue(it.anonymousId.isNotBlank())
+                assertTrue(it.messageId.isNotBlank())
+                assertTrue(it.timestamp == epochTimestamp)
+                assertEquals(emptyJsonObject, it.integrations)
+                assertEquals(context, it.context)
             }
         }
 
@@ -175,11 +179,11 @@ class AnalyticsTests {
             val track = slot<TrackEvent>()
             verify { mockPlugin.track(capture(track)) }
             track.captured.let {
-                Assertions.assertTrue(it.anonymousId.isNotBlank())
-                Assertions.assertTrue(it.messageId.isNotBlank())
-                Assertions.assertTrue(it.timestamp == epochTimestamp)
-                Assertions.assertEquals(it.context, context)
-                Assertions.assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
+                assertTrue(it.anonymousId.isNotBlank())
+                assertTrue(it.messageId.isNotBlank())
+                assertTrue(it.timestamp == epochTimestamp)
+                assertEquals(it.context, context)
+                assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
             }
         }
 
@@ -192,7 +196,7 @@ class AnalyticsTests {
                 analytics.track("track", buildJsonObject { put("foo", "bar") })
                 val track = slot<TrackEvent>()
                 verify { mockPlugin.track(capture(track)) }
-                Assertions.assertEquals(
+                assertEquals(
                     TrackEvent(
                         properties = buildJsonObject { put("foo", "bar") },
                         event = "track"
@@ -212,7 +216,7 @@ class AnalyticsTests {
                 analytics.identify("foobar", buildJsonObject { put("name", "bar") })
                 val identify = slot<IdentifyEvent>()
                 verify { mockPlugin.identify(capture(identify)) }
-                Assertions.assertEquals(
+                assertEquals(
                     IdentifyEvent(
                         traits = buildJsonObject { put("name", "bar") },
                         userId = "foobar"
@@ -230,7 +234,7 @@ class AnalyticsTests {
                     UserInfo::class
                 )
                 val curUserInfo = analytics.store.currentState(UserInfo::class)
-                Assertions.assertEquals(
+                assertEquals(
                     UserInfo(
                         userId = "oldUserId",
                         traits = buildJsonObject { put("behaviour", "bad") },
@@ -241,7 +245,7 @@ class AnalyticsTests {
                 analytics.identify("newUserId", buildJsonObject { put("behaviour", "good") })
 
                 val newUserInfo = analytics.store.currentState(UserInfo::class)
-                Assertions.assertEquals(
+                assertEquals(
                     UserInfo(
                         userId = "newUserId",
                         traits = buildJsonObject { put("behaviour", "good") },
@@ -263,7 +267,7 @@ class AnalyticsTests {
                     properties = buildJsonObject { put("foo", "bar") })
                 val screen = slot<ScreenEvent>()
                 verify { mockPlugin.screen(capture(screen)) }
-                Assertions.assertEquals(
+                assertEquals(
                     ScreenEvent(
                         properties = buildJsonObject { put("foo", "bar") },
                         name = "main",
@@ -283,7 +287,7 @@ class AnalyticsTests {
                 analytics.group("high school", buildJsonObject { put("foo", "bar") })
                 val group = slot<GroupEvent>()
                 verify { mockPlugin.group(capture(group)) }
-                Assertions.assertEquals(
+                assertEquals(
                     GroupEvent(
                         traits = buildJsonObject { put("foo", "bar") },
                         groupId = "high school"
@@ -293,7 +297,7 @@ class AnalyticsTests {
             }
         }
 
-        /*
+
         @Nested
         inner class Alias {
             @Test
@@ -306,7 +310,7 @@ class AnalyticsTests {
                 assertEquals(
                     AliasEvent(
                         userId = "newId",
-                        previousId = ""
+                        previousId = "qwerty-qwerty-123"
                     ),
                     alias.captured
                 )
@@ -345,6 +349,5 @@ class AnalyticsTests {
                 )
             }
         }
-        */
     }
 }

@@ -23,3 +23,7 @@ fun mockAnalytics(): Analytics {
     every { mock.store } returns mockStore
     return mock
 }
+
+fun clearPersistentStorage() {
+    File("/tmp/analytics-kotlin/123").deleteRecursively()
+}

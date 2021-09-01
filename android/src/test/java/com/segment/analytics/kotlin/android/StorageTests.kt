@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
+import com.segment.analytics.kotlin.android.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.android.utils.mockAnalytics
 import com.segment.analytics.kotlin.android.utils.mockContext
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -33,8 +34,7 @@ class StorageTests {
 
         @BeforeEach
         fun setup() {
-            File("/tmp/analytics-android").deleteRecursively()
-            File("/tmp/analytics-android").mkdir()
+            clearPersistentStorage()
             store.provide(
                 UserInfo(
                     anonymousId = "oldAnonId",

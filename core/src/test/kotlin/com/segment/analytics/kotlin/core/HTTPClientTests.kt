@@ -1,19 +1,18 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
+import io.mockk.clearConstructorMockk
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HTTPClientTests {
+    private val httpClient: HTTPClient
 
-    private val httpClient = HTTPClient("1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ")
-
-    @BeforeEach
-    fun setup() {
-
+    init {
+        clearConstructorMockk(HTTPClient::class)
+        httpClient = HTTPClient("1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ")
     }
 
     @Test
@@ -22,7 +21,7 @@ class HTTPClientTests {
     }
 
     @Test
-    fun `upload connection has correct configuration`()  {
+    fun `upload connection has correct configuration`() {
         httpClient.settings().connection.let {
             assertEquals(
                 "https://cdn-settings.segment.com/v1/projects/1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ/settings",
