@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.Logger
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import io.mockk.*
 import kotlinx.coroutines.delay
@@ -77,9 +78,7 @@ class SegmentDestinationTests {
 
         assertEquals(trackEvent, segmentDestination.track(trackEvent))
 
-        val expectedEvent = Json {
-            encodeDefaults = true
-        }.encodeToJsonElement(trackEvent).jsonObject.filterNot { (k, v) ->
+        val expectedEvent = EncodeDefaultsJson.encodeToJsonElement(trackEvent).jsonObject.filterNot { (k, v) ->
             // filter out empty userId and traits values
             (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
         }

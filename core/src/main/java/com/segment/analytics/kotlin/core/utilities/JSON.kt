@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core.utilities
 
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -10,13 +11,21 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
+
+val EncodeDefaultsJson = Json {
+    encodeDefaults = true
+}
+
+val LenientJson = Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+}
 
 // Utility function to convert a jsonPrimitive to its appropriate kotlin type
 fun JsonPrimitive.toContent(): Any? {
@@ -29,13 +38,31 @@ fun JsonPrimitive.toContent(): Any? {
     this.longOrNull?.let {
         return it
     }
-    this.floatOrNull?.let {
-        return it
-    }
     this.doubleOrNull?.let {
         return it
     }
     return contentOrNull
+}
+
+// Utility function to convert a jsonPrimitive to its appropriate kotlin primitive type
+fun JsonObject.toContent(): Map<String, Any?> {
+    return mapValues { (_, v) -> v.toContent() }
+}
+
+// Utility function to convert a jsonPrimitive to its appropriate kotlin primitive type
+fun JsonArray.toContent(): List<Any?> {
+    return map { v -> v.toContent() }
+}
+
+// Utility function to convert a jsonPrimitive to its appropriate kotlin primitive type
+fun JsonElement.toContent(): Any? {
+    // We use dynamic dispatch to choose the correct function
+    return when (this) {
+        is JsonPrimitive -> toContent()
+        is JsonObject -> toContent()
+        is JsonArray -> toContent()
+        else -> null
+    }
 }
 
 // Utility function to put all values of `obj` into current builder
@@ -64,6 +91,9 @@ fun JsonObject.getDouble(key: String): Double? = this[key]?.jsonPrimitive?.doubl
 
 // Utility function to retrieve a int value from a jsonObject
 fun JsonObject.getInt(key: String): Int? = this[key]?.jsonPrimitive?.intOrNull
+
+// Utility function to retrieve a long value from a jsonObject
+fun JsonObject.getLong(key: String): Long? = this[key]?.jsonPrimitive?.longOrNull
 
 // Utility function to retrieve a string set (from jsonArray) from a jsonObject
 fun JsonObject.getStringSet(key: String): Set<String>? =

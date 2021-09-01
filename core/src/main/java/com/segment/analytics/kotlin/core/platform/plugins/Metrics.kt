@@ -2,6 +2,7 @@ package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.DateSerializer
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.putInContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -44,7 +45,7 @@ fun BaseEvent.addMetric(
         context["metrics"]?.jsonArray?.forEach {
             add(it)
         }
-        add(Json { encodeDefaults = true }.encodeToJsonElement(Metric.serializer(), metric))
+        add(EncodeDefaultsJson.encodeToJsonElement(Metric.serializer(), metric))
     }
 
     putInContext("metrics", metrics)

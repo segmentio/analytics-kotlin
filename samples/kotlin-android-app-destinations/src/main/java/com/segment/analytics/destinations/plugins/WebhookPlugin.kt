@@ -6,6 +6,7 @@ import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.DataOutputStream
@@ -44,7 +45,7 @@ class WebhookPlugin(
             connection.setRequestProperty("Content-Type", "application/json")
 
             val outputStream = DataOutputStream(connection.outputStream)
-            val payloadJson = Json { encodeDefaults = true }.encodeToString(payload)
+            val payloadJson = EncodeDefaultsJson.encodeToString(payload)
             outputStream.writeBytes(payloadJson)
 
             outputStream.use {
