@@ -1,3 +1,4 @@
+@file:JvmName("JsonUtils")
 package com.segment.analytics.kotlin.core.utilities
 
 import kotlinx.serialization.json.Json
