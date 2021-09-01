@@ -2,6 +2,6 @@ package com.segment.analytics.kotlin.core.compat
 
 import kotlinx.serialization.json.JsonObject
 
-interface Serializable {
+interface JsonSerializable {
     fun serialize() : JsonObject
 }
