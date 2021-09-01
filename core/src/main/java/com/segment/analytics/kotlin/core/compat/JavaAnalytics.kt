@@ -5,9 +5,9 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import kotlinx.serialization.json.JsonObject
 import java.util.function.Consumer
 
-class JavaAnalytics(configuration: JavaConfiguration) {
+class JavaAnalytics(configuration: Configuration) {
 
-    internal val analytics = Analytics(configuration.configuration)
+    internal val analytics = Analytics(configuration)
 
     val store = analytics.store
 
@@ -20,8 +20,12 @@ class JavaAnalytics(configuration: JavaConfiguration) {
     @JvmOverloads
     fun track(name: String, properties: JsonObject = emptyJsonObject) = analytics.track(name, properties)
 
+    fun track(name: String, serializable: JsonSerializable) = analytics.track(name, serializable.serialize())
+
     @JvmOverloads
     fun identify(userId: String, traits: JsonObject = emptyJsonObject) = analytics.identify(userId, traits)
+
+    fun identify(userId: String, serializable: JsonSerializable) = analytics.identify(userId, serializable.serialize())
 
     @JvmOverloads
     fun screen(
@@ -30,8 +34,16 @@ class JavaAnalytics(configuration: JavaConfiguration) {
         category: String = ""
     ) = analytics.screen(title, properties, category)
 
+    fun screen(
+        title: String,
+        serializable: JsonSerializable,
+        category: String = ""
+    ) = analytics.screen(title, serializable.serialize(), category)
+
     @JvmOverloads
     fun group(groupId: String, traits: JsonObject = emptyJsonObject) = analytics.group(groupId, traits)
+
+    fun group(groupId: String, serializable: JsonSerializable) = analytics.group(groupId, serializable.serialize())
 
     fun process(event: BaseEvent) = analytics.process(event)
 
