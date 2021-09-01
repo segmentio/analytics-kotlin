@@ -46,10 +46,8 @@ class Builders {
 
         fun put(key: String, value: String?) : JsonObjectBuilder = apply { put(key, JsonPrimitive(value)) }
 
-        @Suppress("NewApi")
         fun putJsonObject(key: String, action: java.util.function.Consumer<in JsonObjectBuilder>): JsonObjectBuilder = apply{ put(key, buildJsonObject(action)) }
 
-        @Suppress("NewApi")
         fun putJsonArray(key: String, action: java.util.function.Consumer<in JsonArrayBuilder>): JsonObjectBuilder = apply{ put(key, buildJsonArray(action)) }
 
         internal fun build(): JsonObject = JsonObject(content)
@@ -71,10 +69,8 @@ class Builders {
 
         fun add(element: String?): JsonArrayBuilder = apply { add(JsonPrimitive(element)) }
 
-        @Suppress("NewApi")
         fun addJsonObject(action: java.util.function.Consumer<in JsonObjectBuilder>): JsonArrayBuilder = apply{ add(buildJsonObject(action)) }
 
-        @Suppress("NewApi")
         fun addJsonArray(action: java.util.function.Consumer<in JsonArrayBuilder>): JsonArrayBuilder = apply{ add(buildJsonArray(action)) }
 
         internal fun build(): JsonArray = JsonArray(content)
