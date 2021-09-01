@@ -4,7 +4,7 @@ import com.segment.analytics.kotlin.core.Configuration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
-class ConfigurationBuilder (val writeKey: String) {
+class ConfigurationBuilder (writeKey: String) {
 
     private val configuration: Configuration = Configuration(writeKey)
 
@@ -28,9 +28,9 @@ class ConfigurationBuilder (val writeKey: String) {
 
     fun setFlushInterval(flushInterval: Int) = apply { configuration.flushInterval = flushInterval }
 
-    fun setAutoAddSegmentDestination(autoAddSegmentDestination: Boolean) = configuration.autoAddSegmentDestination
+    fun setAutoAddSegmentDestination(autoAddSegmentDestination: Boolean) = apply { configuration.autoAddSegmentDestination = autoAddSegmentDestination}
 
-    fun setApiHost(apiHost: String) = configuration.apiHost
+    fun setApiHost(apiHost: String) = apply { configuration.apiHost = apiHost}
 
     fun build() = configuration
 }

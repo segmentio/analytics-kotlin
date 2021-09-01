@@ -47,11 +47,11 @@ class JavaAnalytics(configuration: Configuration) {
 
     fun process(event: BaseEvent) = analytics.process(event)
 
-    fun add(plugin: Plugin) = analytics.add(plugin)
+    fun add(plugin: Plugin) = apply { analytics.add(plugin) }
 
     fun <T: Plugin> find(plugin: Class<T>) = analytics.find(plugin.kotlin)
 
-    fun remove(plugin: Plugin) = analytics.remove(plugin)
+    fun remove(plugin: Plugin) = apply { analytics.remove(plugin) }
 
     fun applyClosureToPlugins(closure: (Plugin) -> Unit) = analytics.applyClosureToPlugins(closure)
 
