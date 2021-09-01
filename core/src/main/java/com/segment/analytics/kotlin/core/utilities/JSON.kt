@@ -13,9 +13,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 
@@ -82,39 +80,30 @@ fun JsonObjectBuilder.putUndefinedIfNull(key: String, value: CharSequence?): Jso
     }
 
 // Utility function to retrieve a boolean value from a jsonObject
-fun JsonObject.getBoolean(key: String): Boolean? = this[key]?.jsonPrimitive?.booleanOrNull
+fun JsonObject.getBoolean(key: String): Boolean? = (this[key] as? JsonPrimitive)?.booleanOrNull
 
 // Utility function to retrieve a string value from a jsonObject
-fun JsonObject.getString(key: String): String? = this[key]?.jsonPrimitive?.contentOrNull
+fun JsonObject.getString(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
 
 // Utility function to retrieve a double value from a jsonObject
-fun JsonObject.getDouble(key: String): Double? = this[key]?.jsonPrimitive?.doubleOrNull
+fun JsonObject.getDouble(key: String): Double? = (this[key] as? JsonPrimitive)?.doubleOrNull
 
 // Utility function to retrieve a int value from a jsonObject
-fun JsonObject.getInt(key: String): Int? = this[key]?.jsonPrimitive?.intOrNull
+fun JsonObject.getInt(key: String): Int? = (this[key] as? JsonPrimitive)?.intOrNull
 
 // Utility function to retrieve a long value from a jsonObject
-fun JsonObject.getLong(key: String): Long? = this[key]?.jsonPrimitive?.longOrNull
+fun JsonObject.getLong(key: String): Long? = (this[key] as? JsonPrimitive)?.longOrNull
 
 // Utility function to retrieve a string set (from jsonArray) from a jsonObject
-fun JsonObject.getStringSet(key: String): Set<String>? =
-    this[key]?.jsonArray?.map { it.jsonPrimitive.content }?.toSet()
+fun JsonObject.getStringSet(key: String): Set<String>? {
+    val value = this[key] as? JsonArray
+    return value?.map { it.toContent().toString() }?.toSet()
+}
 
-// Utility function to retrieve a map set from a jsonObject
-fun JsonObject.getMapSet(key: String): Set<Map<String, Any>>? {
-
-    val returnList: MutableList<Map<String, Any>> = mutableListOf()
-
-    this[key]?.jsonObject?.let { jsonMap ->
-        for ((mapKey, value) in jsonMap) {
-            returnList.add(mapOf(mapKey to value))
-        }
-    }
-
-    return if (returnList.isNotEmpty())
-        returnList.toSet()
-    else
-        null
+// Utility function to retrieve a list of Map<String, Any?> from a jsonObject, skips any non-map elements
+fun JsonObject.getMapList(key: String): List<Map<String, Any?>>? {
+    val value = this[key] as? JsonArray
+    return value?.filterIsInstance<JsonObject>()?.map { it.jsonObject.toContent() }
 }
 
 // Utility function to apply key-mappings (deep traversal) and an optional value transform

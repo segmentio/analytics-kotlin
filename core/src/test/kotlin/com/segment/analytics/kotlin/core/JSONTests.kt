@@ -4,7 +4,7 @@ import com.segment.analytics.kotlin.core.utilities.getBoolean
 import com.segment.analytics.kotlin.core.utilities.getDouble
 import com.segment.analytics.kotlin.core.utilities.getInt
 import com.segment.analytics.kotlin.core.utilities.getLong
-import com.segment.analytics.kotlin.core.utilities.getMapSet
+import com.segment.analytics.kotlin.core.utilities.getMapList
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.getStringSet
 import com.segment.analytics.kotlin.core.utilities.mapTransform
@@ -13,20 +13,20 @@ import com.segment.analytics.kotlin.core.utilities.putUndefinedIfNull
 import com.segment.analytics.kotlin.core.utilities.toContent
 import com.segment.analytics.kotlin.core.utilities.transformKeys
 import com.segment.analytics.kotlin.core.utilities.transformValues
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Nested
@@ -43,32 +43,29 @@ class JSONTests {
 
         @Test
         fun `get boolean succeeds`() {
-
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(true)))
+            val jsonObject = buildJsonObject { put("keyed", true) }
 
             val keyedValue = jsonObject.getBoolean("keyed")
 
-            assertTrue(keyedValue ?: false)
+            assertEquals(true, keyedValue)
         }
 
         @Test
         fun `get boolean fails`() {
-
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(false)))
+            val jsonObject = buildJsonObject { put("keyed", false) }
 
             val keyedValue = jsonObject.getBoolean("keyed")
 
-            assertFalse(keyedValue ?: true)
+            assertEquals(false, keyedValue)
         }
 
         @Test
         fun `get boolean bad value throws`() {
-
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(18)))
+            val jsonObject = buildJsonObject { put("keyed", 18) }
 
             try {
                 val keyedValue = jsonObject.getBoolean("keyed")
-                assertTrue(keyedValue == null)
+                assertNull(keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when not boolean`")
             }
@@ -76,11 +73,11 @@ class JSONTests {
 
         @Test
         fun `get boolean optional`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(null as Boolean?)))
+            val jsonObject = buildJsonObject { put("keyed", null as Boolean?) }
 
             try {
                 val keyedValue = jsonObject.getBoolean("keyed")
-                assertTrue(keyedValue == null)
+                assertNull(keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when null boolean")
             }
@@ -88,30 +85,29 @@ class JSONTests {
 
         @Test
         fun `get normal string succeeds`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive("test")))
+            val jsonObject = buildJsonObject { put("keyed", "test") }
 
             val keyedValue = jsonObject.getString("keyed")
 
-            assertTrue(keyedValue.equals("test"))
+            assertEquals("test", keyedValue)
         }
 
         @Test
         fun `get normal string fails`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive("tes†")))
+            val jsonObject = buildJsonObject { put("keyed", "tes†") }
 
             val keyedValue = jsonObject.getString("keyed")
 
-            assertFalse(keyedValue.equals("test"))
+            assertNotEquals("test", keyedValue)
         }
 
         @Test
         fun `get string bad value throws`() {
-
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(18)))
+            val jsonObject = buildJsonObject { put("keyed", 18) }
 
             try {
                 val keyedValue = jsonObject.getString("keyed")
-                assertTrue(keyedValue.equals("18"))
+                assertEquals("18", keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when not int primitive")
             }
@@ -119,11 +115,11 @@ class JSONTests {
 
         @Test
         fun `get string optional`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(null as String?)))
+            val jsonObject = buildJsonObject { put("keyed", null as String?) }
 
             try {
                 val keyedValue = jsonObject.getString("keyed")
-                assertTrue(keyedValue == null)
+                assertNull(keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when null string")
             }
@@ -131,30 +127,30 @@ class JSONTests {
 
         @Test
         fun `get normal integer succeeds`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(18)))
+            val jsonObject = buildJsonObject { put("keyed", 18) }
 
             val keyedValue = jsonObject.getInt("keyed")
 
-            assertTrue(keyedValue?.equals(18) ?: false)
+            assertEquals(18, keyedValue)
         }
 
         @Test
         fun `get normal integer fails`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(19)))
+            val jsonObject = buildJsonObject { put("keyed", 19) }
 
             val keyedValue = jsonObject.getInt("keyed")
 
-            assertFalse(keyedValue?.equals(18) ?: true)
+            assertNotEquals(18, keyedValue)
         }
 
         @Test
         fun `get integer bad value throws`() {
 
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive("18")))
+            val jsonObject = buildJsonObject { put("keyed", 18) }
 
             try {
                 val keyedValue = jsonObject.getInt("keyed")
-                assertTrue(keyedValue?.equals(18) ?: false)
+                assertEquals(18, keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when not int primitive")
             }
@@ -162,11 +158,11 @@ class JSONTests {
 
         @Test
         fun `get integer optional`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(null as Int?)))
+            val jsonObject = buildJsonObject { put("keyed", null as Int?) }
 
             try {
                 val keyedValue = jsonObject.getInt("keyed")
-                assertTrue(keyedValue == null)
+                assertNull(keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when null int")
             }
@@ -174,30 +170,30 @@ class JSONTests {
 
         @Test
         fun `get normal long succeeds`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(2147483648L)))
+            val jsonObject = buildJsonObject { put("keyed", 2147483648L) }
 
             val keyedValue = jsonObject.getLong("keyed")
 
-            assertTrue(keyedValue?.equals(2147483648L) ?: false)
+            assertEquals(2147483648L, keyedValue)
         }
 
         @Test
         fun `get normal long fails`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(2147483649L)))
+            val jsonObject = buildJsonObject { put("keyed", 2147483649L) }
 
             val keyedValue = jsonObject.getLong("keyed")
 
-            assertFalse(keyedValue?.equals(2147483648L) ?: true)
+            assertNotEquals(2147483648L, keyedValue)
         }
 
         @Test
         fun `get long bad value throws`() {
 
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive("2147483648")))
+            val jsonObject = buildJsonObject { put("keyed", "2147483648") }
 
             try {
                 val keyedValue = jsonObject.getLong("keyed")
-                assertTrue(keyedValue?.equals(2147483648L) ?: false)
+                assertEquals(2147483648L, keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when not int primitive")
             }
@@ -205,11 +201,11 @@ class JSONTests {
 
         @Test
         fun `get long optional`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(null as Long?)))
+            val jsonObject = buildJsonObject { put("keyed", null as Long?) }
 
             try {
                 val keyedValue = jsonObject.getLong("keyed")
-                assertTrue(keyedValue == null)
+                assertNull(keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when null int")
             }
@@ -217,30 +213,30 @@ class JSONTests {
 
         @Test
         fun `get normal double succeeds`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(18.0)))
+            val jsonObject = buildJsonObject { put("keyed", 18.0) }
 
             val keyedValue = jsonObject.getDouble("keyed")
 
-            assertTrue(keyedValue?.equals(18.0) ?: false)
+            assertEquals(18.0, keyedValue)
         }
 
         @Test
         fun `get normal double fails`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(19.0)))
+            val jsonObject = buildJsonObject { put("keyed", 19.0) }
 
             val keyedValue = jsonObject.getDouble("keyed")
 
-            assertFalse(keyedValue?.equals(18.0) ?: true)
+            assertNotEquals(18.0, keyedValue)
         }
 
         @Test
         fun `get double bad value throws`() {
 
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive("18")))
+            val jsonObject = buildJsonObject { put("keyed", "18") }
 
             try {
                 val keyedValue = jsonObject.getDouble("keyed")
-                assertTrue(keyedValue?.equals(18.0) ?: false)
+                assertEquals(18.0, keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when not double primitive")
             }
@@ -248,11 +244,11 @@ class JSONTests {
 
         @Test
         fun `get double optional`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(null as Double?)))
+            val jsonObject = buildJsonObject { put("keyed", null as Double?) }
 
             try {
                 val keyedValue = jsonObject.getDouble("keyed")
-                assertTrue(keyedValue == null)
+                assertNull(keyedValue)
             } catch (e: Exception) {
                 fail("Should not throw when null double")
             }
@@ -260,33 +256,48 @@ class JSONTests {
 
         @Test
         fun `get normal string set`() {
-            val jsonObject =
-                JsonObject(mapOf("keyed" to buildJsonArray { add("joker"); add("batman"); add("Mr. Freeze") }))
+            val jsonObject = buildJsonObject {
+                put("keyed", buildJsonArray {
+                    add("joker")
+                    add("batman")
+                    add("Mr. Freeze")
+                })
+            }
 
             val keyedValue = jsonObject.getStringSet("keyed")
 
-            assertTrue(keyedValue?.count() ?: 0 == 3)
+            assertEquals(3, keyedValue?.count())
 
             assertTrue(keyedValue?.contains("Mr. Freeze") ?: false)
         }
 
         @Test
         fun `get normal string set with duplicate`() {
-            val jsonObject = JsonObject(mapOf("keyed" to buildJsonArray {
-                add("joker"); add("batman"); add("Mr. Freeze"); add("batman")
-            }))
+            val jsonObject = buildJsonObject {
+                put("keyed", buildJsonArray {
+                    add("joker")
+                    add("batman")
+                    add("Mr. Freeze")
+                    add("batman")
+                })
+            }
 
             val keyedValue = jsonObject.getStringSet("keyed")
 
             // Make sure there is still 3 and that it removed an additional batman
-            assertTrue(keyedValue?.count() ?: 0 == 3)
+            assertEquals(3, keyedValue?.count())
         }
 
         @Test
         fun `get normal string set with improper lookup`() {
-            val jsonObject = JsonObject(mapOf("keyed" to buildJsonArray {
-                add("joker"); add("batman"); add("Mr. Freeze"); add("batman")
-            }))
+            val jsonObject = buildJsonObject {
+                put("keyed", buildJsonArray {
+                    add("joker")
+                    add("batman")
+                    add("Mr. Freeze")
+                    add("batman")
+                })
+            }
 
             val keyedValue = jsonObject.getStringSet("keyed")
 
@@ -295,79 +306,90 @@ class JSONTests {
 
         @Test
         fun `get null lookup for improper keyed type`() {
-            val jsonObject = JsonObject(mapOf("keyed" to JsonPrimitive(18)))
+            val jsonObject = buildJsonObject { put("keyed", 18) }
 
-            try {
-                val keyedValue = jsonObject.getStringSet("keyed")
-                fail("Should not return a set with the wrong primitive")
-            } catch (e: Exception) {
-                assertTrue(e is IllegalArgumentException)
-            }
+            val keyedValue = jsonObject.getStringSet("keyed")
+            assertNull(keyedValue)
         }
 
         @Test
         fun `get normal set map`() {
-            val villainMap = mapOf("villains" to JsonPrimitive("Mr. Freeze"))
-            val jsonObject = JsonObject(mapOf("keyed" to JsonObject(villainMap)))
-
-            val keyedValue = jsonObject.getMapSet("keyed")
-
-            assertTrue(keyedValue is Set<Map<*, *>>)
-
-            assertTrue(keyedValue?.contains(villainMap) ?: false)
-        }
-
-        @Test
-        fun `get normal set map retrieve key value`() {
-            val villainMap = mapOf("villains" to JsonPrimitive("Mr. Freeze"))
-            val jsonObject = JsonObject(mapOf("keyed" to JsonObject(villainMap)))
-
-            val keyedValue = jsonObject.getMapSet("keyed")
-
-            val keyedMap = keyedValue?.first() ?: run {
-                fail("Could not find map")
-            }
-
-            val temp = keyedMap["villains"] as JsonPrimitive
-
-            assertTrue(temp.contentOrNull == "Mr. Freeze")
-        }
-
-        @Test
-        fun `get normal string set map with duplicate`() {
-            val batmanMap =
-                mapOf("villains" to buildJsonArray {
-                    add("Joker"); add("Bain"); add("Mr. Freeze"); add(
-                    "Bain"
-                )
-                },
-                    "heroes" to buildJsonArray {
-                        add("Batman"); add("Robin"); add("James Gordon"); add(
-                        "Catwoman"
-                    )
+            val jsonObject = buildJsonObject {
+                put("villains", buildJsonArray {
+                    add(buildJsonObject {
+                        put("name", "Victor")
+                        put("alias", "Mr. Freeze")
+                        put("attempts", 2)
+                        put("inPrison", false)
                     })
-            val jsonObject = JsonObject(mapOf("batman" to JsonObject(batmanMap)))
+                    add(buildJsonObject {
+                        put("name", "Selina")
+                        put("alias", "Catwoman")
+                        put("attempts", 5)
+                        put("inPrison", true)
+                    })
+                })
+            }
 
-            val keyedValue = jsonObject.getMapSet("batman")
+            val villainsList = jsonObject.getMapList("villains")
 
-            // Make sure there is still 4 and that it did not remove an additional Bain
-            assertTrue(keyedValue?.count() ?: 0 == 2)
+            assertNotNull(villainsList)
+            assertEquals(2, villainsList?.size)
+            with(villainsList!!) {
+                with(this[0]) {
+                    assertEquals("Victor", get("name"))
+                    assertEquals("Mr. Freeze", get("alias"))
+                    assertEquals(false, get("inPrison"))
+                    assertEquals(2, get("attempts"))
+                }
+                with(this[1]) {
+                    assertEquals("Selina", get("name"))
+                    assertEquals("Catwoman", get("alias"))
+                    assertEquals(true, get("inPrison"))
+                    assertEquals(5, get("attempts"))
+                }
+            }
         }
 
         @Test
-        fun `get normal map with wrong type`() {
-            val villainMap = mapOf("villains" to JsonPrimitive(18))
-            val jsonObject = JsonObject(mapOf("keyed" to JsonObject(villainMap)))
-
-            val keyedValue = jsonObject.getMapSet("keyed")
-
-            val villainNumber = keyedValue?.first() as Map<*, JsonPrimitive>
-            val retrievedMap = villainNumber["villains"] ?: run {
-                fail("Could not find villains map")
+        fun `get null, when not an array property`() {
+            val jsonObject = buildJsonObject {
+                put("keyed", buildJsonObject {
+                    put("name", "Selina")
+                    put("alias", "Catwoman")
+                    put("attempts", 5)
+                    put("inPrison", true)
+                })
+                put("keyed2", 2)
             }
 
-            // Make sure there is still 4 and that it did not remove an additional Bain
-            assertTrue(retrievedMap.intOrNull == 18)
+            assertNull(jsonObject.getMapList("keyed"))
+            assertNull(jsonObject.getMapList("keyed2"))
+        }
+
+        @Test
+        fun `get a list of maps, ignoring non-map elements`() {
+            val jsonObject = buildJsonObject {
+                put("keyed", buildJsonArray {
+                    add(18)
+                    add(buildJsonObject {
+                        put("name", "Selina")
+                        put("alias", "Catwoman")
+                        put("attempts", 5)
+                        put("inPrison", true)
+                    })
+                })
+            }
+
+            val keyedValue = jsonObject.getMapList("keyed")
+
+            assertEquals(1, keyedValue?.size)
+            with(keyedValue!![0]) {
+                assertEquals("Selina", get("name"))
+                assertEquals("Catwoman", get("alias"))
+                assertEquals(true, get("inPrison"))
+                assertEquals(5, get("attempts"))
+            }
         }
     }
 
