@@ -167,6 +167,17 @@ class JavaAnalytics private constructor() {
      */
     fun group(groupId: String, serializable: JsonSerializable) = analytics.group(groupId, serializable.serialize())
 
+    /**
+     * The alias method is used to merge two user identities, effectively connecting two sets of
+     * user data as one. This is an advanced method, but it is required to manage user identities
+     * successfully in some of our integrations.
+     *
+     * @param newId The new ID you want to alias the existing ID to. The existing ID will be either
+     *     the previousId if you have called identify, or the anonymous ID.
+     * @see <a href="https://segment.com/docs/tracking-api/alias/">Alias Documentation</a>
+     */
+    fun alias(newId: String) = analytics.alias(newId)
+
     fun process(event: BaseEvent) = analytics.process(event)
 
     /**
