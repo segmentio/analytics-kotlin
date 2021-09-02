@@ -7,6 +7,8 @@ NOTE: This project is currently in the Pilot phase and is covered by Segment's [
 to try out this new library. Please provide feedback via Github issues/PRs, and feel free to submit pull requests.  This library will eventually 
 supplant our `analytics-android` library.
 
+NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
+
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
@@ -93,7 +95,6 @@ Android
 Analytics("SEGMENT_API_KEY", applicationContext) {
     analyticsScope = applicationCoroutineScope
     collectDeviceId = true
-    recordScreenViews = true
     trackApplicationLifecycleEvents = true
     trackDeepLinks = true
     flushAt = 1
@@ -156,7 +157,7 @@ Example usage:
 ```kotlin
 analytics.track("View Product", buildJsonObject {
     put("productId", 123)
-    put("productName" "Striped trousers")
+    put("productName", "Striped trousers")
 });
 ```
 
@@ -230,7 +231,6 @@ Example Usage:
 ```kotlin
 val plugin = object: Plugin {
     override val type = Plugin.Type.Enrichment
-    override val name = "SomePlugin"
     override var lateinit analytics: Analytics
 }
 analytics.add(plugin)
@@ -241,12 +241,12 @@ find a registered plugin from the analytics timeline
 
 Method signature:
 ```kotlin
-fun find(pluginName: String): Plugin
+fun <T: Plugin> find(plugin: KClass<T>): T?
 ```
 
 Example Usage:
 ```kotlin
-val plugin = analytics.find("SomePlugin")
+val plugin = analytics.find(plugin::class)
 ```
 
 ### remove
@@ -254,12 +254,12 @@ remove a registered plugin from the analytics timeline
 
 Method signature:
 ```kotlin
-fun remove(pluginName: String): Analytics
+fun remove(plugin: Plugin): Analytics
 ```
 
 Example Usage:
 ```kotlin
-analytics.remove("SomePlugin")
+analytics.remove(plugin)
 ```
 
 ### flush
@@ -283,7 +283,6 @@ For example if you wanted to add something to the context object of any event pa
 ```kotlin
 class SomePlugin: Plugin {
     override val type = Plugin.Type.Enrichment
-    override val name = "SomePlugin"
 
     override var lateinit analytics: Analytics
 
@@ -316,7 +315,7 @@ allowing you to modify/augment how events reach the particular destination.
 For example if you wanted to implement a device-mode destination plugin for Amplitude
 ```kotlin
 class AmplitudePlugin: DestinationPlugin() {
-    override val name = "Amplitude"
+    override val key = "Amplitude"
 
     val amplitudeSDK: Amplitude
 
@@ -351,7 +350,6 @@ analytics.add(amplitudePlugin) // add amplitudePlugin to the analytics client
 
 val amplitudeEnrichment = object: Plugin {
     override val type = Plugin.Type.Enrichment
-    override val name = "SomePlugin"
 
     override var lateinit analytics: Analytics
 
