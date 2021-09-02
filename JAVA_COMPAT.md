@@ -1,4 +1,4 @@
-# Analytics-Kotlin
+# Analytics-Kotlin Java Compatibility 
 [![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
 
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM).
@@ -7,10 +7,10 @@ NOTE: This project is currently in the Pilot phase and is covered by Segment's [
 to try out this new library. Please provide feedback via Github issues/PRs, and feel free to submit pull requests.  This library will eventually 
 supplant our `analytics-android` library.
 
-NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
+NOTE: This document serves as an explanation of usage of this `analytics-kotlin` library for pure Java codebase. For the sample usages in Kotlin and more detailed architectural explanation, please refer to our main [README.md doc](README.md).
 
 ## Table of Contents
-- [Analytics-Kotlin](#analytics-kotlin)
+- [Analytics-Kotlin Java Compatibility](#analytics-kotlin-java-compatibility)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
     - [Permissions](#permissions)
@@ -81,146 +81,129 @@ Ensure that you add these permissions to your `AndroidManifest.xml`
 ### Setting up the client
 Our library provides multiple initialisation techniques for the analytics client. The analytics client manages all your tracking events.
 
-Android
-```kotlin
-Analytics("SEGMENT_API_KEY", applicationContext, applicationCoroutineScope)
+**Android**
+```java
+Analytics analytics = AndroidAnalyticsKt.Analytics(BuildConfig.SEGMENT_WRITE_KEY, getApplicationContext(), configuration -> Unit.INSTANCE);
 ```
 
-Generic
-```kotlin
-Analytics("SEGMENT_API_KEY")
+However, if you are in pure Java codebase, some of the functions in `Analytics` is not compatible. We provide a wrapper class `JavaAnalytics` to make all the functions available to Java.
+```java
+JavaAnalytics analyticsCompat = new JavaAnalytics(analytics);
 ```
+
+**Generic**
+```java
+JavaAnalytics analytics = new JavaAnalytics(
+    new ConfigurationBuilder(BuildConfig.SEGMENT_WRITE_KEY).build()
+);
+```
+
+Here, `ConfigurationBuilder` implements a builder pattern to help instantiates a `Configuration` object in Java, it can also be used in Android project.
 
 ### Client Options
 When creating a new client, you can pass several [options](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/Configuration.kt) which can be found below.
 
-Android
-```kotlin
-Analytics("SEGMENT_API_KEY", applicationContext) {
-    analyticsScope = applicationCoroutineScope
-    collectDeviceId = true
-    trackApplicationLifecycleEvents = true
-    trackDeepLinks = true
-    flushAt = 1
+**Android**
+```java
+AndroidAnalyticsKt.Analytics(BuildConfig.SEGMENT_WRITE_KEY, getApplicationContext(), configuration -> {
+    
+    configuration.setFlushAt(1);
+    configuration.setCollectDeviceId(true);
+    configuration.setTrackApplicationLifecycleEvents(true);
+    configuration.setTrackDeepLinks(true);
     //...other config options
-}
+
+    return Unit.INSTANCE;
+});
 ```
 
-JVM
-```kotlin
-Analytics("SEGMENT_API_KEY") {
-    collectDeviceId = true
-    trackApplicationLifecycleEvents = true
-    trackDeepLinks = true
-    flushAt = 1
-    //...other config options
-}
-// OR
-Analytics(Configuration (
-    writeKey = "123",
-    collectDeviceId = true,
-    trackApplicationLifecycleEvents = true,
-    trackDeepLinks = true,
-    flushAt = 1,
-    //...other config options
-))
+**JVM**
+```java
+JavaAnalytics analytics = new JavaAnalytics(
+    new ConfigurationBuilder(BuildConfig.SEGMENT_WRITE_KEY)
+        .setFlushAt(10)
+        .setCollectDeviceId(true)
+        .setTrackApplicationLifecycleEvents(true)
+        .setTrackDeepLinks(true)    //...other config options
+        .build()
+);
 ```
 
-| Name |  Default | Description |
-| ---- |  ------- | ----- |
-| writeKey | *required* |  Your Segment writeKey |
-| application | `null` |  application specific object (in case of Android: ApplicationContext) |
-| analyticsScope | `MainScope()` |  CoroutineScope on which all analytics coroutines will run |
-| analyticsDispatcher | `Executors.newSingleThreadExecutor()` |  Dispatcher running analytics tasks |
-| ioDispatcher | `Dispatchers.IO` |  Dispatcher running IO tasks |
-| storageProvider | `ConcreteStorageProvider` |  Provider for storage class, generally do not want to modify |
-| collectDeviceId | `false` |  automatically collect deviceId |
-| trackApplicationLifecycleEvents | `false` |  automatically track Lifecycle events |
-| trackDeepLinks | `false` |  automatically track [Deep link](https://developer.android.com/training/app-links/deep-linking) opened based on intents |
-| useLifecycleObserver | `false` |  enables the use of LifecycleObserver to track Application lifecycle events |
-| flushAt | `20` |  count of events at which we flush events
-| flushInterval | `30` (seconds) |  interval in seconds at which we flush events
-| defaultSettings | `{}` |  Settings object that will be used as fallback in case of network failure
-| autoAddSegmentDestination | `true` |  automatically add SegmentDestination plugin, disable in case you want to add plugins to SegmentDestination
-| apiHost | `api.segment.io/v1` |  set a default apiHost to which Segment sends event
 
 ## Client Methods
 
 ### track
 The track method is how you record any actions your users perform, along with any properties that describe the action.
 
-Method signature:
-```kotlin
-fun track(name: String, properties: JsonObject = emptyJsonObject)
-
-// If <T> is annotated with @Serializable you will not need to provide a serializationStrategy
-fun <T> track(name: String, properties: T, serializationStrategy: KSerializer<T>)
+Example usage:
+```java
+analytics.track("View Product", Builders.buildJsonObject(o -> {
+    o.put("productId", 123)
+        .put("productName", "Striped trousers");
+}));
 ```
 
-Example usage:
-```kotlin
-analytics.track("View Product", buildJsonObject {
-    put("productId", 123)
-    put("productName", "Striped trousers")
-});
+Here `Builders` is a utility class that has a series of convinent functions that helps build a Kotlin JsonObject.
+
+You can also let your classes implement `JsonSerializable` to avoid buiding up a `JsonObject` every time.
+```java
+class YourJsonSerializable implements JsonSerializable {
+    public JsonObject serialize() {
+        return Builders.buildJsonObject(o -> {
+            o.put("productId", 123)
+                .put("productName", "Striped trousers");
+        }));
+    }
+}
+
+analytics.track("View Product", new YourJsonSerializable());
 ```
 
 ### identify
 The identify call lets you tie a user to their actions and record traits about them. This includes a unique user ID and any optional traits you know about them like their email, name, etc. The traits option can include any information you might want to tie to the user, but when using any of the reserved user traits, you should make sure to only use them for their intended meaning.
 
-Method signature:
-```kotlin
-fun identify(userId: String, traits: JsonObject = emptyJsonObject)
-
-// If <T> is annotated with @Serializable you will not need to provide a serializationStrategy
-fun <T> identify(userId: String, traits: T, serializationStrategy: KSerializer<T>)
-```
-
 Example Usage:
-```kotlin
-analytics.identify("user-123", buildJsonObject {
-    put("username", "MisterWhiskers")
-    put("email", "hello@test.com")
-    put("plan", "premium")
-});
+```java
+analytics.identify("user-123", Builders.buildJsonObject(o -> {
+    o.put("username", "MisterWhiskers")
+        .put("email", "hello@test.com")
+        .put("plan", "premium");
+}));
+
+// or
+
+analytics.identify("user-123", new YourJsonSerializable());
 ```
 
 ### screen
 The screen call lets you record whenever a user sees a screen in your mobile app, along with any properties about the screen.
 
-Method signature:
-```kotlin
-fun screen(title: String, properties: JsonObject = emptyJsonObject, category: String = "")
-
-// If <T> is annotated with @Serializable you will not need to provide a serializationStrategy
-fun <T> screen(title: String, properties: T, category: String = "", serializationStrategy: KSerializer<T>)
-```
-
 Example Usage:
-```kotlin
-analytics.screen("ScreenName", buildJsonObject {
-    put("productSlug", "example-product-123")
-});
+```java
+analytics.screen("ScreenName", Builders.buildJsonObject(o -> {
+    o.put("productSlug", "example-product-123");
+}));
+
+// or
+
+analytics.screen("ScreenName", new YourJsonSerializable());
 ```
 You can also opt-into auto screen tracking by adding this [plugin](https://github.com/segmentio/analytics-kotlin/blob/main/samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins/AndroidRecordScreenPlugin.kt)
 
 ### group
 The group API call is how you associate an individual user with a group—be it a company, organization, account, project, team or whatever other crazy name you came up with for the same concept! This includes a unique group ID and any optional group traits you know about them like the company name industry, number of employees, etc. The traits option can include any information you might want to tie to the group, but when using any of the reserved group traits, you should make sure to only use them for their intended meaning.
-Method signature:
-```kotlin
-fun group(groupId: String, traits: JsonObject = emptyJsonObject)
-
-// If <T> is annotated with @Serializable you will not need to provide a serializationStrategy
-fun <T> group(groupId: String, traits: T, serializationStrategy: KSerializer<T>)
-```
 
 Example Usage:
-```kotlin
-analytics.group("user-123", buildJsonObject {
-    put("username", "MisterWhiskers")
-    put("email", "hello@test.com")
-    put("plan", "premium")
-});
+```java
+analytics.group("user-123", Builders.buildJsonObject(o -> {
+    o.put("username", "MisterWhiskers")
+        .put("email", "hello@test.com")
+        .put("plan", "premium");
+}));
+
+// or
+
+analytics.group("user-123", new YourJsonSerializable());
 ```
 
 ### alias
@@ -239,44 +222,27 @@ analytics.alias("newId")
 ### add
 add API allows you to add a plugin to the analytics timeline
 
-Method signature:
-```kotlin
-fun add(plugin: Plugin): Analytics
+Example Usage:
+```java
+analytics.add(new SomePlugin());
 ```
 
-Example Usage:
-```kotlin
-val plugin = object: Plugin {
-    override val type = Plugin.Type.Enrichment
-    override var lateinit analytics: Analytics
-}
-analytics.add(plugin)
-```
+`SomePlugin` is your customized `Plugin`. See [Plugin Architecture](#plugin-architecture) for details of plugin customization
 
 ### find
 find a registered plugin from the analytics timeline
 
-Method signature:
-```kotlin
-fun <T: Plugin> find(plugin: KClass<T>): T?
-```
-
 Example Usage:
-```kotlin
-val plugin = analytics.find(plugin::class)
+```java
+SomePlugin somePlugin = analytics.find(SomePlugin.class);
 ```
 
 ### remove
 remove a registered plugin from the analytics timeline
 
-Method signature:
-```kotlin
-fun remove(plugin: Plugin): Analytics
-```
-
 Example Usage:
 ```kotlin
-analytics.remove(plugin)
+analytics.remove(somePlugin);
 ```
 
 ### flush
@@ -297,31 +263,89 @@ We have 3 types of basic plugins that you can use as a foundation for modifying 
 - [`Plugin`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt)
 The most trivial plugin interface that will act on any event payload going through the timeline.
 For example if you wanted to add something to the context object of any event payload as an enrichment.
-```kotlin
-class SomePlugin: Plugin {
-    override val type = Plugin.Type.Enrichment
+```java
+class SomePlugin implements Plugin {
 
-    override var lateinit analytics: Analytics
+    private Analytics analytics;
 
-    override fun execute(event: BaseEvent): BaseEvent? {
-        event.putInContext("foo", "bar")
-        return event
+    @Override
+    public void update(@NonNull Settings settings, @NonNull UpdateType type) {
+        // stub method
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent execute(@NonNull BaseEvent event) {
+        EventTransformer.putInContext(event, "foo", "bar");
+        return event;
+    }
+
+    @Override
+    public void setup(@NonNull Analytics analytics) {
+        this.analytics = analytics;
+    }
+
+    @NonNull
+    @Override
+    public Plugin.Type getType() {
+        return Plugin.Type.Enrichment;
+    }
+
+    @NonNull
+    @Override
+    public Analytics getAnalytics() {
+        return analytics;
+    }
+
+    @Override
+    public void setAnalytics(@NonNull Analytics analytics) {
+        setup(analytics);
     }
 }
 ```
 
 - [`EventPlugin`](https://github.com/segmentio/analytics-kotlin/blob/main/analytics-kotlin/src/main/java/com/segment/analytics/platform/Plugin.kt)
-A plugin interface that will act only on specific event types. You can choose the event types by only overriding the event functions you want.
-For example if you only wanted to act on `track` & `identify` events
-```kotlin
-class SomePlugin: EventPlugin {
-    override fun track(event: TrackEvent): BaseEvent? {
+A plugin interface that will act only on specific event types. 
+
+
+```java
+static class SomePlugin implements EventPlugin {
+
+    //...Plugin methods
+    
+    @Nullable
+    @Override
+    public BaseEvent track(@NonNull TrackEvent payload) {
         // code to modify track event
-        return event
+        return payload;
     }
-    override fun identify(event: TrackEvent): BaseEvent? {
+
+    @Nullable
+    @Override
+    public BaseEvent identify(@NonNull IdentifyEvent payload) {
         // code to modify identify event
-        return event
+        return playload;
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent screen(@NonNull ScreenEvent payload) {
+        // code to modify screen event
+        return payload;
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent group(@NonNull GroupEvent payload) {
+        // code to modify group event
+        return payload;
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent alias(@NonNull AliasEvent payload) {
+        // code to modify alias event
+        return payload;
     }
 }
 ```
@@ -330,20 +354,55 @@ class SomePlugin: EventPlugin {
 A plugin interface most commonly used for device-mode destinations. This plugin contains an internal timeline that follows the same process as the analytics timeline,
 allowing you to modify/augment how events reach the particular destination.
 For example if you wanted to implement a device-mode destination plugin for Amplitude
-```kotlin
-class AmplitudePlugin: DestinationPlugin() {
-    override val key = "Amplitude"
+```java
+static class AmplitudePlugin extends DestinationPlugin {
 
-    val amplitudeSDK: Amplitude
+    private Amplitude amplitudeSDK;
 
-    init {
-        amplitudeSDK = Amplitude.instance
+    public AmplitudePlugin() {
+        amplitudeSDK = Amplitude.getInstance();
         amplitudeSDK.initialize(applicationContext, "API_KEY");
     }
 
-    override fun track(event: TrackEvent): BaseEvent? {
-        amplitudeSDK.logEvent(event.name)
-        return event
+    @Nullable
+    @Override
+    public BaseEvent track(@NonNull TrackEvent payload) {
+        // code to react to event with amplitudeSDK
+        return payload;
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent identify(@NonNull IdentifyEvent payload) {
+        // code to react to event with amplitudeSDK
+        return payload;
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent screen(@NonNull ScreenEvent payload) {
+        // code to react to event with amplitudeSDK
+        return payload;
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent group(@NonNull GroupEvent payload) {
+        // code to react to event with amplitudeSDK
+        return payload;
+    }
+
+    @Nullable
+    @Override
+    public BaseEvent alias(@NonNull AliasEvent payload) {
+        // code to react to event with amplitudeSDK
+        return payload;
+    }
+
+    @NonNull
+    @Override
+    public String getKey() {
+        return "Amplitude";
     }
 }
 ```
@@ -360,24 +419,6 @@ You can force a settings update by calling `analytics.checkSettings()`
 Plugins can also hook into [`AndroidLifecycle`]() functions by implementing an interface. These functions will get called implicitly as the lifecycle events are processed.
 - `DestinationPlugin` timeline
 The destination plugin contains an internal timeline that follows the same process as the analytics timeline, allowing you to modify/augment how events reach the particular destination.
-For example if you only wanted to add a context key when sending an event to `Amplitude`
-```kotlin
-val amplitudePlugin = AmplitudePlugin()
-analytics.add(amplitudePlugin) // add amplitudePlugin to the analytics client
-
-val amplitudeEnrichment = object: Plugin {
-    override val type = Plugin.Type.Enrichment
-
-    override var lateinit analytics: Analytics
-
-    override fun execute(event: BaseEvent): BaseEvent? {
-        event.putInContext("foo", "bar")
-        return event
-    }
-}
-
-amplitudePlugin.add(amplitudeEnrichment) // add enrichment plugin to amplitude timeline
-```
 
 ## Contributing
 
