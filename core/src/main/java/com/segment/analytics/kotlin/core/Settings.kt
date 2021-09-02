@@ -4,13 +4,14 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.utilities.LenientJson
+import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.launch
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import java.io.BufferedReader
 
@@ -24,8 +25,8 @@ data class Settings(
         name: String,
         strategy: DeserializationStrategy<T> = Json.serializersModule.serializer()
     ): T? {
-        val integrationData = integrations[name]?.jsonObject ?: return null
-        val typedSettings = Json.decodeFromJsonElement(strategy, integrationData)
+        val integrationData = integrations[name]?.safeJsonObject ?: return null
+        val typedSettings = LenientJson.decodeFromJsonElement(strategy, integrationData)
         return typedSettings
     }
 
@@ -61,7 +62,7 @@ fun Analytics.checkSettings() {
             val settingsString =
                 connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
             log("Fetched Settings: $settingsString")
-            Json { ignoreUnknownKeys = true }.decodeFromString(settingsString)
+            LenientJson.decodeFromString(settingsString)
         } catch (ex: Exception) {
             log(message = "${ex.message}: failed to fetch settings", type = LogType.ERROR)
             null

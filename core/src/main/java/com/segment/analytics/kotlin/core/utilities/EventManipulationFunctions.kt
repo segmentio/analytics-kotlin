@@ -6,7 +6,6 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 
 // Mark integration as enabled, for this event
@@ -60,7 +59,7 @@ fun <T : Any> BaseEvent.putInContextUnderKey(
     value: T,
     serializationStrategy: SerializationStrategy<T>
 ): BaseEvent {
-    val parent = context[parentKey]?.jsonObject ?: emptyJsonObject
+    val parent: JsonObject = context[parentKey]?.safeJsonObject ?: emptyJsonObject
     context = buildJsonObject {
         putAll(context)
         val newParent = buildJsonObject {

@@ -27,9 +27,13 @@ fun mockContext(): Context {
     every { mockPkgMgr.getPackageInfo("com.foo", 0) } returns packageInfo
     val mock = mockk<Context> {
         every { getSharedPreferences(any(), any()) } returns mockPrefs
-        every { getDir(any(), any()) } returns File("/tmp/analytics-android/")
+        every { getDir(any(), any()) } returns File("/tmp/analytics-android-test/")
         every { packageName } returns "com.foo"
         every { packageManager } returns mockPkgMgr
     }
     return mock
+}
+
+fun clearPersistentStorage() {
+    File("/tmp/analytics-android-test/").deleteRecursively()
 }

@@ -7,11 +7,12 @@ import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.utilities.putAll
+import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 
 /**
@@ -131,13 +132,11 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
     internal fun attachAdvertisingId(payload: BaseEvent): BaseEvent {
         val newContext = buildJsonObject {
             // copy existing context
-            payload.context.forEach { (key, value) ->
-                put(key, value)
-            }
+            putAll(payload.context)
 
             val newDevice = buildJsonObject {
-                payload.context["device"]?.jsonObject?.forEach { (key, value) ->
-                    put(key, value)
+                payload.context["device"]?.safeJsonObject?.let {
+                    putAll(it)
                 }
                 if (adTrackingEnabled && advertisingId.isNotBlank()) {
                     put(DEVICE_ADVERTISING_ID_KEY, advertisingId)

@@ -1,3 +1,4 @@
+@file:JvmName("FileUtils")
 package com.segment.analytics.kotlin.core.utilities
 
 import java.io.File

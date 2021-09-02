@@ -2,11 +2,11 @@ package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.DateSerializer
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.putInContext
+import com.segment.analytics.kotlin.core.utilities.safeJsonArray
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.jsonArray
 import java.time.Instant
 
 enum class MetricType(val type: Int) {
@@ -41,10 +41,10 @@ fun BaseEvent.addMetric(
     )
 
     val metrics = buildJsonArray {
-        context["metrics"]?.jsonArray?.forEach {
+        context["metrics"]?.safeJsonArray?.forEach {
             add(it)
         }
-        add(Json { encodeDefaults = true }.encodeToJsonElement(Metric.serializer(), metric))
+        add(EncodeDefaultsJson.encodeToJsonElement(Metric.serializer(), metric))
     }
 
     putInContext("metrics", metrics)
