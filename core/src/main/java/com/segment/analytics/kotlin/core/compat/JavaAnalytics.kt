@@ -2,7 +2,10 @@ package com.segment.analytics.kotlin.core.compat
 
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonObject
+import sovran.kotlin.Store
 import java.util.function.Consumer
 
 /**
@@ -18,6 +21,7 @@ class JavaAnalytics private constructor() {
      */
     constructor(configuration: Configuration): this() {
         analytics = Analytics(configuration)
+        setup(analytics)
     }
 
     /**
@@ -27,17 +31,23 @@ class JavaAnalytics private constructor() {
      */
     constructor(analytics: Analytics): this() {
         this.analytics = analytics
+        setup(analytics)
     }
 
     internal lateinit var analytics: Analytics
+        private set
 
-    val store = analytics.store
+    lateinit var store: Store
+        private set
 
-    val storage = analytics.storage
+    lateinit var storage: Storage
+        private set
 
-    val analyticsScope = analytics.analyticsScope
+    lateinit var analyticsScope: CoroutineScope
+        private set
 
-    val ioDispatcher = analytics.ioDispatcher
+    lateinit var ioDispatcher: CoroutineDispatcher
+        private set
 
     /**
      * The track method is how you record any actions your users perform. Each action is known by a
@@ -204,4 +214,10 @@ class JavaAnalytics private constructor() {
      */
     fun traits() = analytics.traits()
 
+    private fun setup(analytics: Analytics) {
+        store = analytics.store
+        storage = analytics.storage
+        analyticsScope = analytics.analyticsScope
+        ioDispatcher = analytics.ioDispatcher
+    }
 }
