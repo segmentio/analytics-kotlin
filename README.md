@@ -10,25 +10,29 @@ supplant our `analytics-android` library.
 NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
 
 ## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
+- [Analytics-Kotlin](#analytics-kotlin)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Permissions](#permissions)
+  - [Usage](#usage)
     - [Setting up the client](#setting-up-the-client)
     - [Client Options](#client-options)
-- [Client Methods](#client-methods)
-    - track
-    - identify
-    - screen
-    - group
-    - add
-    - find
-    - remove
-    - flush
-- [Plugin Architecture](#plugin-architecture)
+  - [Client Methods](#client-methods)
+    - [track](#track)
+    - [identify](#identify)
+    - [screen](#screen)
+    - [group](#group)
+    - [alias](#alias)
+    - [add](#add)
+    - [find](#find)
+    - [remove](#remove)
+    - [flush](#flush)
+  - [Plugin Architecture](#plugin-architecture)
     - [Fundamentals](#fundamentals)
-    - [Advanced Concepts](#advanced-concepts)
-- [Contributing](#contributing)
-- [Code of Conduct](#code-of-conduct)
-- [License](#license)
+    - [Advanced concepts](#advanced-concepts)
+  - [Contributing](#contributing)
+  - [Code of Conduct](#code-of-conduct)
+  - [License](#license)
 
 ## Installation
 For our pilot phase, we will be using [jitpack](https://jitpack.io/#segmentio/analytics-kotlin) to distribute the library
@@ -217,6 +221,19 @@ analytics.group("user-123", buildJsonObject {
     put("email", "hello@test.com")
     put("plan", "premium")
 });
+```
+
+### alias
+
+The alias method is used to merge two user identities, effectively connecting two sets of user data as one. This is an advanced method, but it is required to manage user identities successfully in some of our integrations.
+Method signature:
+```kotlin
+fun alias(newId: String)
+```
+
+Example Usage:
+```kotlin
+analytics.alias("newId")
 ```
 
 ### add
