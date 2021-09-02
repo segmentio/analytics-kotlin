@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -64,9 +65,7 @@ class SegmentDestination(
 
     private inline fun <reified T : BaseEvent> enqueue(payload: T) {
         // needs to be inline reified for encoding using Json
-        val jsonVal = Json {
-            encodeDefaults = true
-        }.encodeToJsonElement(payload).jsonObject.filterNot { (k, v) ->
+        val jsonVal = EncodeDefaultsJson.encodeToJsonElement(payload).jsonObject.filterNot { (k, v) ->
             // filter out empty userId and traits values
             (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
         }

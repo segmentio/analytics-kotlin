@@ -5,7 +5,9 @@ package com.segment.analytics.kotlin.core.utilities
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.serializer
 
 // Mark integration as enabled, for this event
@@ -67,7 +69,7 @@ fun BaseEvent.putInContextUnderKey(
     key: String,
     jsonElement: JsonElement
 ): BaseEvent {
-    val parent = context[parentKey]?.jsonObject ?: emptyJsonObject
+    val parent: JsonObject = context[parentKey]?.safeJsonObject ?: emptyJsonObject
     context = buildJsonObject {
         putAll(context)
         val newParent = buildJsonObject {

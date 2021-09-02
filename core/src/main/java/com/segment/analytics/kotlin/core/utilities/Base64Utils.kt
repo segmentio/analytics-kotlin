@@ -1,3 +1,4 @@
+@file:JvmName("Base64Utils")
 package com.segment.analytics.kotlin.core.utilities
 
 // Encode string to base64

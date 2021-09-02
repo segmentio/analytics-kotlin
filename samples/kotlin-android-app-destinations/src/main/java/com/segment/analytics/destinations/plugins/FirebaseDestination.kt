@@ -13,7 +13,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.getDouble
-import com.segment.analytics.kotlin.core.utilities.getMapSet
+import com.segment.analytics.kotlin.core.utilities.getMapList
 import com.segment.analytics.kotlin.core.utilities.getString
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -182,7 +182,7 @@ class FirebaseDestination(
             }
 
             if (finalProperty == Param.ITEM_LIST) {
-                val products = properties.getMapSet("products") ?: continue
+                val products = properties.getMapList("products")?.toSet() ?: continue
                 val formattedProducts = formatProducts(products)
                 bundle?.putParcelableArrayList(finalProperty, formattedProducts)
             } else if (bundle != null) {
@@ -198,7 +198,7 @@ class FirebaseDestination(
         return bundle
     }
 
-    private fun formatProducts(products: Set<Map<String, Any>>): ArrayList<Bundle>? {
+    private fun formatProducts(products: Set<Map<String, Any?>>): ArrayList<Bundle>? {
 
         val mappedProducts: ArrayList<Bundle> = ArrayList()
 

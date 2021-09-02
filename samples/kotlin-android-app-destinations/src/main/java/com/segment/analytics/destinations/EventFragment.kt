@@ -109,10 +109,12 @@ class EventFragment(val type: EventType, val analytics: Analytics) : Fragment() 
         container.addView(view)
     }
 
-    private inline fun <reified T : BaseEvent> eventStr(event: T) = Json {
+    private val Json = Json {
         prettyPrint = true
         encodeDefaults = true
-    }.encodeToString(event)
+    }
+
+    private inline fun <reified T : BaseEvent> eventStr(event: T) = Json.encodeToString(event)
 
     private fun colorFormat(text: String): String {
         val spacer = fun(match: MatchResult): CharSequence {

@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.android
 import com.segment.analytics.kotlin.android.utilities.AndroidKVS
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.EventsFileManager
 import io.mockk.every
 import io.mockk.mockkStatic
@@ -50,7 +51,7 @@ class EventsFileTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
 
         val expectedContents = """{"batch":[${eventString}"""
@@ -73,7 +74,7 @@ class EventsFileTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
         file.storeEvent(eventString)
 
@@ -97,7 +98,7 @@ class EventsFileTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
         // artificially add 500kb of data to file
         FileOutputStream(File(directory, "123-0.tmp"), true).write(
@@ -134,7 +135,7 @@ class EventsFileTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
 
         val fileUrls = file.read()
@@ -159,7 +160,7 @@ class EventsFileTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
 
         file.read().let {
@@ -190,7 +191,7 @@ class EventsFileTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
 
         val file1 = EventsFileManager(directory, "123", kvStore)
         val file2 = EventsFileManager(directory, "qwerty", kvStore)
@@ -215,7 +216,7 @@ class EventsFileTests {
 //                context = emptyJsonObject
 //                timestamp = epochTimestamp
 //            }
-//        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+//        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
 //        file.storeEvent(eventString)
 //
 //        val expectedContents = """{"batch":[${eventString}"""
@@ -244,7 +245,7 @@ class EventsFileTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val eventString = Json { encodeDefaults = true }.encodeToString(trackEvent)
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
 
         val list = file.read()

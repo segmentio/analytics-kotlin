@@ -312,7 +312,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     ) {
         group(groupId, traits, Json.serializersModule.serializer())
     }
-/*
+
     /**
      * The alias method is used to merge two user identities, effectively connecting two sets of
      * user data as one. This is an advanced method, but it is required to manage user identities
@@ -337,7 +337,6 @@ class Analytics(val configuration: Configuration) : Subscriber {
             log("failed to fetch current UserInfo state")
         }
     }
-*/
 
     fun process(event: BaseEvent) {
         log("applying base attributes on ${Thread.currentThread().name}")
