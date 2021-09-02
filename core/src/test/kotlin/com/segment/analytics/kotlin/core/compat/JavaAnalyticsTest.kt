@@ -273,6 +273,33 @@ internal class JavaAnalyticsTest {
     }
 
     @Nested
+    inner class Alias {
+
+        private val newId = "newId"
+
+        private val previousId = "qwerty-qwerty-123"
+
+        private lateinit var alias: CapturingSlot<AliasEvent>
+
+        @BeforeEach
+        internal fun setUp() {
+            alias = slot()
+        }
+        @Test
+        fun alias() {
+            analytics.add(mockPlugin)
+            analytics.identify(previousId)
+            analytics.alias(newId)
+
+            verify { mockPlugin.alias(capture(alias)) }
+            assertEquals(
+                AliasEvent(newId, previousId),
+                alias.captured
+            )
+        }
+    }
+
+    @Nested
     inner class PluginTests {
 
         private lateinit var middleware: Plugin
