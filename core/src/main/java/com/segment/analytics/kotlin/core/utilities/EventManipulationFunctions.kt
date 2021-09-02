@@ -45,6 +45,12 @@ fun BaseEvent.putInContext(key: String, jsonElement: JsonElement): BaseEvent {
     return this
 }
 
+fun BaseEvent.putInContext(key: String, value: String?) = putInContext(key, JsonPrimitive(value))
+
+fun BaseEvent.putInContext(key: String, value: Number?) = putInContext(key, JsonPrimitive(value))
+
+fun BaseEvent.putInContext(key: String, value: Boolean?) = putInContext(key, JsonPrimitive(value))
+
 // insert a non-null key-value pair into the context object
 fun <T : Any> BaseEvent.putInContext(
     key: String,
