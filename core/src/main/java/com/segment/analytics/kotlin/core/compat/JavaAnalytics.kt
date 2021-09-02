@@ -5,9 +5,17 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import kotlinx.serialization.json.JsonObject
 import java.util.function.Consumer
 
-class JavaAnalytics(configuration: Configuration) {
+class JavaAnalytics private constructor() {
 
-    internal val analytics = Analytics(configuration)
+    constructor(configuration: Configuration): this() {
+        analytics = Analytics(configuration)
+    }
+
+    constructor(analytics: Analytics): this() {
+        this.analytics = analytics
+    }
+
+    internal lateinit var analytics: Analytics
 
     val store = analytics.store
 
