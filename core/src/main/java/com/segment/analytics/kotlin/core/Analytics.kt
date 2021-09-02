@@ -372,7 +372,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
 
     /**
      * Remove a plugin from the analytics timeline using its name
-     * @param pluginName [Plugin] to be remove
+     * @param plugin [Plugin] to be remove
      */
     fun remove(plugin: Plugin): Analytics {
         this.timeline.remove(plugin)

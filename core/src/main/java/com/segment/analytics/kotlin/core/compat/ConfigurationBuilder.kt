@@ -4,6 +4,12 @@ import com.segment.analytics.kotlin.core.Configuration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
+/**
+ * This class serves as a helper class for Java compatibility, which makes the
+ * @see Configuration buildable through a builder pattern.
+ * It's strongly discouraged to use this builder in a Kotlin based project, since
+ * the optional parameters is the way to go in Kotlin.
+ */
 class ConfigurationBuilder (writeKey: String) {
 
     private val configuration: Configuration = Configuration(writeKey)
