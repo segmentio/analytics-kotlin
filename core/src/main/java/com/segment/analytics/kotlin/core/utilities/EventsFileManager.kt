@@ -1,6 +1,5 @@
 package com.segment.analytics.kotlin.core.utilities
 
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
@@ -40,12 +39,9 @@ class EventsFileManager(
 
     init {
         createDirectory(directory)
-        registerShutdownHook()
     }
 
     private val fileIndexKey = "segment.events.file.index.$writeKey"
-
-    private var os: FileOutputStream? = null
 
     companion object {
         const val MAX_FILE_SIZE = 475_000 // 475KB
@@ -124,8 +120,6 @@ class EventsFileManager(
         val contents = """],"sentAt":"${Instant.now()}"}"""
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
-        os?.close()
-        os = null
         incrementFileIndex()
     }
 
@@ -138,22 +132,10 @@ class EventsFileManager(
     // Atomic write to underlying file
     // TODO make atomic
     private fun writeToFile(content: ByteArray, file: File) {
-        os = os ?: FileOutputStream(file, true)
-        os?.run {
-            write(content)
-            flush()
-        }
-    }
-
-    private fun registerShutdownHook() {
-        // close the stream if the app shuts down
-        Runtime.getRuntime().addShutdownHook(object : Thread() {
-            override fun run() {
-                runBlocking {
-                    os?.close()
-                }
-            }
-        })
+        val os = FileOutputStream(file, true)
+        os.write(content)
+        os.flush()
+        os.close()
     }
 }
 
