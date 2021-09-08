@@ -1,6 +1,6 @@
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.SegmentDestination
+import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.Logger
 import kotlinx.coroutines.*

@@ -34,7 +34,7 @@ class SettingsTests {
         )
         val httpConnection: HttpURLConnection = mockk()
         val connection = object : Connection(httpConnection, settingsStream, null) {}
-        every { anyConstructed<HTTPClient>().settings() } returns connection
+        every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } returns connection
     }
 
     @BeforeEach
@@ -55,7 +55,7 @@ class SettingsTests {
     fun `checkSettings updates settings`() = runBlocking {
         val system = analytics.store.currentState(System::class)
         val curSettings = system?.settings
-        Assertions.assertEquals(
+        assertEquals(
             Settings(
                 integrations = buildJsonObject {
                     put(

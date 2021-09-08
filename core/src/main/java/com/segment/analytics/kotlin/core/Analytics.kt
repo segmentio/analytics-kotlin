@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.CoroutineDispatcher

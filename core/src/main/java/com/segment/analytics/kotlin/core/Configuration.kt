@@ -42,7 +42,8 @@ data class Configuration(
     var flushInterval: Int = 30,
     val defaultSettings: Settings = Settings(),
     var autoAddSegmentDestination: Boolean = true,
-    var apiHost: String = "api.segment.io/v1"
+    var apiHost: String = "api.segment.io/v1",
+    var cdnHost: String = "cdn-settings.segment.com/v1"
 ) {
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null

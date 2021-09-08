@@ -1,11 +1,23 @@
-package com.segment.analytics.kotlin.core
+package com.segment.analytics.kotlin.core.platform.plugins
 
+import com.segment.analytics.kotlin.core.AliasEvent
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.GroupEvent
+import com.segment.analytics.kotlin.core.HTTPClient
+import com.segment.analytics.kotlin.core.HTTPException
+import com.segment.analytics.kotlin.core.IdentifyEvent
+import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.Settings
+import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.parseFilePaths
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
@@ -18,6 +30,12 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+
+@Serializable
+data class SegmentSettings(
+    val apiKey: String,
+    val apiHost: String,
+)
 
 /**
  * Segment Analytics plugin that is used to send events to Segment's tracking api, in the choice of region.
@@ -66,10 +84,11 @@ class SegmentDestination(
 
     private inline fun <reified T : BaseEvent> enqueue(payload: T) {
         // needs to be inline reified for encoding using Json
-        val jsonVal = EncodeDefaultsJson.encodeToJsonElement(payload).jsonObject.filterNot { (k, v) ->
-            // filter out empty userId and traits values
-            (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
-        }
+        val jsonVal = EncodeDefaultsJson.encodeToJsonElement(payload)
+            .jsonObject.filterNot { (k, v) ->
+                // filter out empty userId and traits values
+                (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
+            }
 
         val stringVal = Json.encodeToString(jsonVal)
         analytics.log("$key running $stringVal")
@@ -109,9 +128,11 @@ class SegmentDestination(
     }
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
-        settings.integrations[key]?.jsonObject?.let {
-            apiKey = it["apiKey"]?.jsonPrimitive?.content ?: apiKey
-            apiHost = it["apiHost"]?.jsonPrimitive?.content ?: apiHost
+        if (settings.isDestinationEnabled(key)) {
+            settings.destinationSettings<SegmentSettings>(key)?.let {
+                apiKey = it.apiKey
+                apiHost = it.apiHost
+            }
         }
     }
 
