@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.platform.plugins
 import com.segment.analytics.kotlin.core.AliasEvent
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.GroupEvent
 import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.HTTPException
@@ -33,8 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @Serializable
 data class SegmentSettings(
-    val apiKey: String,
-    val apiHost: String,
+    var apiKey: String,
+    var apiHost: String = DEFAULT_API_HOST,
 )
 
 /**
@@ -48,7 +49,7 @@ class SegmentDestination(
     private var apiKey: String,
     private val flushCount: Int = 20,
     private val flushIntervalInMillis: Long = 30 * 1000, // 30s
-    private var apiHost: String = "api.segment.io/v1"
+    private var apiHost: String = DEFAULT_API_HOST
 ) : DestinationPlugin() {
 
     override val key: String = "Segment.io"

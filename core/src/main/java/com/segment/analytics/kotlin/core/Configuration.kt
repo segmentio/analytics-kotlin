@@ -1,5 +1,7 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
+import com.segment.analytics.kotlin.core.Constants.DEFAULT_CDN_HOST
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -42,8 +44,8 @@ data class Configuration(
     var flushInterval: Int = 30,
     val defaultSettings: Settings = Settings(),
     var autoAddSegmentDestination: Boolean = true,
-    var apiHost: String = "api.segment.io/v1",
-    var cdnHost: String = "cdn-settings.segment.com/v1"
+    var apiHost: String = DEFAULT_API_HOST,
+    var cdnHost: String = DEFAULT_CDN_HOST
 ) {
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
