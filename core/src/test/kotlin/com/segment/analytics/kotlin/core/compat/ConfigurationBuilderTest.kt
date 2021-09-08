@@ -116,6 +116,14 @@ internal class ConfigurationBuilderTest {
     }
 
     @Test
+    fun setCdnHost() {
+        val expected = "test"
+        val config = builder.setCdnHost(expected).build()
+
+        assertEquals(expected, config.cdnHost)
+    }
+
+    @Test
     fun build() {
         val expected = Configuration(
             writeKey = writeKey,

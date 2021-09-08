@@ -38,5 +38,7 @@ class ConfigurationBuilder (writeKey: String) {
 
     fun setApiHost(apiHost: String) = apply { configuration.apiHost = apiHost}
 
+    fun setCdnHost(cdnHost: String) = apply { configuration.cdnHost = cdnHost}
+
     fun build() = configuration
 }
