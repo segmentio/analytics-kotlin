@@ -15,9 +15,9 @@ import java.util.zip.GZIPOutputStream
 class HTTPClient(private val writeKey: String) {
     internal val authHeader = authorizationHeader(writeKey)
 
-    fun settings(): Connection {
+    fun settings(cdnHost: String): Connection {
         val connection: HttpURLConnection =
-            openConnection("https://cdn-settings.segment.com/v1/projects/$writeKey/settings")
+            openConnection("https://$cdnHost/projects/$writeKey/settings")
         val responseCode = connection.responseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
             connection.disconnect()

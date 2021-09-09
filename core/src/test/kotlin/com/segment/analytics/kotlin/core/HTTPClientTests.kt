@@ -22,7 +22,7 @@ class HTTPClientTests {
 
     @Test
     fun `upload connection has correct configuration`() {
-        httpClient.settings().connection.let {
+        httpClient.settings("cdn-settings.segment.com/v1").connection.let {
             assertEquals(
                 "https://cdn-settings.segment.com/v1/projects/1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ/settings",
                 it.url.toString()

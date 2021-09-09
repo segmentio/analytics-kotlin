@@ -116,6 +116,14 @@ internal class ConfigurationBuilderTest {
     }
 
     @Test
+    fun setCdnHost() {
+        val expected = "test"
+        val config = builder.setCdnHost(expected).build()
+
+        assertEquals(expected, config.cdnHost)
+    }
+
+    @Test
     fun build() {
         val expected = Configuration(
             writeKey = writeKey,
@@ -130,7 +138,8 @@ internal class ConfigurationBuilderTest {
             flushAt = 100,
             flushInterval = 200,
             autoAddSegmentDestination = false,
-            apiHost = "test"
+            apiHost = "test",
+            cdnHost = "testCdn"
         )
 
         val config = builder.setApplication(expected.application)
@@ -145,6 +154,7 @@ internal class ConfigurationBuilderTest {
             .setFlushInterval(expected.flushInterval)
             .setAutoAddSegmentDestination(expected.autoAddSegmentDestination)
             .setApiHost(expected.apiHost)
+            .setCdnHost(expected.cdnHost)
             .build()
 
         assertEquals(expected, config)

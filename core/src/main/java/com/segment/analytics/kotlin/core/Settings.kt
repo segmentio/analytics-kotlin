@@ -51,6 +51,7 @@ internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
  */
 fun Analytics.checkSettings() {
     val writeKey = configuration.writeKey
+    val cdnHost = configuration.cdnHost
 
     // stop things; queue in case our settings have changed.
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
@@ -58,7 +59,7 @@ fun Analytics.checkSettings() {
     analyticsScope.launch(ioDispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
         val settingsObj: Settings? = try {
-            val connection = HTTPClient(writeKey).settings()
+            val connection = HTTPClient(writeKey).settings(cdnHost)
             val settingsString =
                 connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
             log("Fetched Settings: $settingsString")
