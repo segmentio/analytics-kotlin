@@ -46,7 +46,7 @@ data class Configuration(
 ) {
     internal var analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-    internal var ioDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2)
+    internal var ioDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(1)
         .asCoroutineDispatcher()
 
     fun isValid(): Boolean {
