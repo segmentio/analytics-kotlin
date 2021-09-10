@@ -18,10 +18,6 @@ class ConfigurationBuilder (writeKey: String) {
 
     fun setAnalyticsScope(analyticsScope: CoroutineScope) = apply { configuration.analyticsScope = analyticsScope }
 
-    fun setAnalyticsDispatcher(analyticsDispatcher: CoroutineDispatcher) = apply { configuration.analyticsDispatcher = analyticsDispatcher }
-
-    fun setIODispatcher(ioDispatcher: CoroutineDispatcher) = apply { configuration.ioDispatcher = ioDispatcher }
-
     fun setCollectDeviceId(collectDeviceId: Boolean) = apply { configuration.collectDeviceId = collectDeviceId }
 
     fun setTrackApplicationLifecycleEvents(trackApplicationLifecycleEvents: Boolean) = apply { configuration.trackApplicationLifecycleEvents = trackApplicationLifecycleEvents }

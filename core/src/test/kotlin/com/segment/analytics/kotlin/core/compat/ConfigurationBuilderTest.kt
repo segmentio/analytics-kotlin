@@ -36,22 +36,6 @@ internal class ConfigurationBuilderTest {
     }
 
     @Test
-    fun setAnalyticsDispatcher() {
-        val dispatcher = Dispatchers.Unconfined
-        val config = builder.setAnalyticsDispatcher(dispatcher).build()
-
-        assertEquals(dispatcher, config.analyticsDispatcher)
-    }
-
-    @Test
-    fun setIODispatcher() {
-        val dispatcher = Dispatchers.Unconfined
-        val config = builder.setIODispatcher(dispatcher).build()
-
-        assertEquals(dispatcher, config.ioDispatcher)
-    }
-
-    @Test
     fun setCollectDeviceId() {
         val expected = true
         val config = builder.setCollectDeviceId(expected).build()
@@ -129,8 +113,6 @@ internal class ConfigurationBuilderTest {
             writeKey = writeKey,
             application = this,
             analyticsScope = CoroutineScope(SupervisorJob()),
-            analyticsDispatcher = Dispatchers.Unconfined,
-            ioDispatcher = Dispatchers.Unconfined,
             collectDeviceId = true,
             trackApplicationLifecycleEvents = true,
             useLifecycleObserver = true,
@@ -144,8 +126,6 @@ internal class ConfigurationBuilderTest {
 
         val config = builder.setApplication(expected.application)
             .setAnalyticsScope(expected.analyticsScope)
-            .setAnalyticsDispatcher(expected.analyticsDispatcher)
-            .setIODispatcher(expected.ioDispatcher)
             .setCollectDeviceId(expected.collectDeviceId)
             .setTrackApplicationLifecycleEvents(expected.trackApplicationLifecycleEvents)
             .setUseLifecycleObserver(expected.useLifecycleObserver)

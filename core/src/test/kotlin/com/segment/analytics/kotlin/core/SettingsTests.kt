@@ -43,8 +43,6 @@ class SettingsTests {
             Configuration(
                 writeKey = "123",
                 analyticsScope = testScope,
-                ioDispatcher = testDispatcher,
-                analyticsDispatcher = testDispatcher,
                 application = "Test"
             )
         )

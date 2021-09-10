@@ -23,17 +23,12 @@ import java.util.concurrent.Executors
 public fun Analytics(
     writeKey: String,
     context: Context,
-    coroutineScope: CoroutineScope,
-    analyticsDispatcher: CoroutineDispatcher =
-        Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
-    ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    coroutineScope: CoroutineScope
 ): Analytics {
     require(writeKey.isNotBlank()) { "writeKey cannot be blank " }
     val conf = Configuration(
         writeKey = writeKey,
         analyticsScope = coroutineScope,
-        analyticsDispatcher = analyticsDispatcher,
-        ioDispatcher = ioDispatcher,
         application = context,
         storageProvider = AndroidStorageProvider
     )

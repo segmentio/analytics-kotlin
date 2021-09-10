@@ -32,9 +32,6 @@ data class Configuration(
     val writeKey: String,
     var application: Any? = null,
     var analyticsScope: CoroutineScope = MainScope(),
-    var analyticsDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor()
-        .asCoroutineDispatcher(),
-    var ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     val storageProvider: StorageProvider = ConcreteStorageProvider,
     var collectDeviceId: Boolean = false,
     var trackApplicationLifecycleEvents: Boolean = false,
@@ -47,6 +44,11 @@ data class Configuration(
     var apiHost: String = DEFAULT_API_HOST,
     var cdnHost: String = DEFAULT_CDN_HOST
 ) {
+    internal var analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+    internal var ioDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2)
+        .asCoroutineDispatcher()
+
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
     }

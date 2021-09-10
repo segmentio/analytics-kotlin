@@ -31,8 +31,6 @@ internal class JavaAnalyticsTest {
     fun setup() {
         val config = ConfigurationBuilder("123")
             .setAnalyticsScope(testScope)
-            .setIODispatcher(testDispatcher)
-            .setAnalyticsDispatcher(testDispatcher)
             .setApplication("Test")
             .setAutoAddSegmentDestination(false)
             .build()

@@ -59,9 +59,6 @@ class AndroidLifecyclePluginTests {
         analytics = Analytics(
             Configuration(
                 writeKey = "123",
-                analyticsScope = testScope,
-                ioDispatcher = testDispatcher,
-                analyticsDispatcher = testDispatcher,
                 application = mockContext,
                 storageProvider = AndroidStorageProvider
             )
