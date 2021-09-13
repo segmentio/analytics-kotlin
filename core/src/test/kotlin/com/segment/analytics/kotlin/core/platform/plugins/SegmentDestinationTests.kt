@@ -1,8 +1,6 @@
-package com.segment.analytics.kotlin.core
+package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.Logger
-import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
