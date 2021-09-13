@@ -31,7 +31,6 @@ import java.util.concurrent.Executors
 data class Configuration(
     val writeKey: String,
     var application: Any? = null,
-    var analyticsScope: CoroutineScope = MainScope(),
     val storageProvider: StorageProvider = ConcreteStorageProvider,
     var collectDeviceId: Boolean = false,
     var trackApplicationLifecycleEvents: Boolean = false,
@@ -48,6 +47,8 @@ data class Configuration(
 
     internal var ioDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(1)
         .asCoroutineDispatcher()
+
+    internal var analyticsScope: CoroutineScope = MainScope()
 
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null

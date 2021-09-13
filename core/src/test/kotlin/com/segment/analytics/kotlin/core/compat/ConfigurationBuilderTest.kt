@@ -1,9 +1,6 @@
 package com.segment.analytics.kotlin.core.compat
 
 import com.segment.analytics.kotlin.core.Configuration
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 
@@ -25,14 +22,6 @@ internal class ConfigurationBuilderTest {
         val config = builder.setApplication(this).build()
 
         assertEquals(this, config.application)
-    }
-
-    @Test
-    fun setAnalyticsScope() {
-        val superviseScope = CoroutineScope(SupervisorJob())
-        val config = builder.setAnalyticsScope(superviseScope).build()
-
-        assertEquals(superviseScope, config.analyticsScope)
     }
 
     @Test
@@ -112,7 +101,6 @@ internal class ConfigurationBuilderTest {
         val expected = Configuration(
             writeKey = writeKey,
             application = this,
-            analyticsScope = CoroutineScope(SupervisorJob()),
             collectDeviceId = true,
             trackApplicationLifecycleEvents = true,
             useLifecycleObserver = true,
@@ -125,7 +113,6 @@ internal class ConfigurationBuilderTest {
         )
 
         val config = builder.setApplication(expected.application)
-            .setAnalyticsScope(expected.analyticsScope)
             .setCollectDeviceId(expected.collectDeviceId)
             .setTrackApplicationLifecycleEvents(expected.trackApplicationLifecycleEvents)
             .setUseLifecycleObserver(expected.useLifecycleObserver)

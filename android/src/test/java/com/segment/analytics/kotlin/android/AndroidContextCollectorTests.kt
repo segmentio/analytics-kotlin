@@ -4,8 +4,6 @@ import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -22,7 +20,6 @@ class AndroidContextCollectorTests {
     val analytics = Analytics(
         Configuration(
             writeKey = "123",
-            analyticsScope = CoroutineScope(Dispatchers.Main),
             application = appContext,
             storageProvider = AndroidStorageProvider
         )

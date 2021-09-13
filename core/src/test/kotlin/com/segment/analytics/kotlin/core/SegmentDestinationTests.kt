@@ -55,7 +55,6 @@ class SegmentDestinationTests {
         analytics = Analytics(
             Configuration(
                 writeKey = "123",
-                analyticsScope = testScope,
                 application = "Test",
                 storageProvider = ConcreteStorageProvider
             )

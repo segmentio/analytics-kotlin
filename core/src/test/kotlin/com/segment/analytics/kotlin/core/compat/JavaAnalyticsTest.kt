@@ -30,7 +30,6 @@ internal class JavaAnalyticsTest {
     @BeforeEach
     fun setup() {
         val config = ConfigurationBuilder("123")
-            .setAnalyticsScope(testScope)
             .setApplication("Test")
             .setAutoAddSegmentDestination(false)
             .build()
