@@ -41,7 +41,7 @@ data class Configuration(
 ) {
     internal var analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-    internal var ioDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(1)
+    internal var ioDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor()
         .asCoroutineDispatcher()
 
     internal var analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob())
