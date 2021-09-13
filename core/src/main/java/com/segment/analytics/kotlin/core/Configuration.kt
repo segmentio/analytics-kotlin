@@ -3,11 +3,7 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_CDN_HOST
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.*
 import java.util.concurrent.Executors
 
 /**
@@ -48,7 +44,7 @@ data class Configuration(
     internal var ioDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(1)
         .asCoroutineDispatcher()
 
-    internal var analyticsScope: CoroutineScope = MainScope()
+    internal var analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
