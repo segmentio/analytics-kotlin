@@ -30,12 +30,13 @@ internal class JavaAnalyticsTest {
     @BeforeEach
     fun setup() {
         val config = ConfigurationBuilder("123")
-            .setAnalyticsScope(testScope)
-            .setIODispatcher(testDispatcher)
-            .setAnalyticsDispatcher(testDispatcher)
             .setApplication("Test")
             .setAutoAddSegmentDestination(false)
             .build()
+
+        config.ioDispatcher = testDispatcher
+        config.analyticsDispatcher = testDispatcher
+        config.analyticsScope = testScope
 
         analytics = JavaAnalytics(config)
         mockPlugin = spyk(StubPlugin())

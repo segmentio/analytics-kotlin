@@ -7,9 +7,6 @@ import com.segment.analytics.destinations.plugins.MixpanelDestination
 import com.segment.analytics.destinations.plugins.WebhookPlugin
 import com.segment.analytics.kotlin.android.Analytics
 import com.segment.analytics.kotlin.core.Analytics
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import java.util.concurrent.Executors
 
 class MainApplication : Application() {
@@ -17,13 +14,10 @@ class MainApplication : Application() {
         lateinit var analytics: Analytics
     }
 
-    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
     override fun onCreate() {
         super.onCreate()
 
         analytics = Analytics(BuildConfig.SEGMENT_WRITE_KEY, applicationContext) {
-            this.analyticsScope = applicationScope
             this.collectDeviceId = true
             this.trackApplicationLifecycleEvents = true
             this.trackDeepLinks = true

@@ -12,38 +12,42 @@ class TestRunPlugin(var closure: (BaseEvent?) -> Unit): EventPlugin {
         ran = false
     }
 
+    fun updateState(ran: Boolean) {
+        this.ran = ran
+    }
+
     override fun execute(event: BaseEvent): BaseEvent {
-        ran = true
+        updateState(true)
         return event
     }
 
     override fun track(payload: TrackEvent): BaseEvent {
         closure(payload)
-        ran = true
+        updateState(true)
         return payload
     }
 
     override fun identify(payload: IdentifyEvent): BaseEvent {
         closure(payload)
-        ran = true
+        updateState(true)
         return payload
     }
 
     override fun screen(payload: ScreenEvent): BaseEvent {
         closure(payload)
-        ran = true
+        updateState(true)
         return payload
     }
 
     override fun group(payload: GroupEvent): BaseEvent {
         closure(payload)
-        ran = true
+        updateState(true)
         return payload
     }
 
     override fun alias(payload: AliasEvent): BaseEvent {
         closure(payload)
-        ran = true
+        updateState(true)
         return payload
     }
 }

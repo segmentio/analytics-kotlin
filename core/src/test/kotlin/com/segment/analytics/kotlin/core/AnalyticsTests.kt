@@ -43,15 +43,15 @@ class AnalyticsTests {
     @BeforeEach
     fun setup() {
         clearPersistentStorage()
-        analytics = Analytics(
-            Configuration(
-                writeKey = "123",
-                analyticsScope = testScope,
-                ioDispatcher = testDispatcher,
-                analyticsDispatcher = testDispatcher,
-                application = "Test"
-            )
+        val config = Configuration(
+            writeKey = "123",
+            application = "Test"
         )
+        config.ioDispatcher = testDispatcher
+        config.analyticsDispatcher = testDispatcher
+        config.analyticsScope = testScope
+
+        analytics = Analytics(config)
         analytics.configuration.autoAddSegmentDestination = false
     }
 

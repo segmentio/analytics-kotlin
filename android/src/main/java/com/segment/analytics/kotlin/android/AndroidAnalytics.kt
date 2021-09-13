@@ -9,11 +9,6 @@ import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.Logger
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
-import java.util.concurrent.Executors
 
 // A set of functions tailored to the Android implementation of analytics
 
@@ -22,18 +17,11 @@ import java.util.concurrent.Executors
 // Usage: Analytics("$writeKey", applicationContext, applicationScope)
 public fun Analytics(
     writeKey: String,
-    context: Context,
-    coroutineScope: CoroutineScope,
-    analyticsDispatcher: CoroutineDispatcher =
-        Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
-    ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    context: Context
 ): Analytics {
     require(writeKey.isNotBlank()) { "writeKey cannot be blank " }
     val conf = Configuration(
         writeKey = writeKey,
-        analyticsScope = coroutineScope,
-        analyticsDispatcher = analyticsDispatcher,
-        ioDispatcher = ioDispatcher,
         application = context,
         storageProvider = AndroidStorageProvider
     )

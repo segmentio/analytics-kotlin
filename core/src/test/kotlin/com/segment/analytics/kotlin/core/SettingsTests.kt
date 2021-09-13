@@ -9,7 +9,6 @@ import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -42,9 +41,6 @@ class SettingsTests {
         analytics = Analytics(
             Configuration(
                 writeKey = "123",
-                analyticsScope = testScope,
-                ioDispatcher = testDispatcher,
-                analyticsDispatcher = testDispatcher,
                 application = "Test"
             )
         )

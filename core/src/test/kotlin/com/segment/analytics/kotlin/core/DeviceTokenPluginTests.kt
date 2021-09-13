@@ -1,6 +1,5 @@
 package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.*
 import com.segment.analytics.kotlin.core.platform.plugins.DeviceToken
 import com.segment.analytics.kotlin.core.platform.plugins.setDeviceToken
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
@@ -36,16 +35,15 @@ class DeviceTokenPluginTests {
 
     @BeforeEach
     fun setup() {
-        analytics = Analytics(
-            Configuration(
+        val config = Configuration(
                 writeKey = "123",
-                analyticsScope = testScope,
-                ioDispatcher = testDispatcher,
-                analyticsDispatcher = testDispatcher,
                 application = "Test",
                 autoAddSegmentDestination = false
             )
-        )
+        config.ioDispatcher = testDispatcher
+        config.analyticsDispatcher = testDispatcher
+        config.analyticsScope = testScope
+        analytics = Analytics(config)
     }
 
     @Test
