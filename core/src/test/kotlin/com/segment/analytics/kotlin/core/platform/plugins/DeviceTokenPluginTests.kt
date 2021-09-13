@@ -1,7 +1,9 @@
-package com.segment.analytics.kotlin.core
+package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.platform.plugins.DeviceToken
-import com.segment.analytics.kotlin.core.platform.plugins.setDeviceToken
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.HTTPClient
+import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import io.mockk.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
