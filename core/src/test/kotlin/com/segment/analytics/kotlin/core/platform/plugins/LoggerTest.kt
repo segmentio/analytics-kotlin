@@ -2,6 +2,8 @@ package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -44,6 +46,7 @@ internal class LoggerTest {
     fun flush() {
         val logger = spyk(Logger())
         analytics.add(logger)
+        analytics.log("test", TrackEvent(emptyJsonObject, "test"), LogType.INFO)
         analytics.logFlush()
         verify { logger.flush() }
     }

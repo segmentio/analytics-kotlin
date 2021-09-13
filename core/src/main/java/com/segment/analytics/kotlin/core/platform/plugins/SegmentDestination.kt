@@ -204,8 +204,4 @@ class SegmentDestination(
             }
         }
     }
-
-    override fun reset() {
-        super.reset()
-    }
 }
