@@ -121,11 +121,11 @@ internal class BuildersTest {
             put("double", 1.0)
             put("string", "1")
             put("boolean", true)
-            putJsonObject("object") {
-                it.put("string", "this is object")
+            putJsonObjectFunc("object") {
+                put("string", "this is object")
             }
-            putJsonArray("array") {
-                it.add("this is array")
+            putJsonArrayFunc("array") {
+                add("this is array")
             }
         }
 
@@ -161,11 +161,11 @@ internal class BuildersTest {
             add(1.0)
             add("1")
             add(true)
-            addJsonObject() {
-                it.put("string", "this is object")
+            addJsonObjectFunc {
+                put("string", "this is object")
             }
-            addJsonArray() {
-                it.add("this is array")
+            addJsonArrayFunc {
+                add("this is array")
             }
         }
 

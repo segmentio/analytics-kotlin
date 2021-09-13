@@ -112,24 +112,24 @@ class Builders {
         fun putJsonArray(key: String, action: java.util.function.Consumer<in JsonArrayBuilder>): JsonObjectBuilder = apply{ put(key, buildJsonArray(action)) }
 
         /**
+         * add another JsonObject to current JsonObject with a given key. the other JsonObject is
+         * built through a lambda expression or a Function in Java
+         * returns the builder instance
+         */
+        fun putJsonObjectFunc(key: String, action: JsonObjectBuilder.() -> Unit): JsonObjectBuilder = apply{ put(key, buildJsonObject(action)) }
+
+        /**
+         * add a JsonArray to current JsonObject with a given key. the JsonArray is built through a
+         * lambda expression or a Function in Java
+         * returns the builder instance
+         */
+        fun putJsonArrayFunc(key: String, action: JsonArrayBuilder.() -> Unit): JsonObjectBuilder = apply{ put(key, buildJsonArray(action)) }
+
+        /**
          * build the content in JsonObject form
          */
         internal fun build(): JsonObject = JsonObject(content)
     }
-
-    /**
-     * add another JsonObject to current JsonObject with a given key. the other JsonObject is
-     * built through a lambda expression or a Function in Java
-     * returns the builder instance
-     */
-    fun JsonObjectBuilder.putJsonObject(key: String, action: JsonObjectBuilder.() -> Unit): JsonObjectBuilder = apply{ put(key, buildJsonObject(action)) }
-
-    /**
-     * add a JsonArray to current JsonObject with a given key. the JsonArray is built through a
-     * lambda expression or a Function in Java
-     * returns the builder instance
-     */
-    fun JsonObjectBuilder.putJsonArray(key: String, action: JsonArrayBuilder.() -> Unit): JsonObjectBuilder = apply{ put(key, buildJsonArray(action)) }
 
     /**
      * DSL builder for Kotlin JsonArray
@@ -177,24 +177,24 @@ class Builders {
         fun addJsonArray(action: java.util.function.Consumer<in JsonArrayBuilder>): JsonArrayBuilder = apply{ add(buildJsonArray(action)) }
 
         /**
+         * add a JsonObject to current JsonArray. the JsonObject is
+         * built through a lambda expression or a Function in Java
+         * returns the builder instance
+         */
+        fun addJsonObjectFunc(action: JsonObjectBuilder.() -> Unit): JsonArrayBuilder = apply{ add(buildJsonObject(action)) }
+
+        /**
+         * add another JsonArray to current JsonArray. the other JsonArray is
+         * built through a lambda expression or a Function in Java
+         * returns the builder instance
+         */
+        fun addJsonArrayFunc(action: JsonArrayBuilder.() -> Unit): JsonArrayBuilder = apply{ add(buildJsonArray(action)) }
+
+        /**
          * build the content in JsonArray form
          */
         internal fun build(): JsonArray = JsonArray(content)
     }
-
-    /**
-     * add a JsonObject to current JsonArray. the JsonObject is
-     * built through a lambda expression or a Function in Java
-     * returns the builder instance
-     */
-    fun JsonArrayBuilder.addJsonObject(action: JsonObjectBuilder.() -> Unit): JsonArrayBuilder = apply{ add(buildJsonObject(action)) }
-
-    /**
-     * add another JsonArray to current JsonArray. the other JsonArray is
-     * built through a lambda expression or a Function in Java
-     * returns the builder instance
-     */
-    fun JsonArrayBuilder.addJsonArray(action: JsonArrayBuilder.() -> Unit): JsonArrayBuilder = apply{ add(buildJsonArray(action)) }
 
     @DslMarker
     internal annotation class JsonDslMarker
