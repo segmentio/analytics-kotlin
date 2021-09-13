@@ -52,13 +52,16 @@ class SegmentDestinationTests {
     fun setup() {
         clearPersistentStorage()
         segmentDestination = SegmentDestination("123", 2, 0)
-        analytics = Analytics(
-            Configuration(
-                writeKey = "123",
-                application = "Test",
-                storageProvider = ConcreteStorageProvider
-            )
+
+        val config = Configuration(
+            writeKey = "123",
+            application = "Test",
+            storageProvider = ConcreteStorageProvider
         )
+        config.ioDispatcher = testDispatcher
+        config.analyticsDispatcher = testDispatcher
+        config.analyticsScope = testScope
+        analytics = Analytics(config)
         segmentDestination.setup(analytics)
     }
 

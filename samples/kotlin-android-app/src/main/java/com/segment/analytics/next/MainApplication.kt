@@ -11,22 +11,16 @@ import com.segment.analytics.next.plugins.AndroidRecordScreenPlugin
 import com.segment.analytics.next.plugins.PushNotificationTracking
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 
 class MainApplication : Application() {
     companion object {
         lateinit var analytics: Analytics
     }
 
-    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
     override fun onCreate() {
         super.onCreate()
 
         analytics = Analytics(BuildConfig.SEGMENT_WRITE_KEY, applicationContext) {
-            this.analyticsScope = applicationScope
             this.collectDeviceId = true
             this.trackApplicationLifecycleEvents = true
             this.trackDeepLinks = true

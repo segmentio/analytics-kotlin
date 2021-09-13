@@ -34,6 +34,10 @@ internal class JavaAnalyticsTest {
             .setAutoAddSegmentDestination(false)
             .build()
 
+        config.ioDispatcher = testDispatcher
+        config.analyticsDispatcher = testDispatcher
+        config.analyticsScope = testScope
+
         analytics = JavaAnalytics(config)
         mockPlugin = spyk(StubPlugin())
     }

@@ -6,16 +6,11 @@ import com.segment.analytics.kotlin.core.platform.plugins.Logger
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlin.coroutines.ContinuationInterceptor
 
 fun main(args: Array<String>) {
     runBlocking {
-        val dispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher
         val analytics = Analytics("gNHARErhCjBxvBErXOMrTTuwoIlxKkCg") {
             application = "MainApp"
-            analyticsScope = MainScope()
-            analyticsDispatcher = dispatcher
-            ioDispatcher = dispatcher
         }
         analytics.add(ConsoleLogger)
         analytics.track(

@@ -47,6 +47,9 @@ class AnalyticsTests {
             writeKey = "123",
             application = "Test"
         )
+        config.ioDispatcher = testDispatcher
+        config.analyticsDispatcher = testDispatcher
+        config.analyticsScope = testScope
 
         analytics = Analytics(config)
         analytics.configuration.autoAddSegmentDestination = false

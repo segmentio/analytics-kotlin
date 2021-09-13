@@ -35,13 +35,15 @@ class DeviceTokenPluginTests {
 
     @BeforeEach
     fun setup() {
-        analytics = Analytics(
-            Configuration(
+        val config = Configuration(
                 writeKey = "123",
                 application = "Test",
                 autoAddSegmentDestination = false
             )
-        )
+        config.ioDispatcher = testDispatcher
+        config.analyticsDispatcher = testDispatcher
+        config.analyticsScope = testScope
+        analytics = Analytics(config)
     }
 
     @Test
