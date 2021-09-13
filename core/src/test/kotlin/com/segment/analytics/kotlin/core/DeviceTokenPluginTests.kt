@@ -56,6 +56,20 @@ class DeviceTokenPluginTests {
     }
 
     @Test
+    fun `setting device token updates the device token plugin`() {
+        assertEquals(null, analytics.find(DeviceToken::class))
+        analytics.setDeviceToken("deviceToken")
+        var deviceTokenPlugin = analytics.find(DeviceToken::class) as DeviceToken
+        assertNotEquals(null, deviceTokenPlugin)
+        assertEquals("deviceToken", deviceTokenPlugin.token)
+
+        analytics.setDeviceToken("deviceTokenUpdated")
+        deviceTokenPlugin = analytics.find(DeviceToken::class) as DeviceToken
+        assertNotEquals(null, deviceTokenPlugin)
+        assertEquals("deviceTokenUpdated", deviceTokenPlugin.token)
+    }
+
+    @Test
     fun `plugin will add token to payloads`() {
         analytics.setDeviceToken("deviceToken")
         val mockPlugin = spyk(TestRunPlugin {})
