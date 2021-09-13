@@ -30,7 +30,11 @@ NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_C
 
    For example, you can capture data on any app:
     ```kotlin
-    analytics.track('Order Completed', Properties(price = 99.84))
+    @Serializable
+    data class TrackProperties(
+        var price: Double
+    )
+    analytics.track('Order Completed', TrackProperties(price = 99.84))
     ```
    Then, query the resulting data in SQL:
     ```sql
