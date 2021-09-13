@@ -34,6 +34,9 @@ NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_C
     data class TrackProperties(
         var price: Double
     )
+
+    // ...
+
     analytics.track('Order Completed', TrackProperties(price = 99.84))
     ```
    Then, query the resulting data in SQL:
