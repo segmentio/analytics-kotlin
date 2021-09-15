@@ -78,11 +78,12 @@ abstract class Connection(
     }
 }
 
-fun safeGetInputStream(connection: HttpURLConnection): InputStream {
+fun safeGetInputStream(connection: HttpURLConnection): InputStream? {
     return try {
         connection.inputStream
     } catch (ignored: IOException) {
-        connection.errorStream
+        // cannot use connection.errorStream here, since it returns null which breaks non-null check in kotlin
+        null
     }
 }
 
@@ -109,7 +110,7 @@ internal fun HttpURLConnection.createPostConnection(): Connection {
                     var inputStream: InputStream? = null
                     try {
                         inputStream = safeGetInputStream(this.connection)
-                        responseBody = inputStream.bufferedReader().use(BufferedReader::readText)
+                        responseBody = inputStream?.bufferedReader()?.use(BufferedReader::readText)
                     } catch (e: IOException) {
                         responseBody = ("Could not read response body for rejected message: "
                                 + e.toString())
