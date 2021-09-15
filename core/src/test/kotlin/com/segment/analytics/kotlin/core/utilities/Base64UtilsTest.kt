@@ -1,4 +1,4 @@
-package com.segment.analytics.kotlin.core
+package com.segment.analytics.kotlin.core.utilities
 
 import com.segment.analytics.kotlin.core.utilities.encodeToBase64
 import org.junit.jupiter.api.Assertions.assertEquals
