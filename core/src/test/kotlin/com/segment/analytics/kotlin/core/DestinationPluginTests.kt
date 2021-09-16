@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
+import com.segment.analytics.kotlin.core.utilities.putInContext
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.serialization.json.buildJsonObject
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.util.*
+import kotlin.math.exp
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DestinationPluginTests {
@@ -81,8 +83,37 @@ class DestinationPluginTests {
     fun `execute runs the destination timeline`() {
         val destinationPlugin = spyk(object: DestinationPlugin() {
             override val key: String = "TestDestination"
+            override fun track(payload: TrackEvent): BaseEvent? {
+                return payload.putInContext("processedDestination", true)
+            }
         })
         timeline.add(destinationPlugin)
+
+        val beforePlugin = spyk(object: Plugin {
+            override lateinit var analytics: Analytics
+            override val type: Plugin.Type = Plugin.Type.Before
+            override fun execute(event: BaseEvent): BaseEvent? {
+                return event.putInContext("processedBefore", true)
+            }
+        })
+        val enrichmentPlugin = spyk(object: Plugin {
+            override lateinit var analytics: Analytics
+            override val type: Plugin.Type = Plugin.Type.Enrichment
+            override fun execute(event: BaseEvent): BaseEvent? {
+                return event.putInContext("processedEnrichment", true)
+            }
+        })
+        val afterPlugin = spyk(object: Plugin {
+            override lateinit var analytics: Analytics
+            override val type: Plugin.Type = Plugin.Type.After
+            override fun execute(event: BaseEvent): BaseEvent? {
+                return event.putInContext("processedAfter", true)
+            }
+        })
+        destinationPlugin.add(beforePlugin)
+        destinationPlugin.add(enrichmentPlugin)
+        destinationPlugin.add(afterPlugin)
+
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -93,26 +124,26 @@ class DestinationPluginTests {
                 context = emptyJsonObject
                 timestamp = Date(0).toInstant().toString()
             }
-        val beforePlugin = spyk(object: Plugin {
-            override lateinit var analytics: Analytics
-            override val type: Plugin.Type = Plugin.Type.Before
-        })
-        val enrichmentPlugin = spyk(object: Plugin {
-            override lateinit var analytics: Analytics
-            override val type: Plugin.Type = Plugin.Type.Enrichment
-        })
-        val afterPlugin = spyk(object: Plugin {
-            override lateinit var analytics: Analytics
-            override val type: Plugin.Type = Plugin.Type.After
-        })
-        destinationPlugin.add(beforePlugin)
-        destinationPlugin.add(enrichmentPlugin)
-        destinationPlugin.add(afterPlugin)
+
+        val expected = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = buildJsonObject {
+                    put("processedBefore", true)
+                    put("processedEnrichment", true)
+                    put("processedDestination", true)
+                    put("processedAfter", true)
+                }
+                timestamp = Date(0).toInstant().toString()
+            }
+
         val result = timeline.process(trackEvent)
-        assertEquals(trackEvent, result)
-        verify(exactly = 1) { beforePlugin.execute(trackEvent) }
-        verify(exactly = 1) { enrichmentPlugin.execute(trackEvent) }
-        verify(exactly = 1) { afterPlugin.execute(trackEvent) }
+
+        assertEquals(expected, result)
     }
 
     @Test
