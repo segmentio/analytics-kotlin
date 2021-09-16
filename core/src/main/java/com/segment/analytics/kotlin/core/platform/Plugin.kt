@@ -104,7 +104,7 @@ abstract class DestinationPlugin : EventPlugin {
         val beforeResult = timeline.applyPlugins(Plugin.Type.Before, event)
         val enrichmentResult = timeline.applyPlugins(Plugin.Type.Enrichment, beforeResult)
 
-        enrichmentResult?.let {
+        val destinationResult = enrichmentResult?.let {
             when (it) {
                 is IdentifyEvent -> {
                     identify(it)
@@ -124,7 +124,7 @@ abstract class DestinationPlugin : EventPlugin {
             }
         }
 
-        val afterResult = timeline.applyPlugins(Plugin.Type.After, enrichmentResult)
+        val afterResult = timeline.applyPlugins(Plugin.Type.After, destinationResult)
 
         return afterResult
     }
