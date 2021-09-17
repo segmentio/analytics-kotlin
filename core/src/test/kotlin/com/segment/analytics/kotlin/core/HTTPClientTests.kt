@@ -72,6 +72,7 @@ class HTTPClientTests {
         every { connection.connection.inputStream } throws IOException()
         every { connection.connection.responseMessage } returns "test"
         every { connection.outputStream?.close() } returns Unit
+        every { connection.connection.errorStream } returns null
         try {
             connection.close()
         }
