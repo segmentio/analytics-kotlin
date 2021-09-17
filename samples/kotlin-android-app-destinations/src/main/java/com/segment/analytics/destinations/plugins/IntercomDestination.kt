@@ -4,6 +4,8 @@ import android.app.Application
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.putAll
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import io.intercom.android.sdk.Company
@@ -13,12 +15,12 @@ import io.intercom.android.sdk.identity.Registration
 import kotlinx.serialization.json.*
 
 class IntercomDestination(
-    private val application: Application,
-    private val intercomApiKey: String,
-    private val intercomAppId: String
+    private val application: Application
 ): DestinationPlugin(), AndroidLifecycle {
 
     override val key: String = "Intercom"
+    private var mobileApiKey: String = ""
+    private var appId: String = ""
     lateinit var intercom: Intercom
         private set
 
@@ -44,10 +46,17 @@ class IntercomDestination(
     private val REVENUE = "revenue"
     private val TOTAL = "total"
 
-    override fun setup(analytics: Analytics) {
-        super.setup(analytics)
+    override fun update(settings: Settings, type: Plugin.UpdateType) {
+        // if we've already set up this singleton SDK, can't do it again, so skip.
+        if (type != Plugin.UpdateType.Initial) return
+        super.update(settings, type)
 
-        Intercom.initialize(application, intercomApiKey, intercomAppId)
+        settings.integrations[key]?.jsonObject?.let {
+            mobileApiKey = it.getString("mobileApiKey") ?: ""
+            appId = it.getString("appId") ?: ""
+        }
+
+        Intercom.initialize(application, mobileApiKey, appId)
         this.intercom = Intercom.client()
     }
 
