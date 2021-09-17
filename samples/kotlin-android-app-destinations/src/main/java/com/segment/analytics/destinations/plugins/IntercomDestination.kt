@@ -9,6 +9,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.putAll
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
+import com.segment.analytics.kotlin.core.utilities.toContent
 import io.intercom.android.sdk.Company
 import io.intercom.android.sdk.Intercom
 import io.intercom.android.sdk.UserAttributes
@@ -119,20 +120,21 @@ class IntercomDestination(
             analytics.log("Intercom.client().registerIdentifiedUser(registration)")
         }
 
-        payload.integrations["Intercom"]?.safeJsonObject?.let { intercomOptions ->
-            intercomOptions["userHash"]?.let {
-                val str = it.toString()
+        val intercomOptions = payload.integrations["Intercom"]?.safeJsonObject
+        intercomOptions?.let { it ->
+            it["userHash"]?.let { userHash ->
+                val str = userHash.toString()
                 if (str.isNotEmpty()) {
                     intercom.setUserHash(str)
                 }
             }
+        }
 
-            if (!payload.traits.isNullOrEmpty() && intercomOptions.isNotEmpty()) {
-                setUserAttributes(payload.traits, intercomOptions)
-            }
-            else {
-                setUserAttributes(payload.traits, null)
-            }
+        if (!payload.traits.isNullOrEmpty() && !intercomOptions.isNullOrEmpty()) {
+            setUserAttributes(payload.traits, intercomOptions)
+        }
+        else {
+            setUserAttributes(payload.traits, null)
         }
 
         return result
@@ -194,7 +196,7 @@ class IntercomDestination(
         traits.forEach {
             if (it.value is JsonPrimitive &&
                 it.key !in arrayOf(NAME, EMAIL, PHONE, "userId", "anonymousId")) {
-                builder.withCustomAttribute(it.key, it.value)
+                builder.withCustomAttribute(it.key, it.value.toContent())
             }
         }
 
@@ -231,7 +233,7 @@ class IntercomDestination(
         traits.forEach {
            if (it.value is JsonPrimitive &&
                    it.key !in arrayOf("id", NAME, CREATED_AT, MONTHLY_SPEND, PLAN)) {
-               builder.withCustomAttribute(it.key, it.value)
+               builder.withCustomAttribute(it.key, it.value.toContent())
            }
         }
 
