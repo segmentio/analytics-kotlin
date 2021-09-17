@@ -82,8 +82,7 @@ fun safeGetInputStream(connection: HttpURLConnection): InputStream? {
     return try {
         connection.inputStream
     } catch (ignored: IOException) {
-        // cannot use connection.errorStream here, since it returns null which breaks non-null check in kotlin
-        null
+        connection.errorStream
     }
 }
 
