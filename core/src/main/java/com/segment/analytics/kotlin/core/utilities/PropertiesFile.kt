@@ -47,7 +47,7 @@ class PropertiesFile(private val directory: File, writeKey: String) : KVS {
         underlyingProperties.getProperty(key, defaultVal)
 
     fun remove(key: String): Boolean {
-        underlyingProperties.setProperty(key, null)
+        underlyingProperties.remove(key)
         save()
         return true
     }

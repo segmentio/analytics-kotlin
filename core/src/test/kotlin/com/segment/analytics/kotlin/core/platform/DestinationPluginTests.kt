@@ -1,10 +1,7 @@
-package com.segment.analytics.kotlin.core
+package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
-import com.segment.analytics.kotlin.core.platform.DestinationPlugin
-import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.utilities.putInContext
 import io.mockk.spyk
 import io.mockk.verify

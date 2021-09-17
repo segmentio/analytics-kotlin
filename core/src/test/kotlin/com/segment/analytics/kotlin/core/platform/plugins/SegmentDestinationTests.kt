@@ -1,8 +1,6 @@
-package com.segment.analytics.kotlin.core
+package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.Logger
-import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
@@ -22,6 +20,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.lang.Exception
 import java.net.HttpURLConnection
 import java.time.Instant
 import java.util.*
@@ -141,6 +140,36 @@ class SegmentDestinationTests {
         analytics.add(testLogger)
         val destSpy = spyk(segmentDestination)
         assertEquals(trackEvent, destSpy.track(trackEvent))
+        assertTrue(errorAddingPayload)
+    }
+
+    @Test
+    fun `enqueuing properly handles exception`() {
+        val trackEvent = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = epochTimestamp
+            }
+        var errorAddingPayload = false
+        val testLogger = object : Logger() {
+            override fun log(type: LogType, message: String, event: BaseEvent?) {
+                if (type == LogType.ERROR && message == "Error adding payload") {
+                    errorAddingPayload = true
+                }
+            }
+        }
+        analytics.add(testLogger)
+
+        val destSpy = spyk(segmentDestination)
+        every { destSpy.flush() } throws Exception("test")
+        assertEquals(trackEvent, destSpy.track(trackEvent))
+        assertEquals(trackEvent, destSpy.track(trackEvent))
+
         assertTrue(errorAddingPayload)
     }
 
@@ -342,5 +371,65 @@ class SegmentDestinationTests {
             // batch file doesnt get deleted
             assertEquals(1, it.eventsFile.read().size)
         }
+    }
+
+    @Test
+    fun `flush properly handles upload exception`() {
+        val trackEvent = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = epochTimestamp
+            }
+        var exceptionUploading = false
+        val testLogger = object : Logger() {
+            override fun log(type: LogType, message: String, event: BaseEvent?) {
+                if (type == LogType.ERROR && message.contains("test")) {
+                    exceptionUploading = true
+                }
+            }
+        }
+        analytics.add(testLogger)
+        val destSpy = spyk(segmentDestination)
+
+        every { anyConstructed<HTTPClient>().upload(any()) } throws Exception("test")
+
+        assertEquals(trackEvent, destSpy.track(trackEvent))
+        assertEquals(1, segmentDestination.eventCount.get())
+        destSpy.flush()
+        assertTrue(exceptionUploading)
+    }
+
+    @Test
+    fun `flush interrupted when no event file exist`() {
+        val trackEvent = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = epochTimestamp
+            }
+        var interrupted = false
+        val testLogger = object : Logger() {
+            override fun log(type: LogType, message: String, event: BaseEvent?) {
+                if (type == LogType.INFO && message == "No events to upload") {
+                    interrupted = true
+                }
+            }
+        }
+        analytics.add(testLogger)
+        val destSpy = spyk(segmentDestination)
+        destSpy.track(trackEvent)
+        analytics.storage.read(Storage.Constants.Events)?.let { analytics.storage.removeFile(it) }
+
+        destSpy.flush()
+        assertTrue(interrupted)
     }
 }

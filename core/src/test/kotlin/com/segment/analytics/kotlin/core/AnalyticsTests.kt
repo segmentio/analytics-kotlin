@@ -1,8 +1,11 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.MetricType
+import com.segment.analytics.kotlin.core.platform.plugins.addMetric
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
@@ -184,6 +187,29 @@ class AnalyticsTests {
                 assertTrue(it.timestamp == epochTimestamp)
                 assertEquals(it.context, context)
                 assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
+            }
+        }
+
+        @Test
+        fun `event metrics get populated`() {
+            val mockPlugin = spyk(object : EventPlugin {
+                override val type: Plugin.Type = Plugin.Type.Before
+                override lateinit var analytics: Analytics
+                override fun track(payload: TrackEvent): BaseEvent? {
+                    payload.addMetric(MetricType.Counter, "test", 1.0)
+                    return super.track(payload)
+                }
+            })
+            analytics.add(mockPlugin)
+            analytics.track("track", buildJsonObject { put("foo", "bar") })
+            val track = slot<TrackEvent>()
+            verify { mockPlugin.track(capture(track)) }
+            track.captured.let {
+                assertTrue(it.anonymousId.isNotBlank())
+                assertTrue(it.messageId.isNotBlank())
+                assertEquals(epochTimestamp, it.timestamp)
+                assertTrue(it.context.containsKey("metrics"))
+                assertEquals(emptyJsonObject, it.integrations)
             }
         }
 

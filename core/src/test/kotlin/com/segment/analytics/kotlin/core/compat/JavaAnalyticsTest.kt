@@ -42,6 +42,13 @@ internal class JavaAnalyticsTest {
         mockPlugin = spyk(StubPlugin())
     }
 
+    @Test
+    fun `secondary constructor properly setup analytics`() {
+        val actual = JavaAnalytics(analytics.analytics)
+        assertNotNull(actual.analytics)
+        assertEquals(analytics.analytics, actual.analytics)
+    }
+
     @Nested
     inner class Track {
 
