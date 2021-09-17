@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.putAll
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
@@ -94,6 +95,11 @@ class IntercomDestination(
             }
 
             intercom.logEvent(eventName, event)
+            analytics.log("Intercom.client().logEvent($eventName, $event)")
+        }
+        else {
+            intercom.logEvent(eventName)
+            analytics.log("Intercom.client().logEvent($eventName)")
         }
 
         return result
@@ -105,10 +111,12 @@ class IntercomDestination(
         val userId = payload.userId
         if (userId.isEmpty()) {
             intercom.registerUnidentifiedUser()
+            analytics.log("Intercom.client().registerUnidentifiedUser()")
         }
         else {
             val registration = Registration.create().withUserId(userId)
             intercom.registerIdentifiedUser(registration)
+            analytics.log("Intercom.client().registerIdentifiedUser(registration)")
         }
 
         payload.integrations["Intercom"]?.safeJsonObject?.let { intercomOptions ->
@@ -151,6 +159,7 @@ class IntercomDestination(
     override fun reset() {
         super.reset()
         intercom.logout()
+        analytics.log("Intercom.client().reset()")
     }
 
     private fun setUserAttributes(traits: Traits, intercomOptions: JsonObject?) {
@@ -190,6 +199,7 @@ class IntercomDestination(
         }
 
         intercom.updateUser(builder.build())
+        analytics.log("Intercom.client().updateUser(userAttributes)")
     }
 
     private fun setCompany(traits: JsonObject): Company {
