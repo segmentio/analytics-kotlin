@@ -47,6 +47,10 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation 'com.google.firebase:firebase-analytics-ktx'
 
+    // Intercom
+    implementation 'io.intercom.android:intercom-sdk-base:10.1.1'
+    implementation 'io.intercom.android:intercom-sdk-fcm:10.1.1'
+
     implementation project(':android')
 
     implementation 'androidx.multidex:multidex:2.0.1'
