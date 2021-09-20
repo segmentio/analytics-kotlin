@@ -6,10 +6,7 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.log
-import com.segment.analytics.kotlin.core.utilities.getString
-import com.segment.analytics.kotlin.core.utilities.putAll
-import com.segment.analytics.kotlin.core.utilities.safeJsonObject
-import com.segment.analytics.kotlin.core.utilities.toContent
+import com.segment.analytics.kotlin.core.utilities.*
 import io.intercom.android.sdk.Company
 import io.intercom.android.sdk.Intercom
 import io.intercom.android.sdk.UserAttributes
@@ -70,15 +67,13 @@ class IntercomDestination(
 
         if (!properties.isNullOrEmpty()) {
             val price = buildJsonObject{
-                val amount = properties[REVENUE] ?: properties[TOTAL]
+                val amount = properties.getDouble(REVENUE) ?: properties.getDouble(TOTAL)
                 amount?.let {
-                    if (it is Number) {
-                        put(AMOUNT, it.toDouble() * 100)
-                    }
+                    put(AMOUNT, it * 100)
                 }
 
-                properties[CURRENCY]?.let {
-                    put(CURRENCY, it.toString())
+                properties.getString(CURRENCY)?.let {
+                    put(CURRENCY, it)
                 }
             }
 
@@ -87,10 +82,10 @@ class IntercomDestination(
                     put(PRICE, price)
                 }
 
-                properties.forEach {
-                    if (it.key !in arrayOf("products", REVENUE, TOTAL, CURRENCY)
-                        && it.value is JsonPrimitive) {
-                        put(it.key, it.value)
+                properties.forEach { (key, value) ->
+                    if (key !in arrayOf("products", REVENUE, TOTAL, CURRENCY)
+                        && value is JsonPrimitive) {
+                        put(key, value)
                     }
                 }
             }
@@ -121,13 +116,8 @@ class IntercomDestination(
         }
 
         val intercomOptions = payload.integrations["Intercom"]?.safeJsonObject
-        intercomOptions?.let { it ->
-            it["userHash"]?.let { userHash ->
-                val str = userHash.toString()
-                if (str.isNotEmpty()) {
-                    intercom.setUserHash(str)
-                }
-            }
+        intercomOptions?.getString("userHash")?.let {
+            intercom.setUserHash(it)
         }
 
         if (!payload.traits.isNullOrEmpty() && !intercomOptions.isNullOrEmpty()) {
@@ -166,37 +156,25 @@ class IntercomDestination(
 
     private fun setUserAttributes(traits: Traits, intercomOptions: JsonObject?) {
         val builder = UserAttributes.Builder()
-            .withName(traits[NAME].toString())
-            .withEmail(traits[EMAIL].toString())
-            .withPhone(traits[PHONE].toString())
+            .withName(traits.getString(NAME))
+            .withEmail(traits.getString(EMAIL))
+            .withPhone(traits.getString(PHONE))
 
         intercomOptions?.let {
-            builder.withLanguageOverride(it[LANGUAGE_OVERRIDE].toString())
-
-            it[CREATED_AT]?.let { createdAt ->
-                if (createdAt is Number) {
-                    builder.withSignedUpAt(createdAt.toLong())
-                }
-            }
-
-            it[UNSUBSCRIBED_FROM_EMAILS]?.let { unsubscribed ->
-                if (unsubscribed is JsonPrimitive) {
-                    builder.withUnsubscribedFromEmails(unsubscribed.jsonPrimitive.booleanOrNull)
-                }
-            }
+            builder.withLanguageOverride(it.getString(LANGUAGE_OVERRIDE))
+            builder.withSignedUpAt(it.getLong(CREATED_AT))
+            builder.withUnsubscribedFromEmails(it.getBoolean(UNSUBSCRIBED_FROM_EMAILS))
         }
 
-        traits[COMPANY]?.let {
-            if (it is JsonObject) {
-                val company = setCompany(it)
-                builder.withCompany(company)
-            }
+        traits[COMPANY]?.safeJsonObject?.let {
+            val company = setCompany(it)
+            builder.withCompany(company)
         }
 
-        traits.forEach {
-            if (it.value is JsonPrimitive &&
-                it.key !in arrayOf(NAME, EMAIL, PHONE, "userId", "anonymousId")) {
-                builder.withCustomAttribute(it.key, it.value.toContent())
+        traits.forEach { (key, value) ->
+            if (value is JsonPrimitive &&
+                key !in arrayOf(NAME, EMAIL, PHONE, "userId", "anonymousId")) {
+                builder.withCustomAttribute(key, value.toContent())
             }
         }
 
@@ -206,34 +184,19 @@ class IntercomDestination(
 
     private fun setCompany(traits: JsonObject): Company {
         val builder = Company.Builder()
-        traits["id"]?.let {
-            builder.withCompanyId(it.toString())
+        traits.getString("id")?.let {
+            builder.withCompanyId(it)
         } ?: return builder.build()
 
-        traits[NAME]?.let {
-            builder.withName(it.toString())
-        }
+        builder.withName(traits.getString(NAME))
+        builder.withCreatedAt(traits.getLong(CREATED_AT))
+        builder.withMonthlySpend(traits.getInt(MONTHLY_SPEND))
+        builder.withPlan(traits.getString(PLAN))
 
-        traits[CREATED_AT]?.let {
-            if (it is JsonPrimitive) {
-                builder.withCreatedAt(it.jsonPrimitive.longOrNull)
-            }
-        }
-
-        traits[MONTHLY_SPEND]?.let {
-            if (it is Number) {
-                builder.withMonthlySpend(it.toInt())
-            }
-        }
-
-        traits[PLAN]?.let {
-            builder.withPlan(it.toString())
-        }
-
-        traits.forEach {
-           if (it.value is JsonPrimitive &&
-                   it.key !in arrayOf("id", NAME, CREATED_AT, MONTHLY_SPEND, PLAN)) {
-               builder.withCustomAttribute(it.key, it.value.toContent())
+        traits.forEach { (key, value) ->
+           if (value is JsonPrimitive &&
+                   key !in arrayOf("id", NAME, CREATED_AT, MONTHLY_SPEND, PLAN)) {
+               builder.withCustomAttribute(key, value.toContent())
            }
         }
 
