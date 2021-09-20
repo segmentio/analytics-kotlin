@@ -11,7 +11,7 @@ android {
     defaultConfig {
         multiDexEnabled true
         applicationId "com.segment.analytics.destinations"
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode 3
         versionName "2.0"
