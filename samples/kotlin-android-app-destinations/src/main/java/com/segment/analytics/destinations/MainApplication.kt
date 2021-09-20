@@ -1,10 +1,7 @@
 package com.segment.analytics.destinations
 
 import android.app.Application
-import com.segment.analytics.destinations.plugins.AmplitudeSession
-import com.segment.analytics.destinations.plugins.FirebaseDestination
-import com.segment.analytics.destinations.plugins.MixpanelDestination
-import com.segment.analytics.destinations.plugins.WebhookPlugin
+import com.segment.analytics.destinations.plugins.*
 import com.segment.analytics.kotlin.android.Analytics
 import com.segment.analytics.kotlin.core.Analytics
 import java.util.concurrent.Executors
@@ -40,5 +37,8 @@ class MainApplication : Application() {
 
         // Try out Firebase Destination
         analytics.add(FirebaseDestination(applicationContext))
+
+        // Try out Intercom destination
+        analytics.add(IntercomDestination(this))
     }
 }
