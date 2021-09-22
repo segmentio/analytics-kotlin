@@ -99,12 +99,13 @@ class IntercomDestination(
                 }
             }
 
-            val event = buildJsonObject {
+            val eventProperties = buildJsonObject {
                 if (!price.isNullOrEmpty()) {
                     put(PRICE, price)
                 }
 
                 properties.forEach { (key, value) ->
+                    // here we are only interested in primitive values and not maps or collections
                     if (key !in setOf("products", REVENUE, TOTAL, CURRENCY)
                         && value is JsonPrimitive) {
                         put(key, value)
@@ -112,8 +113,8 @@ class IntercomDestination(
                 }
             }
 
-            intercom.logEvent(eventName, event)
-            analytics.log("Intercom.client().logEvent($eventName, $event)")
+            intercom.logEvent(eventName, eventProperties)
+            analytics.log("Intercom.client().logEvent($eventName, $eventProperties)")
         }
         else {
             intercom.logEvent(eventName)
@@ -195,6 +196,7 @@ class IntercomDestination(
         }
 
         traits.forEach { (key, value) ->
+            // here we are only interested in primitive values and not maps or collections
             if (value is JsonPrimitive &&
                 key !in setOf(NAME, EMAIL, PHONE, "userId", "anonymousId")) {
                 builder.withCustomAttribute(key, value.toContent())
@@ -217,6 +219,7 @@ class IntercomDestination(
         company.getString(PLAN)?.let { builder.withPlan(it) }
 
         company.forEach { (key, value) ->
+           // here we are only interested in primitive values and not maps or collections
            if (value is JsonPrimitive &&
                    key !in setOf("id", NAME, CREATED_AT, MONTHLY_SPEND, PLAN)
            ) {
