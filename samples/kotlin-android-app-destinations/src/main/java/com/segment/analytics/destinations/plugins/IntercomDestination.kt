@@ -13,6 +13,50 @@ import io.intercom.android.sdk.UserAttributes
 import io.intercom.android.sdk.identity.Registration
 import kotlinx.serialization.json.*
 
+/*
+This is an example of the Intercom device-mode destination plugin that can be integrated with
+Segment analytics.
+Note: This plugin is NOT SUPPORTED by Segment.  It is here merely as an example,
+and for your convenience should you find it useful.
+# Instructions for adding Intercom:
+- In your app-module build.gradle file add the following:
+```
+...
+dependencies {
+    ...
+    // Intercom
+    implementation 'io.intercom.android:intercom-sdk-base:10.1.1'
+    implementation 'io.intercom.android:intercom-sdk-fcm:10.1.1'
+}
+```
+- Copy this entire IntercomDestination.kt file into your project's codebase.
+- Go to your project's codebase and wherever u initialize the analytics client add these lines
+```
+val intercom = IntercomDestination()
+analytics.add(intercom)
+```
+
+Note: due to the inclusion of Intercom partner integration your minSdk cannot be smaller than 21
+
+MIT License
+Copyright (c) 2021 Segment
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 class IntercomDestination(
     private val application: Application
 ): DestinationPlugin(), AndroidLifecycle {
