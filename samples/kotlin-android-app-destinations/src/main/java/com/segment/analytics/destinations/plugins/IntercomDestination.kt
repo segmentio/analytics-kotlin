@@ -67,28 +67,6 @@ class IntercomDestination(
     lateinit var intercom: Intercom
         private set
 
-    // Intercom common specced attributes
-    private val NAME = "name"
-    private val CREATED_AT = "createdAt"
-    private val COMPANY = "company"
-    private val PRICE = "price"
-    private val AMOUNT = "amount"
-    private val CURRENCY = "currency"
-
-    // Intercom specced user attributes
-    private val EMAIL = "email"
-    private val PHONE = "phone"
-    private val LANGUAGE_OVERRIDE = "languageOverride"
-    private val UNSUBSCRIBED_FROM_EMAILS = "unsubscribedFromEmails"
-
-    // Intercom specced group attributes
-    private val MONTHLY_SPEND = "monthlySpend"
-    private val PLAN = "plan"
-
-    // Segment specced properties
-    private val REVENUE = "revenue"
-    private val TOTAL = "total"
-
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         // if we've already set up this singleton SDK, can't do it again, so skip.
         if (type != Plugin.UpdateType.Initial) return
@@ -227,18 +205,18 @@ class IntercomDestination(
         analytics.log("Intercom.client().updateUser(userAttributes)")
     }
 
-    private fun setCompany(traits: JsonObject): Company {
+    private fun setCompany(company: JsonObject): Company {
         val builder = Company.Builder()
-        traits.getString("id")?.let {
+        company.getString("id")?.let {
             builder.withCompanyId(it)
         } ?: return builder.build()
 
-        traits.getString(NAME)?.let { builder.withName(it) }
-        traits.getLong(CREATED_AT)?.let { builder.withCreatedAt(it) }
-        traits.getInt(MONTHLY_SPEND)?.let { builder.withMonthlySpend(it) }
-        traits.getString(PLAN)?.let { builder.withPlan(it) }
+        company.getString(NAME)?.let { builder.withName(it) }
+        company.getLong(CREATED_AT)?.let { builder.withCreatedAt(it) }
+        company.getInt(MONTHLY_SPEND)?.let { builder.withMonthlySpend(it) }
+        company.getString(PLAN)?.let { builder.withPlan(it) }
 
-        traits.forEach { (key, value) ->
+        company.forEach { (key, value) ->
            if (value is JsonPrimitive &&
                    key !in setOf("id", NAME, CREATED_AT, MONTHLY_SPEND, PLAN)
            ) {
@@ -247,5 +225,30 @@ class IntercomDestination(
         }
 
         return builder.build()
+    }
+
+    companion object {
+
+        // Intercom common specced attributes
+        private const val NAME = "name"
+        private const val CREATED_AT = "createdAt"
+        private const val COMPANY = "company"
+        private const val PRICE = "price"
+        private const val AMOUNT = "amount"
+        private const val CURRENCY = "currency"
+
+        // Intercom specced user attributes
+        private const val EMAIL = "email"
+        private const val PHONE = "phone"
+        private const val LANGUAGE_OVERRIDE = "languageOverride"
+        private const val UNSUBSCRIBED_FROM_EMAILS = "unsubscribedFromEmails"
+
+        // Intercom specced group attributes
+        private const val MONTHLY_SPEND = "monthlySpend"
+        private const val PLAN = "plan"
+
+        // Segment specced properties
+        private const val REVENUE = "revenue"
+        private const val TOTAL = "total"
     }
 }

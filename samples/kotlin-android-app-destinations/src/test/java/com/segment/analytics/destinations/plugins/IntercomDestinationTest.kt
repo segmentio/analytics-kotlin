@@ -1,18 +1,13 @@
 package com.segment.analytics.destinations.plugins
 
 import android.app.Application
-import android.app.TaskStackBuilder
 import android.util.Log
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.getString
 import io.intercom.android.sdk.Company
 import io.intercom.android.sdk.Intercom
-import io.intercom.android.sdk.UnreadConversationCountListener
 import io.intercom.android.sdk.UserAttributes
-import io.intercom.android.sdk.helpcenter.api.CollectionContentRequestCallback
-import io.intercom.android.sdk.helpcenter.api.CollectionRequestCallback
-import io.intercom.android.sdk.helpcenter.api.SearchRequestCallback
 import io.intercom.android.sdk.identity.Registration
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -33,7 +28,8 @@ internal class IntercomDestinationTest {
     @MockK(relaxUnitFun = true)
     lateinit var application: Application
 
-    private lateinit var intercom: Intercom
+    @MockK(relaxUnitFun = true)
+    lateinit var intercom: Intercom
 
     private var configuration: Configuration
 
@@ -50,7 +46,6 @@ internal class IntercomDestinationTest {
 
         // mock intercom
         mockkStatic(Intercom::class)
-        intercom = spyk<Intercom>(StubIntercom())
         every { Intercom.client() } returns intercom
         every { Intercom.initialize(any(), any(), any()) } just Runs
 
@@ -272,91 +267,5 @@ internal class IntercomDestinationTest {
         analytics.add(intercomDestination)
         intercomDestination.reset()
         verify { intercom.logout() }
-    }
-
-    internal class StubIntercom: Intercom() {
-        override fun registerUnidentifiedUser() {
-        }
-
-        override fun registerIdentifiedUser(p0: Registration?) {
-        }
-
-        override fun setUserHash(p0: String?) {
-        }
-
-        override fun updateUser(p0: UserAttributes?) {
-        }
-
-        override fun logEvent(p0: String?) {
-        }
-
-        override fun logEvent(p0: String?, p1: MutableMap<String, *>?) {
-        }
-
-        override fun displayMessenger() {
-        }
-
-        override fun displayMessageComposer() {
-        }
-
-        override fun displayMessageComposer(p0: String?) {
-        }
-
-        override fun displayConversationsList() {
-        }
-
-        override fun displayHelpCenter() {
-        }
-
-        override fun displayHelpCenterCollections(p0: MutableList<String>?) {
-        }
-
-        override fun displayCarousel(p0: String?) {
-        }
-
-        override fun setBottomPadding(p0: Int) {
-        }
-
-        override fun setInAppMessageVisibility(p0: Visibility?) {
-        }
-
-        override fun setLauncherVisibility(p0: Visibility?) {
-        }
-
-        override fun hideIntercom() {
-        }
-
-        override fun handlePushMessage() {
-        }
-
-        override fun handlePushMessage(p0: TaskStackBuilder?) {
-        }
-
-        override fun reset() {
-        }
-
-        override fun logout() {
-        }
-
-        override fun getUnreadConversationCount(): Int = 0
-
-        override fun addUnreadConversationCountListener(p0: UnreadConversationCountListener) {
-        }
-
-        override fun removeUnreadConversationCountListener(p0: UnreadConversationCountListener?) {
-        }
-
-        override fun displayArticle(p0: String) {
-        }
-
-        override fun fetchHelpCenterCollections(p0: CollectionRequestCallback?) {
-        }
-
-        override fun fetchHelpCenterCollection(p0: String?, p1: CollectionContentRequestCallback?) {
-        }
-
-        override fun searchHelpCenter(p0: String?, p1: SearchRequestCallback?) {
-        }
-
     }
 }
