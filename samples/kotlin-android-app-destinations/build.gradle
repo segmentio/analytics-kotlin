@@ -11,7 +11,7 @@ android {
     defaultConfig {
         multiDexEnabled true
         applicationId "com.segment.analytics.destinations"
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode 3
         versionName "2.0"
@@ -34,6 +34,11 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    testOptions {
+        unitTests.all {
+            useJUnitPlatform()
+        }
+    }
 }
 
 dependencies {
@@ -46,6 +51,10 @@ dependencies {
     // Declare the dependency for the Analytics library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation 'com.google.firebase:firebase-analytics-ktx'
+
+    // Intercom
+    implementation 'io.intercom.android:intercom-sdk-base:10.1.1'
+    implementation 'io.intercom.android:intercom-sdk-fcm:10.1.1'
 
     implementation project(':android')
 
@@ -63,7 +72,11 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
 
+    testImplementation 'io.mockk:mockk:1.10.6'
     testImplementation 'junit:junit:4.+'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.2'
+    testImplementation platform("org.junit:junit-bom:5.7.2")
+    testImplementation "org.junit.jupiter:junit-jupiter"
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
