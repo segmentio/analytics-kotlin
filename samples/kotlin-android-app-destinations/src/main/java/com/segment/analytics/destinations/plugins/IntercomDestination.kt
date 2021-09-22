@@ -83,7 +83,7 @@ class IntercomDestination(
                 }
 
                 properties.forEach { (key, value) ->
-                    if (key !in arrayOf("products", REVENUE, TOTAL, CURRENCY)
+                    if (key !in setOf("products", REVENUE, TOTAL, CURRENCY)
                         && value is JsonPrimitive) {
                         put(key, value)
                     }
@@ -156,9 +156,10 @@ class IntercomDestination(
 
     private fun setUserAttributes(traits: Traits, intercomOptions: JsonObject?) {
         val builder = UserAttributes.Builder()
-            .withName(traits.getString(NAME))
-            .withEmail(traits.getString(EMAIL))
-            .withPhone(traits.getString(PHONE))
+
+        traits.getString(NAME)?.let { builder.withName(it) }
+        traits.getString(EMAIL)?.let { builder.withEmail(it) }
+        traits.getString(PHONE)?.let { builder.withPhone(it) }
 
         intercomOptions?.let {
             builder.withLanguageOverride(it.getString(LANGUAGE_OVERRIDE))
@@ -173,7 +174,7 @@ class IntercomDestination(
 
         traits.forEach { (key, value) ->
             if (value is JsonPrimitive &&
-                key !in arrayOf(NAME, EMAIL, PHONE, "userId", "anonymousId")) {
+                key !in setOf(NAME, EMAIL, PHONE, "userId", "anonymousId")) {
                 builder.withCustomAttribute(key, value.toContent())
             }
         }
@@ -188,14 +189,15 @@ class IntercomDestination(
             builder.withCompanyId(it)
         } ?: return builder.build()
 
-        builder.withName(traits.getString(NAME))
-        builder.withCreatedAt(traits.getLong(CREATED_AT))
-        builder.withMonthlySpend(traits.getInt(MONTHLY_SPEND))
-        builder.withPlan(traits.getString(PLAN))
+        traits.getString(NAME)?.let { builder.withName(it) }
+        traits.getLong(CREATED_AT)?.let { builder.withCreatedAt(it) }
+        traits.getInt(MONTHLY_SPEND)?.let { builder.withMonthlySpend(it) }
+        traits.getString(PLAN)?.let { builder.withPlan(it) }
 
         traits.forEach { (key, value) ->
            if (value is JsonPrimitive &&
-                   key !in arrayOf("id", NAME, CREATED_AT, MONTHLY_SPEND, PLAN)) {
+                   key !in setOf("id", NAME, CREATED_AT, MONTHLY_SPEND, PLAN)
+           ) {
                builder.withCustomAttribute(key, value.toContent())
            }
         }
