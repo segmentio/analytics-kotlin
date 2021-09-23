@@ -14,7 +14,7 @@ class AmplitudeSession : Plugin {
     override val type: Plugin.Type = Plugin.Type.Enrichment
     override lateinit var analytics: Analytics
     var sessionID: Long = -1
-    private val key = "Amplitude"
+    private val key = "Action Amplitude"
     private var active = false
 
     private var timer: TimerTask? = null
