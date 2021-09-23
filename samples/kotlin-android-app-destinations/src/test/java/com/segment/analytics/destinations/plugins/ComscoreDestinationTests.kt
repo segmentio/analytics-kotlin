@@ -2,23 +2,47 @@ package com.segment.analytics.destinations.plugins
 
 import android.content.Context
 import com.comscore.streaming.StreamingAnalytics
-import com.segment.analytics.kotlin.core.*
+import com.comscore.streaming.StreamingConfiguration
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.IdentifyEvent
+import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.Settings
+import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.getString
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.clearMocks
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
+import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.verify
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import sovran.kotlin.Store
 import com.segment.analytics.kotlin.core.Analytics as SegmentAnalytics
-import com.comscore.streaming.StreamingConfiguration
-import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.utilities.LenientJson
-import org.junit.jupiter.api.Test
 
+/**
+ * Note: Some of the behaviour requires the use of the enrichment plugin ComscoreOptionsPlugin
+ * which is usually inserted into the analytics timeline, but for the purpose of these tests, will
+ * be inserted into the destination timeline.
+ */
 class ComscoreDestinationTests {
 
     @MockK(relaxUnitFun = true)
@@ -28,13 +52,16 @@ class ComscoreDestinationTests {
     lateinit var mockedStreamingAnalytics: StreamingAnalytics
 
     @MockK(relaxUnitFun = true)
-    lateinit var streamingConfiguration: StreamingConfiguration
+    lateinit var mockedStreamingConfiguration: StreamingConfiguration
 
 
     lateinit var comscoreDestination: ComscoreDestination
 
-    @MockK
+    @MockK(relaxUnitFun = true)
     lateinit var mockedAnalytics: SegmentAnalytics
+
+    @MockK
+    lateinit var mockedStore: Store
 
     @MockK
     lateinit var mockedContext: Context
@@ -48,9 +75,18 @@ class ComscoreDestinationTests {
         clearMocks(mockedStreamingAnalytics)
         comscoreDestination = ComscoreDestination(mockedComscoreAnalytics)
         every { mockedAnalytics.configuration.application } returns mockedContext
+        every { mockedAnalytics.store } returns mockedStore
+        every { mockedStore.currentState(System::class) } returns null
         comscoreDestination.setup(mockedAnalytics)
         every { mockedComscoreAnalytics.createStreamingAnalytics() } returns mockedStreamingAnalytics
-        every { mockedStreamingAnalytics.configuration } returns streamingConfiguration
+        every { mockedStreamingAnalytics.configuration } returns mockedStreamingConfiguration
+
+        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt").kotlin)
+        every { mockedAnalytics.log(any(), any(), any()) } just Runs
+
+        val comscoreOptionsPlugin = ComscoreOptionsPlugin()
+        comscoreDestination.comscoreOptionsPlugin = comscoreOptionsPlugin
+        comscoreDestination.add(comscoreOptionsPlugin)
     }
 
     @Test
@@ -88,13 +124,17 @@ class ComscoreDestinationTests {
         """.trimIndent()
         )
 
+        comscoreDestination = ComscoreDestination(mockedComscoreAnalytics)
+        comscoreDestination.setup(mockedAnalytics)
         val partnerId = slot<String>()
         every { mockedComscoreAnalytics.start(any(), capture(partnerId), any()) } just Runs
+        every { mockedAnalytics.add(any()) } returns mockedAnalytics
 
         comscoreDestination.update(settingsBlob, Plugin.UpdateType.Initial)
 
         /* assertions about config */
         assertNotNull(comscoreDestination.settings)
+        assertNotNull(comscoreDestination.comscoreOptionsPlugin)
         with(comscoreDestination.settings!!) {
             assertTrue(autoUpdate)
             assertTrue(foregroundOnly)
@@ -117,14 +157,8 @@ class ComscoreDestinationTests {
                 put("firstName", "Kylo")
                 put("lastName", "Ren")
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "anonId"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        val identifyEvent = comscoreDestination.identify(sampleEvent)
+        ).applyBaseEventData()
+        val identifyEvent = comscoreDestination.process(sampleEvent)
 
         assertNotNull(identifyEvent)
         with(identifyEvent as IdentifyEvent) {
@@ -143,7 +177,6 @@ class ComscoreDestinationTests {
             "firstName" to "Kylo",
             "lastName" to "Ren"
         )
-
         verify { mockedComscoreAnalytics.setPersistentLabels(expectedLabels) }
     }
 
@@ -156,14 +189,8 @@ class ComscoreDestinationTests {
                 put("parent", "MainActivity")
             },
             category = "signup_flow"
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "anonId"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        val screenEvent = comscoreDestination.screen(sampleEvent)
+        ).applyBaseEventData()
+        val screenEvent = comscoreDestination.process(sampleEvent)
 
         assertNotNull(screenEvent)
         with(screenEvent as ScreenEvent) {
@@ -181,24 +208,16 @@ class ComscoreDestinationTests {
             "startup" to "false",
             "parent" to "MainActivity"
         )
-
         verify { mockedComscoreAnalytics.notifyViewEvent(expectedProps) }
     }
-
 
     @Test
     fun `track for non-video event`() {
         val sampleEvent = TrackEvent(
             event = "Product Clicked",
             properties = buildJsonObject { put("Item Name", "Biscuits") }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "anonId"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        val trackEvent = comscoreDestination.track(sampleEvent)
+        ).applyBaseEventData()
+        val trackEvent = comscoreDestination.process(sampleEvent)
 
         /* assertions about new event */
         assertNotNull(trackEvent)
@@ -256,18 +275,12 @@ class ComscoreDestinationTests {
                     put("c6", "and another one")
                 }
             )
-        }.apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
+        }.applyBaseEventData()
 
-        comscoreDestination.track(playbackStarted)
+        comscoreDestination.process(playbackStarted)
 
         verify { mockedStreamingAnalytics.createPlaybackSession() }
-        verify { streamingConfiguration.addLabels(expected) }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
 
         with(comscoreDestination.configurationLabels) {
             assertEquals("1234", get("ns_st_ci"))
@@ -287,15 +300,9 @@ class ComscoreDestinationTests {
                 put("bitrate", 40)
                 put("full_screen", true)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
+        ).applyBaseEventData()
 
-        comscoreDestination.track(playbackStarted)
+        comscoreDestination.process(playbackStarted)
     }
 
     // MIGHT BE REDUNDANT
@@ -316,7 +323,7 @@ class ComscoreDestinationTests {
         assertEquals(mockedStreamingAnalytics, comscoreDestination.streamingAnalytics)
 
         verify { mockedStreamingAnalytics.createPlaybackSession() }
-        verify { streamingConfiguration.addLabels(expected) }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
 
         with(comscoreDestination.configurationLabels) {
             assertEquals("1234", get("ns_st_ci"))
@@ -331,42 +338,50 @@ class ComscoreDestinationTests {
             properties = buildJsonObject {
                 put("asset_id", 1234)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(playbackPaused)
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackPaused)
 
         assertNull(comscoreDestination.streamingAnalytics)
     }
 
     @Test
-    fun `track video playback paused`() {
-        TODO("Relies on options talk to sneed")
+    fun `track video playback paused with options`() {
         trackVideoPlaybackStarted()
         val playbackPaused = TrackEvent(
             event = "Video Playback Paused",
             properties = buildJsonObject {
-                put("asset_id", 1234)
+                put("assetId", 1234)
+                put("adType", "mid-roll")
+                put("totalLength", 100)
+                put("videoPlayer", "vimeo")
+                put("playbackPosition", 10)
+                put("fullScreen", true)
+                put("bitrate", 50)
+                put("sound", 80)
+                put(ComscoreOptionsPlugin.TARGET_KEY, buildJsonObject {
+                    put("c3", "abc")
+                })
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(playbackPaused)
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackPaused)
 
-        assertNull(comscoreDestination.streamingAnalytics)
+        val expected = mapOf(
+            "ns_st_mp" to "vimeo",
+            "ns_st_vo" to "80",
+            "ns_st_ws" to "full",
+            "ns_st_br" to "50000",
+            "c3" to "abc",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
+
+        verify { mockedStreamingAnalytics.notifyPause() }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
     }
 
 
     @Test
-    fun videoPlaybackBufferStarted() {
+    fun `track video playback buffer started after playback started`() {
         trackVideoPlaybackStarted()
         val playbackBufferStarted = TrackEvent(
             event = "Video Playback Buffer Started",
@@ -380,14 +395,9 @@ class ComscoreDestinationTests {
                 put("bitrate", 500)
                 put("sound", 80)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(playbackBufferStarted)
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackBufferStarted)
+
         val expected = mapOf(
             "ns_st_mp" to "youtube",
             "ns_st_vo" to "80",
@@ -399,11 +409,11 @@ class ComscoreDestinationTests {
         )
         verify { mockedStreamingAnalytics.startFromPosition(20) }
         verify { mockedStreamingAnalytics.notifyBufferStart() }
-        verify { streamingConfiguration.addLabels(expected) }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
     }
 
     @Test
-    fun videoPlaybackBufferCompleted() {
+    fun `track video playback buffer completed after playback started`() {
         trackVideoPlaybackStarted()
         val playbackBufferCompleted = TrackEvent(
             event = "Video Playback Buffer Completed",
@@ -417,14 +427,9 @@ class ComscoreDestinationTests {
                 put("bitrate", 500)
                 put("sound", 80)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(playbackBufferCompleted)
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackBufferCompleted)
+
         val expected = mapOf(
             "ns_st_mp" to "vimeo",
             "ns_st_vo" to "80",
@@ -436,11 +441,11 @@ class ComscoreDestinationTests {
         )
         verify { mockedStreamingAnalytics.startFromPosition(30) }
         verify { mockedStreamingAnalytics.notifyBufferStop() }
-        verify { streamingConfiguration.addLabels(expected) }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
     }
 
     @Test
-    fun videoPlaybackSeekStarted() {
+    fun `track video playback seek started after playback started`() {
         trackVideoPlaybackStarted()
         val playbackSeekStarted = TrackEvent(
             event = "Video Playback Seek Started",
@@ -454,14 +459,9 @@ class ComscoreDestinationTests {
                 put("bitrate", 500)
                 put("sound", 80)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(playbackSeekStarted)
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackSeekStarted)
+
         val expected = mapOf(
             "ns_st_mp" to "youtube",
             "ns_st_vo" to "80",
@@ -472,11 +472,11 @@ class ComscoreDestinationTests {
             "c6" to "*null",
         )
         verify { mockedStreamingAnalytics.notifySeekStart() }
-        verify { streamingConfiguration.addLabels(expected) }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
     }
 
     @Test
-    fun videoPlaybackSeekCompleted() {
+    fun `track video playback seek completed after playback started`() {
         trackVideoPlaybackStarted()
         val playbackSeekCompleted = TrackEvent(
             event = "Video Playback Seek Completed",
@@ -490,29 +490,25 @@ class ComscoreDestinationTests {
                 put("bitrate", 500)
                 put("sound", 80)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(playbackSeekCompleted)
-        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-        expected["ns_st_mp"] = "vimeo"
-        expected["ns_st_vo"] = "80"
-        expected["ns_st_ws"] = "full"
-        expected["ns_st_br"] = "500000"
-        expected["c3"] = "*null"
-        expected["c4"] = "*null"
-        expected["c6"] = "*null"
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackSeekCompleted)
+
+        val expected = mapOf(
+            "ns_st_mp" to "vimeo",
+            "ns_st_vo" to "80",
+            "ns_st_ws" to "full",
+            "ns_st_br" to "500000",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
         verify { mockedStreamingAnalytics.startFromPosition(50) }
         verify { mockedStreamingAnalytics.notifyPlay() }
-        verify { streamingConfiguration.addLabels(expected) }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
     }
 
     @Test
-    fun videoPlaybackResumed() {
+    fun `track video playback resumed after playback started`() {
         trackVideoPlaybackStarted()
         val playbackResumed = TrackEvent(
             event = "Video Playback Resumed",
@@ -527,150 +523,160 @@ class ComscoreDestinationTests {
                 put("bitrate", 500)
                 put("sound", 80)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(playbackResumed)
-        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-        expected["ns_st_mp"] = "youtube"
-        expected["ns_st_vo"] = "80"
-        expected["ns_st_ws"] = "full"
-        expected["ns_st_br"] = "500000"
-        expected["c3"] = "*null"
-        expected["c4"] = "*null"
-        expected["c6"] = "*null"
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackResumed)
+
+        val expected = mapOf(
+            "ns_st_mp" to "youtube",
+            "ns_st_vo" to "80",
+            "ns_st_ws" to "full",
+            "ns_st_br" to "500000",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
         verify { mockedStreamingAnalytics.startFromPosition(60) }
         verify { mockedStreamingAnalytics.notifyPlay() }
-        verify { streamingConfiguration.addLabels(expected) }
+        verify { mockedStreamingConfiguration.addLabels(expected) }
     }
 
     @Test
-    fun videoContentStartedWithDigitalAirdate() {
-        TODO()
-//        trackVideoPlaybackStarted()
-//        val comScoreOptions: MutableMap<String, Any> = LinkedHashMap()
-//        comScoreOptions["digitalAirdate"] = "2014-01-20"
-//        comScoreOptions["contentClassificationType"] = "vc12"
-//        integration.track(
-//            TrackEvent(
-//                event = "Video Content Started"
-//            )
-//                    properties =
-//                    buildJsonObject {
-//                put("assetId", 9324)
-//                put("title", "Meeseeks and Destroy")
-//                put("season", 1)
-//                put("episode", 5)
-//                put("genre", "cartoon")
-//                put("program", "Rick and Morty")
-//                put("channel", "cartoon network")
-//                put("publisher", "Turner Broadcasting System")
-//                put("fullEpisode", true)
-//                put("podId", "segment A")
-//                put("totalLength", "120")
-//                put("playbackPosition", 70)
-//                )
-//                .integration("comScore", comScoreOptions
-//            }
-//        )
-//        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-//        expected["ns_st_ci"] = "9324"
-//        expected["ns_st_ep"] = "Meeseeks and Destroy"
-//        expected["ns_st_sn"] = "1"
-//        expected["ns_st_en"] = "5"
-//        expected["ns_st_ge"] = "cartoon"
-//        expected["ns_st_pr"] = "Rick and Morty"
-//        expected["ns_st_st"] = "cartoon network"
-//        expected["ns_st_pu"] = "Turner Broadcasting System"
-//        expected["ns_st_ce"] = "true"
-//        expected["ns_st_ddt"] = "2014-01-20"
-//        expected["ns_st_pn"] = "segment A"
-//        expected["ns_st_cl"] = "120000"
-//        expected["ns_st_ct"] = "vc12"
-//        expected["c3"] = "*null"
-//        expected["c4"] = "*null"
-//        expected["c6"] = "*null"
-//        verify {streamingAnalytics).startFromPosition(70)
-//        verify {streamingAnalytics).notifyPlay()
-//        verify {streamingAnalytics, atLeast(1))
-//            .setMetadata(refEq(getContentMetadata(expected)))
+    fun `track video content started with digitalAirdate`() {
+        trackVideoPlaybackStarted()
+        val videoContentStarted = TrackEvent(
+            event = "Video Content Started",
+            properties = buildJsonObject {
+                put("assetId", 9324)
+                put("title", "Meeseeks and Destroy")
+                put("season", 1)
+                put("episode", 5)
+                put("genre", "cartoon")
+                put("program", "Rick and Morty")
+                put("channel", "cartoon network")
+                put("publisher", "Turner Broadcasting System")
+                put("fullEpisode", true)
+                put("podId", "segment A")
+                put("totalLength", "120")
+                put("playbackPosition", 70)
+                put(ComscoreOptionsPlugin.TARGET_KEY, buildJsonObject {
+                    put("digitalAirdate", "2014-01-20")
+                    put("contentClassificationType", "vc12")
+                })
+            }
+        ).applyBaseEventData()
+        comscoreDestination.process(videoContentStarted)
+
+        val expected = mapOf(
+            "ns_st_ci" to "9324",
+            "ns_st_ep" to "Meeseeks and Destroy",
+            "ns_st_sn" to "1",
+            "ns_st_en" to "5",
+            "ns_st_ge" to "cartoon",
+            "ns_st_pr" to "Rick and Morty",
+            "ns_st_st" to "cartoon network",
+            "ns_st_pu" to "Turner Broadcasting System",
+            "ns_st_ce" to "true",
+            "ns_st_ddt" to "2014-01-20",
+            "ns_st_pn" to "segment A",
+            "ns_st_cl" to "120000",
+            "ns_st_ct" to "vc12",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
+
+        verify { mockedStreamingAnalytics.startFromPosition(70) }
+        verify { mockedStreamingAnalytics.notifyPlay() }
+
+        // This is hack-y way to test the map but bcos ContentMetadata is not comparable, we have to resort to this
+        val logEvent = mutableListOf<String>()
+        verify { mockedAnalytics.log(capture(logEvent)) }
+        val actualProps = logEvent.fetchPropertiesFromLogs("streamingAnalytics.setMetadata(")
+        assertEquals(expected, actualProps)
+
+        // ideally we would write this
+        // verify { streamingAnalytics.setMetadata(getContentMetadata(expected)) }
     }
 
     @Test
-    fun videoContentStartedWithTVAirdate() {
-        TODO()
-//        trackVideoPlaybackStarted()
-//        val comScoreOptions: MutableMap<String, Any> = LinkedHashMap()
-//        comScoreOptions["tvAirdate"] = "2017-05-14"
-//        comScoreOptions["contentClassificationType"] = "vc12"
-//        integration.track(
-//            TrackEvent(
-//                event = "Video Content Started"
-//            )
-//                    properties =
-//                    buildJsonObject {
-//                put("title", "Meeseeks and Destroy")
-//                put("season", 1)
-//                put("episode", 5)
-//                put("genre", "cartoon")
-//                put("program", "Rick and Morty")
-//                put("channel", "cartoon network")
-//                put("publisher", "Turner Broadcasting System")
-//                put("full_episode", true)
-//                put("pod_id", "segment A")
-//                put("total_length", "120")
-//                put("position", 70)
-//                )
-//                .integration("comScore", comScoreOptions
-//            }
-//        )
-//        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-//        expected["ns_st_ci"] = "0"
-//        expected["ns_st_ep"] = "Meeseeks and Destroy"
-//        expected["ns_st_sn"] = "1"
-//        expected["ns_st_en"] = "5"
-//        expected["ns_st_ge"] = "cartoon"
-//        expected["ns_st_pr"] = "Rick and Morty"
-//        expected["ns_st_st"] = "cartoon network"
-//        expected["ns_st_pu"] = "Turner Broadcasting System"
-//        expected["ns_st_ce"] = "true"
-//        expected["ns_st_tdt"] = "2017-05-14"
-//        expected["ns_st_pn"] = "segment A"
-//        expected["ns_st_cl"] = "120000"
-//        expected["ns_st_ct"] = "vc12"
-//        expected["c3"] = "*null"
-//        expected["c4"] = "*null"
-//        expected["c6"] = "*null"
-//        verify {streamingAnalytics).startFromPosition(70)
-//        verify {streamingAnalytics).notifyPlay()
-//        verify {streamingAnalytics, atLeast(1))
-//            .setMetadata(refEq(getContentMetadata(expected)))
+    fun `track video content started with tvAirdate`() {
+        trackVideoPlaybackStarted()
+        val trackEvent =
+            TrackEvent(
+                event = "Video Content Started",
+                properties = buildJsonObject {
+                    put("title", "Meeseeks and Destroy")
+                    put("season", 1)
+                    put("episode", 5)
+                    put("genre", "cartoon")
+                    put("program", "Rick and Morty")
+                    put("channel", "cartoon network")
+                    put("publisher", "Turner Broadcasting System")
+                    put("full_episode", true)
+                    put("pod_id", "segment A")
+                    put("total_length", "120")
+                    put("position", 70)
+                    put(ComscoreOptionsPlugin.TARGET_KEY, buildJsonObject {
+                        put("tvAirdate", "2017-05-14")
+                        put("contentClassificationType", "vc12")
+                    })
+                }
+            ).applyBaseEventData()
+
+        comscoreDestination.process(trackEvent)
+
+        val expected = mapOf(
+            "ns_st_ci" to "0",
+            "ns_st_ep" to "Meeseeks and Destroy",
+            "ns_st_sn" to "1",
+            "ns_st_en" to "5",
+            "ns_st_ge" to "cartoon",
+            "ns_st_pr" to "Rick and Morty",
+            "ns_st_st" to "cartoon network",
+            "ns_st_pu" to "Turner Broadcasting System",
+            "ns_st_ce" to "true",
+            "ns_st_tdt" to "2017-05-14",
+            "ns_st_pn" to "segment A",
+            "ns_st_cl" to "120000",
+            "ns_st_ct" to "vc12",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
+        verify { mockedStreamingAnalytics.startFromPosition(70) }
+        verify { mockedStreamingAnalytics.notifyPlay() }
+
+        // This is hack-y way to test the map but bcos ContentMetadata is not comparable, we have to resort to this
+        val logEvent = mutableListOf<String>()
+        verify { mockedAnalytics.log(capture(logEvent)) }
+        val actualProps = logEvent.fetchPropertiesFromLogs("streamingAnalytics.setMetadata(")
+        assertEquals(expected, actualProps)
     }
 
     @Test
-    fun videoContentStartedWithoutVideoPlaybackStarted() {
-        comscoreDestination.track(
+    fun `track video content started without playback started`() {
+        comscoreDestination.process(
             TrackEvent(
                 event = "Video Content Started",
                 properties = buildJsonObject { put("assetId", 5678) }
-            ).apply {
-                messageId = "qwerty-1234"
-                anonymousId = "foo"
-                integrations = emptyJsonObject
-                context = emptyJsonObject
-                timestamp = "2021-07-13T00:59:09"
-            })
+            ).applyBaseEventData())
         assertNull(comscoreDestination.streamingAnalytics)
     }
 
     @Test
-    fun videoContentPlaying() {
-        trackVideoPlaybackStarted()
-        assertNotNull(comscoreDestination.configurationLabels["ns_st_ad"])
+    fun `track video content playing`() {
+        val playbackStarted = TrackEvent(
+            event = "Video Playback Started",
+            properties = buildJsonObject {
+                put("asset_id", 1234)
+                put("total_length", 120)
+                put("video_player", "youtube")
+                put("sound", 80)
+                put("bitrate", 40)
+                put("full_screen", true)
+            }
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackStarted) // No ad-type with this event
         val contentPlaying = TrackEvent(
             event = "Video Content Playing",
             properties = buildJsonObject {
@@ -687,22 +693,17 @@ class ComscoreDestinationTests {
                 put("podId", "segment A")
                 put("playbackPosition", 70)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(contentPlaying)
+        ).applyBaseEventData()
+        comscoreDestination.process(contentPlaying)
         verify { mockedStreamingAnalytics.startFromPosition(70) }
         verify { mockedStreamingAnalytics.notifyPlay() }
+        assertNull(comscoreDestination.configurationLabels["ns_st_ad"])
     }
 
     @Test
-    fun videoContentPlayingWithAdType() {
+    fun `track video content playing with adType`() {
         trackVideoPlaybackStarted()
-        assertNotNull(comscoreDestination.configurationLabels.get("ns_st_ad"))
+        assertNotNull(comscoreDestination.configurationLabels["ns_st_ad"])
         val contentPlaying = TrackEvent(
             event = "Video Content Playing",
             properties = buildJsonObject {
@@ -718,37 +719,37 @@ class ComscoreDestinationTests {
                 put("podId", "segment A")
                 put("playbackPosition", 70)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(contentPlaying)
-        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-        expected["ns_st_ci"] = "123214"
-        expected["ns_st_ep"] = "Look Who's Purging Now"
-        expected["ns_st_sn"] = "2"
-        expected["ns_st_en"] = "9"
-        expected["ns_st_ge"] = "cartoon"
-        expected["ns_st_pr"] = "Rick and Morty"
-        expected["ns_st_st"] = "cartoon network"
-        expected["ns_st_pu"] = "Turner Broadcasting System"
-        expected["ns_st_ce"] = "true"
-        expected["ns_st_pn"] = "segment A"
-        expected["ns_st_ct"] = "vc00"
-        expected["c3"] = "*null"
-        expected["c4"] = "*null"
-        expected["c6"] = "*null"
-//        verify {mockedStreamingAnalytics, atLeast(1))
-//            .setMetadata(refEq(getContentMetadata(expected)))
+        ).applyBaseEventData()
+        comscoreDestination.process(contentPlaying)
+        val expected = mapOf(
+            "ns_st_ci" to "123214",
+            "ns_st_ep" to "Look Who's Purging Now",
+            "ns_st_sn" to "2",
+            "ns_st_en" to "9",
+            "ns_st_ge" to "cartoon",
+            "ns_st_pr" to "Rick and Morty",
+            "ns_st_st" to "cartoon network",
+            "ns_st_pu" to "Turner Broadcasting System",
+            "ns_st_ce" to "true",
+            "ns_st_pn" to "segment A",
+            "ns_st_ct" to "vc00",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
+
         verify { mockedStreamingAnalytics.startFromPosition(70) }
         verify { mockedStreamingAnalytics.notifyPlay() }
+
+        // This is hack-y way to test the map but bcos ContentMetadata is not comparable, we have to resort to this
+        val logEvent = mutableListOf<String>()
+        verify { mockedAnalytics.log(capture(logEvent)) }
+        val actualProps = logEvent.fetchPropertiesFromLogs("streamingAnalytics.setMetadata(")
+        assertEquals(expected, actualProps)
     }
 
     @Test
-    fun videoContentCompleted() {
+    fun `track video content completed`() {
         trackVideoPlaybackStarted()
         val contentCompleted = TrackEvent(
             event = "Video Content Completed",
@@ -767,21 +768,25 @@ class ComscoreDestinationTests {
                 put("podId", "segment A")
                 put("playbackPosition", 80)
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(contentCompleted)
+        ).applyBaseEventData()
+        comscoreDestination.process(contentCompleted)
         verify { mockedStreamingAnalytics.notifyEnd() }
     }
 
     @Test
-    fun videoAdStarted() {
-        trackVideoPlaybackStarted()
-        assertNotNull(comscoreDestination.configurationLabels["ns_st_ad"])
+    fun `track video ad started`() {
+        val playbackStarted = TrackEvent(
+            event = "Video Playback Started",
+            properties = buildJsonObject {
+                put("total_length", 120)
+                put("video_player", "youtube")
+                put("sound", 80)
+                put("bitrate", 40)
+                put("full_screen", true)
+            }
+        ).applyBaseEventData()
+        comscoreDestination.process(playbackStarted) // No content_id with this event
+        assertNull(comscoreDestination.configurationLabels["ns_st_ci"])
         val adStarted = TrackEvent(
             event = "Video Ad Started",
             properties =
@@ -793,30 +798,30 @@ class ComscoreDestinationTests {
                 put("position", 0)
                 put("title", "Helmet Ad")
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(adStarted)
-        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-        expected["ns_st_ami"] = "4311"
-        expected["ns_st_ad"] = "pre-roll"
-        expected["ns_st_cl"] = "120000"
-        expected["ns_st_amt"] = "Helmet Ad"
-        expected["ns_st_ct"] = "va00"
-        expected["c3"] = "*null"
-        expected["c4"] = "*null"
-        expected["c6"] = "*null"
+        ).applyBaseEventData()
+        comscoreDestination.process(adStarted)
+        val expected = mapOf(
+            "ns_st_ami" to "4311",
+            "ns_st_ad" to "pre-roll",
+            "ns_st_cl" to "120000",
+            "ns_st_amt" to "Helmet Ad",
+            "ns_st_ct" to "va00",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null",
+        )
         verify { mockedStreamingAnalytics.startFromPosition(0) }
         verify { mockedStreamingAnalytics.notifyPlay() }
-//        verify {streamingAnalytics).setMetadata(refEq(getAdvertisementMetadata(expected)))
+
+        // This is hack-y way to test the map but bcos ContentMetadata is not comparable, we have to resort to this
+        val logEvent = mutableListOf<String>()
+        verify { mockedAnalytics.log(capture(logEvent)) }
+        val actualProps = logEvent.fetchPropertiesFromLogs("streamingAnalytics.setMetadata(")
+        assertEquals(expected, actualProps)
     }
 
     @Test
-    fun videoAdStartedWithContentId() {
+    fun `track video ad started with content id`() {
         trackVideoPlaybackStarted()
         val adStarted = TrackEvent(
             event = "Video Ad Started",
@@ -829,84 +834,86 @@ class ComscoreDestinationTests {
                 put("playbackPosition", 0)
                 put("title", "Helmet Ad")
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(adStarted)
-        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-        expected["ns_st_ami"] = "4311"
-        expected["ns_st_ad"] = "pre-roll"
-        expected["ns_st_cl"] = "120000"
-        expected["ns_st_amt"] = "Helmet Ad"
-        expected["ns_st_ct"] = "va00"
-        expected["c3"] = "*null"
-        expected["c4"] = "*null"
-        expected["c6"] = "*null"
-        expected["ns_st_ci"] = "1234"
+        ).applyBaseEventData()
+        comscoreDestination.process(adStarted)
+
+        val expected = mapOf(
+            "ns_st_ci" to "1234", // from initial video playback started
+            "ns_st_ami" to "4311",
+            "ns_st_ad" to "pre-roll",
+            "ns_st_cl" to "120000",
+            "ns_st_amt" to "Helmet Ad",
+            "ns_st_ct" to "va00",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
+
         verify { mockedStreamingAnalytics.startFromPosition(0) }
         verify { mockedStreamingAnalytics.notifyPlay() }
-//        verify {streamingAnalytics).setMetadata(refEq(getAdvertisementMetadata(expected)))
+
+        // This is hack-y way to test the map but bcos ContentMetadata is not comparable, we have to resort to this
+        val logEvent = mutableListOf<String>()
+        verify { mockedAnalytics.log(capture(logEvent)) }
+        val actualProps = logEvent.fetchPropertiesFromLogs("streamingAnalytics.setMetadata(")
+        assertEquals(expected, actualProps)
     }
 
     @Test
-    fun videoAdStartedWithAdClassificationType() {
-        TODO()
-//        trackVideoPlaybackStarted()
-//        val comScoreOptions: MutableMap<String, Any> = LinkedHashMap()
-//        comScoreOptions["adClassificationType"] = "va14"
-//        integration.track(
-//            TrackEvent(
-//                event = "Video Ad Started"
-//            )
-//                    properties =
-//                    buildJsonObject {
-//                put("asset_id", 4311)
-//                put("pod_id", "adSegmentA")
-//                put("type", "pre-roll")
-//                put("total_length", 120)
-//                put("position", 0)
-//                put("title", "Helmet Ad")
-//                )
-//                .integration("comScore", comScoreOptions
-//            }
-//        )
-//        val expected: LinkedHashMap<String, String> = LinkedHashMap()
-//        expected["ns_st_ami"] = "4311"
-//        expected["ns_st_ad"] = "pre-roll"
-//        expected["ns_st_cl"] = "120000"
-//        expected["ns_st_amt"] = "Helmet Ad"
-//        expected["ns_st_ct"] = "va14"
-//        expected["c3"] = "*null"
-//        expected["c4"] = "*null"
-//        expected["c6"] = "*null"
-//        streamingAnalytics.startFromPosition(0)
-//        verify {streamingAnalytics).notifyPlay()
-//        verify {streamingAnalytics).setMetadata(refEq(getAdvertisementMetadata(expected)))
+    fun `track video ad started with ad classification type`() {
+        trackVideoPlaybackStarted()
+
+        val track = TrackEvent(
+            event = "Video Ad Started",
+            properties = buildJsonObject {
+                put("asset_id", 4311)
+                put("pod_id", "adSegmentA")
+                put("type", "pre-roll")
+                put("total_length", 120)
+                put("position", 0)
+                put("title", "Helmet Ad")
+                put(ComscoreOptionsPlugin.TARGET_KEY, buildJsonObject {
+                    put("adClassificationType", "va14")
+                })
+            }
+        ).applyBaseEventData()
+
+        comscoreDestination.process(track)
+
+        val expected = mapOf(
+            "ns_st_ci" to "1234", // from initial video playback started
+            "ns_st_ami" to "4311",
+            "ns_st_ad" to "pre-roll",
+            "ns_st_cl" to "120000",
+            "ns_st_amt" to "Helmet Ad",
+            "ns_st_ct" to "va14",
+            "c3" to "*null",
+            "c4" to "*null",
+            "c6" to "*null"
+        )
+        verify { mockedStreamingAnalytics.startFromPosition(0) }
+        verify { mockedStreamingAnalytics.notifyPlay() }
+
+        // This is hack-y way to test the map but bcos ContentMetadata is not comparable, we have to resort to this
+        val logEvent = mutableListOf<String>()
+        verify { mockedAnalytics.log(capture(logEvent)) }
+        val actualProps = logEvent.fetchPropertiesFromLogs("streamingAnalytics.setMetadata(")
+        assertEquals(expected, actualProps)
     }
 
     @Test
-    fun videoAdStartedWithoutVideoPlaybackStarted() {
-        comscoreDestination.track(
+    fun `track video ad started without playback started`() {
+        comscoreDestination.process(
             TrackEvent(
                 event = "Video Ad Started",
                 properties = buildJsonObject { put("assetId", 4324) }
-            ).apply {
-                messageId = "qwerty-1234"
-                anonymousId = "foo"
-                integrations = emptyJsonObject
-                context = emptyJsonObject
-                timestamp = "2021-07-13T00:59:09"
-            }
+            ).applyBaseEventData()
         )
         assertNull(comscoreDestination.streamingAnalytics)
     }
 
     @Test
-    fun videoAdPlaying() {
+    fun `track video ad playing`() {
         trackVideoPlaybackStarted()
         assertNotNull(comscoreDestination.configurationLabels["ns_st_ad"])
         val adPlaying = TrackEvent(
@@ -920,20 +927,14 @@ class ComscoreDestinationTests {
                 put("playbackPosition", 20)
                 put("title", "Helmet Ad")
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        comscoreDestination.track(adPlaying)
+        ).applyBaseEventData()
+        comscoreDestination.process(adPlaying)
         verify { mockedStreamingAnalytics.startFromPosition(20) }
         verify { mockedStreamingAnalytics.notifyPlay() }
     }
 
     @Test
-    fun videoAdCompleted() {
+    fun `track video ad completed`() {
         trackVideoPlaybackStarted()
         val adCompleted = TrackEvent(
             event = "Video Ad Completed",
@@ -946,15 +947,46 @@ class ComscoreDestinationTests {
                 put("playbackPosition", 100)
                 put("title", "Helmet Ad")
             }
-        ).apply {
-            messageId = "qwerty-1234"
-            anonymousId = "foo"
-            integrations = emptyJsonObject
-            context = emptyJsonObject
-            timestamp = "2021-07-13T00:59:09"
-        }
-        mockedStreamingAnalytics
-        comscoreDestination.track(adCompleted)
+        ).applyBaseEventData()
+        comscoreDestination.process(adCompleted)
         verify { mockedStreamingAnalytics.notifyEnd() }
+    }
+
+    private fun MutableList<String>.fetchPropertiesFromLogs(targetLog: String) =
+        first { it.startsWith(targetLog) }
+            .let { it.substring(it.indexOf("{") + 1, it.indexOf("}")) }
+            .split(",")
+            .map { it.split("=") }
+            .map { it.first().trim() to it.last().trim() }
+            .toMap()
+
+    private fun assertEquals(
+        expected: Map<String, String>,
+        actual: Map<String, String>
+    ) {
+        assertEquals(
+            expected.size,
+            actual.size,
+            "$expected is not the same size as $actual"
+        )
+        expected.forEach {
+            assertTrue(
+                actual.containsKey(it.key),
+                "$actual does not contain (${it.key}=${it.value})"
+            )
+            assertEquals(
+                actual[it.key],
+                expected[it.key],
+                "$actual contains wrong value (${it.key}=${it.value})"
+            )
+        }
+    }
+
+    private fun BaseEvent.applyBaseEventData() = apply {
+        messageId = "qwerty-1234"
+        anonymousId = "anonId"
+        integrations = emptyJsonObject
+        context = emptyJsonObject
+        timestamp = "2021-07-13T00:59:09"
     }
 }

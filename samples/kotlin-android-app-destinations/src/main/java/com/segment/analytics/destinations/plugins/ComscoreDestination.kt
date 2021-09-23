@@ -10,14 +10,18 @@ import com.comscore.streaming.ContentMetadata
 import com.comscore.streaming.StreamingAnalytics
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
+import com.segment.analytics.kotlin.core.Analytics as SegmentAnalytics
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.toContent
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.put
+import java.util.concurrent.ConcurrentHashMap
 
 /*
 This is an example of the Comscore device-mode destination plugin that can be integrated with
@@ -109,100 +113,51 @@ data class ComscoreSettings(
 }
 
 /**
- * This is a wrapper to all Comscore components. It helps with testing since Comscore relays heavily
- * on JNI and static classes, and all needs to be mocked in any case.
+ * This plugin copies any properties living under "videoMetricDictionaryClassification"
+ * to an internal map for `track` events, which can be retrieved later.
  */
-interface ComscoreAnalytics {
-    /**
-     * Creates a new streaming analytics session.
-     *
-     * @return The new session.
-     */
-    fun createStreamingAnalytics(): StreamingAnalytics
+class ComscoreOptionsPlugin : EventPlugin {
+    override val type: Plugin.Type = Plugin.Type.Before
+    override lateinit var analytics: SegmentAnalytics
 
-    /**
-     * Starts collecting analytics with the provided client configuration
-     *
-     * @param context Application context
-     * @param partnerId Partner ID
-     * @param publisher Publisher configuration
-     */
-    fun start(context: Context, partnerId: String, publisher: PublisherConfiguration)
+    // Map of messageId to stored comscoreOptions
+    val videoMetricClassificationMap = ConcurrentHashMap<String, Map<String, String>>()
 
-    /**
-     * Sets global labels
-     *
-     * @param labels Labels.
-     */
-    fun setPersistentLabels(labels: Map<String, String>)
-
-    /**
-     * Sends an view event with the provided properties.
-     *
-     * @param properties Event properties.
-     */
-    fun notifyViewEvent(properties: Map<String, String>)
-
-    /**
-     * Sends an unmapped event with the provided properties.
-     *
-     * @param properties Event properties.
-     */
-    fun notifyHiddenEvent(properties: Map<String, String>)
-
-    /**
-     * Default implementation of ComscoreAnalytics. It uses the methods and classes provided by the
-     * Comscore SDK.
-     */
-    class DefaultComscoreAnalytics : ComscoreAnalytics {
-        override fun createStreamingAnalytics(): StreamingAnalytics {
-            return StreamingAnalytics()
+    override fun track(payload: TrackEvent): BaseEvent {
+        val comscoreOptions = payload.properties[TARGET_KEY]?.safeJsonObject
+        if (comscoreOptions.isNullOrEmpty()) {
+            return payload
         }
+        payload.properties = JsonObject(payload.properties.filter { (k, _) ->
+            k != TARGET_KEY
+        })
+        videoMetricClassificationMap[payload.messageId] = comscoreOptions.asStringMap()
+        return payload
+    }
 
-        override fun start(
-            context: Context,
-            partnerId: String,
-            publisher: PublisherConfiguration
-        ) {
-            val partner = PartnerConfiguration.Builder().partnerId(partnerId).build()
-            Analytics.getConfiguration().addClient(partner)
-            Analytics.getConfiguration().addClient(publisher)
-            Analytics.start(context)
-        }
-
-        override fun setPersistentLabels(labels: Map<String, String>) {
-            Analytics.getConfiguration().addPersistentLabels(labels)
-        }
-
-        override fun notifyViewEvent(properties: Map<String, String>) {
-            Analytics.notifyViewEvent(properties)
-        }
-
-        override fun notifyHiddenEvent(properties: Map<String, String>) {
-            Analytics.notifyHiddenEvent(properties)
-        }
+    companion object {
+        const val TARGET_KEY = "videoMetricDictionaryClassification"
     }
 }
 
 class ComscoreDestination(
     private var comScoreAnalytics: ComscoreAnalytics = ComscoreAnalytics.DefaultComscoreAnalytics()
 ) : DestinationPlugin() {
-
-    companion object {
-        const val PARTNER_ID = "24186693"
-    }
-
     override val key: String = "comScore"
 
     internal var streamingAnalytics: StreamingAnalytics? = null
     internal val configurationLabels = hashMapOf<String, String>()
     internal var settings: ComscoreSettings? = null
+    internal var comscoreOptionsPlugin: ComscoreOptionsPlugin? = null
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
         if (settings.isDestinationEnabled(key)) {
             this.settings = settings.destinationSettings(key, ComscoreSettings.serializer())
             if (type == Plugin.UpdateType.Initial) {
+                val optionsPlugin = ComscoreOptionsPlugin()
+                analytics.add(optionsPlugin)
+                comscoreOptionsPlugin = optionsPlugin
                 this.settings?.let {
                     comScoreAnalytics.start(
                         analytics.configuration.application as Context,
@@ -243,7 +198,8 @@ class ComscoreDestination(
         val event = payload.event
         val properties = payload.properties
 
-        var comscoreOptions = payload.integrations[key]?.safeJsonObject?.asStringMap()
+        var comscoreOptions =
+            comscoreOptionsPlugin?.videoMetricClassificationMap?.get(payload.messageId)
         if (comscoreOptions.isNullOrEmpty()) {
             comscoreOptions = emptyMap()
         }
@@ -286,6 +242,9 @@ class ComscoreDestination(
             }
         }
 
+        // Clear the map now that we are done with it
+        comscoreOptionsPlugin?.videoMetricClassificationMap?.remove(payload.messageId)
+
         return payload
     }
 
@@ -307,70 +266,61 @@ class ComscoreDestination(
             }
         }
         configurationLabels.clear()
-        val playbackMapper = mapOf(
-            "videoPlayer" to "ns_st_mp",
-            "video_player" to "ns_st_mp",
-            "sound" to "ns_st_vo"
-        )
         val mappedPlaybackProperties =
-            mapPlaybackProperties(properties, comscoreOptions, playbackMapper)
+            mapPlaybackProperties(properties, comscoreOptions, PLAYBACK_MAPPER)
         if (name == "Video Playback Started") {
-            streamingAnalytics = comScoreAnalytics.createStreamingAnalytics()
-            streamingAnalytics?.createPlaybackSession()
-            streamingAnalytics?.configuration?.addLabels(mappedPlaybackProperties)
+            comScoreAnalytics.createStreamingAnalytics().let {
+                streamingAnalytics = it
+                it.createPlaybackSession()
+                it.configuration.addLabels(mappedPlaybackProperties)
 
-            // adding ad_type to configurationLabels assuming pre-roll ad plays before video content
-            if (adType != null) {
-                configurationLabels["ns_st_ad"] = adType
-            }
+                // adding ad_type to configurationLabels assuming pre-roll ad plays before video content
+                if (adType != null) {
+                    configurationLabels["ns_st_ad"] = adType
+                }
 
-            // The label ns_st_ci must be set through a setAsset call
-            val contentIdMapper = mapOf(
-                "assetId" to "ns_st_ci",
-                "asset_id" to "ns_st_ci"
-            )
-            val mappedContentProperties = mapSpecialKeys(properties, contentIdMapper)
-            streamingAnalytics?.setMetadata(getContentMetadata(mappedContentProperties))
-            mappedContentProperties["ns_st_ci"]?.let {
-                configurationLabels["ns_st_ci"] = it
+                // The label ns_st_ci must be set through a setAsset call
+                val mappedContentProperties = mapSpecialKeys(properties, CONTENT_ID_MAPPER)
+                it.setMetadata(getContentMetadata(mappedContentProperties))
+                mappedContentProperties["ns_st_ci"]?.let { asset_id ->
+                    configurationLabels["ns_st_ci"] = asset_id
+                }
             }
             return
         }
-        if (streamingAnalytics == null) {
-//            logger.verbose(
-//                "streamingAnalytics instance not initialized correctly. Please call Video Playback Started to initialize."
-//            )
-        } else {
-            streamingAnalytics?.let {
+        streamingAnalytics.let {
+            if (it == null) {
+                analytics.log("streamingAnalytics instance not initialized correctly. Please call Video Playback Started to initialize.")
+            } else {
                 it.configuration.addLabels(mappedPlaybackProperties)
                 when (name) {
                     "Video Playback Paused", "Video Playback Interrupted" -> {
                         it.notifyPause()
-//                logger.verbose("streamingAnalytics.notifyPause(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyPause($playbackPosition)")
                     }
                     "Video Playback Buffer Started" -> {
                         it.startFromPosition(playbackPosition)
                         it.notifyBufferStart()
-//                logger.verbose("streamingAnalytics.notifyBufferStart(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyBufferStart($playbackPosition)")
                     }
                     "Video Playback Buffer Completed" -> {
                         it.startFromPosition(playbackPosition)
                         it.notifyBufferStop()
-//                logger.verbose("streamingAnalytics.notifyBufferStop(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyBufferStop($playbackPosition)")
                     }
                     "Video Playback Seek Started" -> {
                         it.notifySeekStart()
-//                logger.verbose("streamingAnalytics.notifySeekStart(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifySeekStart($playbackPosition)")
                     }
                     "Video Playback Seek Completed" -> {
                         it.startFromPosition(playbackPosition)
                         it.notifyPlay()
-//                logger.verbose("streamingAnalytics.notifyEnd(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyPlay($playbackPosition)")
                     }
                     "Video Playback Resumed" -> {
                         it.startFromPosition(playbackPosition)
                         it.notifyPlay()
-//                logger.verbose("streamingAnalytics.notifyPlay(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyPlay($playbackPosition)")
                     }
                 }
             }
@@ -387,34 +337,19 @@ class ComscoreDestination(
         if (playbackPosition == 0L) {
             playbackPosition = properties.getLong("position") ?: 0L
         }
-        val contentMapper = mapOf(
-            "title" to "ns_st_ep",
-            "season" to "ns_st_sn",
-            "episode" to "ns_st_en",
-            "genre" to "ns_st_ge",
-            "program" to "ns_st_pr",
-            "channel" to "ns_st_st",
-            "publisher" to "ns_st_pu",
-            "fullEpisode" to "ns_st_ce",
-            "full_episode" to "ns_st_ce",
-            "podId" to "ns_st_pn",
-            "pod_id" to "ns_st_pn"
-        )
         val mappedContentProperties =
-            mapContentProperties(properties, comscoreOptions, contentMapper)
-        if (streamingAnalytics == null) {
-//            logger.verbose(
-//                "streamingAnalytics instance not initialized correctly. Please call Video Playback Started to initialize."
-//            )
-        } else {
-            streamingAnalytics?.let {
+            mapContentProperties(properties, comscoreOptions, CONTENT_MAPPER)
+        streamingAnalytics.let {
+            if (it == null) {
+                analytics.log("streamingAnalytics instance not initialized correctly. Please call Video Playback Started to initialize.")
+            } else {
                 when (name) {
                     "Video Content Started" -> {
                         it.setMetadata(getContentMetadata(mappedContentProperties))
-//                logger.verbose("streamingAnalytics.setMetadata(%s)", mappedContentProperties)
+                        analytics.log("streamingAnalytics.setMetadata($mappedContentProperties)")
                         it.startFromPosition(playbackPosition)
                         it.notifyPlay()
-//                logger.verbose("streamingAnalytics.notifyPlay(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyPlay($playbackPosition)")
                     }
                     "Video Content Playing" -> {
                         // The presence of ns_st_ad on the StreamingAnalytics's asset means that we just exited an ad break, so
@@ -427,15 +362,15 @@ class ComscoreDestination(
                                     mappedContentProperties
                                 )
                             )
-//                    logger.verbose("streamingAnalytics.setMetadata(%s)", mappedContentProperties)
+                            analytics.log("streamingAnalytics.setMetadata($mappedContentProperties)")
                         }
                         it.startFromPosition(playbackPosition)
                         it.notifyPlay()
-//                logger.verbose("streamingAnalytics.notifyEnd(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyPlay($playbackPosition)")
                     }
                     "Video Content Completed" -> {
                         it.notifyEnd()
-//                logger.verbose("streamingAnalytics.notifyEnd(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyEnd($playbackPosition)")
                     }
                 }
             }
@@ -453,29 +388,21 @@ class ComscoreDestination(
             playbackPosition = properties.getLong("position") ?: 0L
         }
         var adType = properties.getString("adType")
-        if (adType == null || adType.trim { it <= ' ' }.isEmpty()) {
+        if (adType == null || adType.trim().isEmpty()) {
             adType = properties.getString("ad_type")
-            if (adType == null || adType.trim { it <= ' ' }.isEmpty()) {
+            if (adType == null || adType.trim().isEmpty()) {
                 adType = properties.getString("type")
             }
         }
-        val adMapper = mapOf(
-            "assetId" to "ns_st_ami",
-            "asset_id" to "ns_st_ami",
-            "title" to "ns_st_amt",
-            "publisher" to "ns_st_pu"
-        )
         if (adType != null) {
             configurationLabels["ns_st_ad"] = adType
         }
         val mappedAdProperties =
-            mapAdProperties(properties, comscoreOptions, adMapper).toMutableMap()
-        if (streamingAnalytics == null) {
-//            logger.verbose(
-//                "streamingAnalytics instance not initialized correctly. Please call Video Playback Started to initialize."
-//            )
-        } else {
-            streamingAnalytics?.let {
+            mapAdProperties(properties, comscoreOptions, AD_MAPPER).toMutableMap()
+        streamingAnalytics.let {
+            if (it == null) {
+                analytics.log("streamingAnalytics instance not initialized correctly. Please call Video Playback Started to initialize.")
+            } else {
                 when (name) {
                     "Video Ad Started" -> {
                         // The ID for content is not available on Ad Start events, however it will be available on the current
@@ -486,23 +413,55 @@ class ComscoreDestination(
                             mappedAdProperties["ns_st_ci"] = contentId
                         }
                         it.setMetadata(getAdvertisementMetadata(mappedAdProperties))
-//                logger.verbose("streamingAnalytics.setMetadata(%s)", mappedAdProperties)
+                        analytics.log("streamingAnalytics.setMetadata($mappedAdProperties)")
                         it.startFromPosition(playbackPosition)
                         it.notifyPlay()
-//                logger.verbose("streamingAnalytics.notifyPlay(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyPlay($playbackPosition)")
                     }
                     "Video Ad Playing" -> {
                         it.startFromPosition(playbackPosition)
                         it.notifyPlay()
-//                logger.verbose("streamingAnalytics.notifyPlay(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyPlay($playbackPosition)")
                     }
                     "Video Ad Completed" -> {
                         it.notifyEnd()
-//                logger.verbose("streamingAnalytics.notifyEnd(%s)", playbackPosition)
+                        analytics.log("streamingAnalytics.notifyEnd($playbackPosition)")
                     }
                 }
             }
         }
+    }
+
+    companion object {
+        const val PARTNER_ID = "24186693"
+        val AD_MAPPER = mapOf(
+            "assetId" to "ns_st_ami",
+            "asset_id" to "ns_st_ami",
+            "title" to "ns_st_amt",
+            "publisher" to "ns_st_pu"
+        )
+        val CONTENT_MAPPER = mapOf(
+            "title" to "ns_st_ep",
+            "season" to "ns_st_sn",
+            "episode" to "ns_st_en",
+            "genre" to "ns_st_ge",
+            "program" to "ns_st_pr",
+            "channel" to "ns_st_st",
+            "publisher" to "ns_st_pu",
+            "fullEpisode" to "ns_st_ce",
+            "full_episode" to "ns_st_ce",
+            "podId" to "ns_st_pn",
+            "pod_id" to "ns_st_pn"
+        )
+        val CONTENT_ID_MAPPER = mapOf(
+            "assetId" to "ns_st_ci",
+            "asset_id" to "ns_st_ci"
+        )
+        val PLAYBACK_MAPPER = mapOf(
+            "videoPlayer" to "ns_st_mp",
+            "video_player" to "ns_st_mp",
+            "sound" to "ns_st_vo"
+        )
     }
 
     private fun mapContentProperties(
@@ -602,6 +561,82 @@ class ComscoreDestination(
         return asset
     }
 
+}
+
+/**
+ * This is a wrapper to all Comscore components. It helps with testing since Comscore relays heavily
+ * on JNI and static classes, and all needs to be mocked in any case.
+ */
+interface ComscoreAnalytics {
+    /**
+     * Creates a new streaming analytics session.
+     *
+     * @return The new session.
+     */
+    fun createStreamingAnalytics(): StreamingAnalytics
+
+    /**
+     * Starts collecting analytics with the provided client configuration
+     *
+     * @param context Application context
+     * @param partnerId Partner ID
+     * @param publisher Publisher configuration
+     */
+    fun start(context: Context, partnerId: String, publisher: PublisherConfiguration)
+
+    /**
+     * Sets global labels
+     *
+     * @param labels Labels.
+     */
+    fun setPersistentLabels(labels: Map<String, String>)
+
+    /**
+     * Sends an view event with the provided properties.
+     *
+     * @param properties Event properties.
+     */
+    fun notifyViewEvent(properties: Map<String, String>)
+
+    /**
+     * Sends an unmapped event with the provided properties.
+     *
+     * @param properties Event properties.
+     */
+    fun notifyHiddenEvent(properties: Map<String, String>)
+
+    /**
+     * Default implementation of ComscoreAnalytics. It uses the methods and classes provided by the
+     * Comscore SDK.
+     */
+    class DefaultComscoreAnalytics : ComscoreAnalytics {
+        override fun createStreamingAnalytics(): StreamingAnalytics {
+            return StreamingAnalytics()
+        }
+
+        override fun start(
+            context: Context,
+            partnerId: String,
+            publisher: PublisherConfiguration
+        ) {
+            val partner = PartnerConfiguration.Builder().partnerId(partnerId).build()
+            Analytics.getConfiguration().addClient(partner)
+            Analytics.getConfiguration().addClient(publisher)
+            Analytics.start(context)
+        }
+
+        override fun setPersistentLabels(labels: Map<String, String>) {
+            Analytics.getConfiguration().addPersistentLabels(labels)
+        }
+
+        override fun notifyViewEvent(properties: Map<String, String>) {
+            Analytics.notifyViewEvent(properties)
+        }
+
+        override fun notifyHiddenEvent(properties: Map<String, String>) {
+            Analytics.notifyHiddenEvent(properties)
+        }
+    }
 }
 
 // Map special keys, preserve only the special keys and convert to string -> string map
