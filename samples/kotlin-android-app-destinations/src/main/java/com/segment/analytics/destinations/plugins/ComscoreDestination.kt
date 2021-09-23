@@ -153,6 +153,7 @@ class ComscoreDestination(
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
         if (settings.isDestinationEnabled(key)) {
+            analytics.log("Comscore Destination is enabled")
             this.settings = settings.destinationSettings(key, ComscoreSettings.serializer())
             if (type == Plugin.UpdateType.Initial) {
                 val optionsPlugin = ComscoreOptionsPlugin()
@@ -165,6 +166,7 @@ class ComscoreDestination(
                         it.toPublisherConfiguration()
                     )
                     it.analyticsConfig()
+                    analytics.log("Comscore Destination loaded")
                 }
             }
         }
