@@ -170,6 +170,10 @@ class ComscoreDestination(
         }
     }
 
+    override fun flush() {
+        comScoreAnalytics.flush()
+    }
+
     override fun identify(payload: IdentifyEvent): BaseEvent {
         val userId: String = payload.userId
         val anonymousId: String = payload.anonymousId
@@ -606,6 +610,11 @@ interface ComscoreAnalytics {
     fun notifyHiddenEvent(properties: Map<String, String>)
 
     /**
+     * Flushes the offline cache
+     */
+    fun flush()
+
+    /**
      * Default implementation of ComscoreAnalytics. It uses the methods and classes provided by the
      * Comscore SDK.
      */
@@ -635,6 +644,10 @@ interface ComscoreAnalytics {
 
         override fun notifyHiddenEvent(properties: Map<String, String>) {
             Analytics.notifyHiddenEvent(properties)
+        }
+
+        override fun flush() {
+            Analytics.flushOfflineCache()
         }
     }
 }

@@ -79,16 +79,18 @@ class MixpanelDestination(
 ) : DestinationPlugin(), AndroidLifecycle {
 
     internal var settings: MixpanelSettings? = null
-    internal lateinit var mixpanel: MixpanelAPI
+    internal var mixpanel: MixpanelAPI? = null
 
     override val key: String = "Mixpanel"
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
         if (settings.isDestinationEnabled(key)) {
+            analytics.log("Mixpanel Destination is enabled")
             this.settings = settings.destinationSettings(key)
             if (type == Plugin.UpdateType.Initial) {
                 mixpanel = MixpanelAPI.getInstance(context, this.settings?.token)
+                analytics.log("Mixpanel Destination loaded")
             }
         } else {
             analytics.log("Mixpanel destination is disabled via settings")
@@ -105,8 +107,8 @@ class MixpanelDestination(
 
         with(settings) {
             if (isPeopleEnabled && increments.contains(eventName)) {
-                mixpanel.people.increment(eventName, 1.0)
-                mixpanel.people.set("Last $eventName", Date())
+                mixpanel?.people?.increment(eventName, 1.0)
+                mixpanel?.people?.set("Last $eventName", Date())
             }
         }
 
@@ -119,7 +121,7 @@ class MixpanelDestination(
         val traits: JsonObject = payload.traits
 
         if (userId.isNotEmpty()) {
-            mixpanel.identify(userId)
+            mixpanel?.identify(userId)
             analytics.log("mixpanel.identify($userId)", type = LogType.INFO, event = payload)
         }
 
@@ -139,7 +141,7 @@ class MixpanelDestination(
             }.map(TRAIT_MAPPER)
 
             if (superProperties.isNotEmpty()) {
-                mixpanel.registerSuperProperties(superProperties.toJSONObject())
+                mixpanel?.registerSuperProperties(superProperties.toJSONObject())
                 analytics.log(
                     "mixpanel.registerSuperProperties($superProperties)",
                     type = LogType.INFO,
@@ -148,14 +150,14 @@ class MixpanelDestination(
             }
 
             if (isPeopleEnabled) {
-                mixpanel.people.identify(userId)
+                mixpanel?.people?.identify(userId)
                 analytics.log(
                     "mixpanel.people.identify($userId)",
                     type = LogType.INFO,
                     event = payload
                 )
                 if (peopleProperties.isNotEmpty()) {
-                    mixpanel.people.set(peopleProperties.toJSONObject())
+                    mixpanel?.people?.set(peopleProperties.toJSONObject())
                     analytics.log(
                         "mixpanel.getPeople().set($peopleProperties)",
                         type = LogType.INFO,
@@ -181,10 +183,10 @@ class MixpanelDestination(
 
         // Set Group Traits
         if (traits.isNotEmpty()) {
-            mixpanel.getGroup(groupName, groupId).setOnce(traits.toJSONObject())
+            mixpanel?.getGroup(groupName, groupId)?.setOnce(traits.toJSONObject())
         }
 
-        mixpanel.setGroup(groupName, groupId)
+        mixpanel?.setGroup(groupName, groupId)
         analytics.log(
             "mixpanel.setGroup($groupName, $groupId)",
             type = LogType.INFO,
@@ -198,12 +200,12 @@ class MixpanelDestination(
         val userId = payload.userId
         val previousId = if (payload.previousId == payload.anonymousId) {
             // Instead of using our own anonymousId, we use Mixpanel's own generated Id.
-            mixpanel.distinctId
+            mixpanel?.distinctId
         } else {
             payload.previousId
         }
         if (userId.isNotBlank()) {
-            mixpanel.alias(userId, previousId)
+            mixpanel?.alias(userId, previousId)
             analytics.log("mixpanel.alias($userId, $previousId)", type = LogType.INFO, event = payload)
         }
         return payload
@@ -257,14 +259,14 @@ class MixpanelDestination(
 
     private fun trackEvent(name: String, properties: JsonObject) {
         val props = properties.toJSONObject()
-        mixpanel.track(name, props)
+        mixpanel?.track(name, props)
         analytics.log("mixpanel.track($name, $properties)", type = LogType.INFO)
 
         val revenue = properties.getDouble("revenue")
 
         with(settings!!) {
             if (isPeopleEnabled && revenue != null && revenue != 0.0) {
-                mixpanel.people?.trackCharge(revenue, props)
+                mixpanel?.people?.trackCharge(revenue, props)
                 analytics.log("mixpanel.people.trackCharge($name, $props)", type = LogType.INFO)
             }
         }

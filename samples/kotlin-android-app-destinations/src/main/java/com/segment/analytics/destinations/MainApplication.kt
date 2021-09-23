@@ -1,9 +1,17 @@
 package com.segment.analytics.destinations
 
 import android.app.Application
+import com.segment.analytics.destinations.plugins.AmplitudeSession
+import com.segment.analytics.destinations.plugins.AppsFlyerDestination
+import com.segment.analytics.destinations.plugins.ComscoreDestination
+import com.segment.analytics.destinations.plugins.IntercomDestination
+import com.segment.analytics.destinations.plugins.FirebaseDestination
+import com.segment.analytics.destinations.plugins.MixpanelDestination
+import com.segment.analytics.destinations.plugins.WebhookPlugin
 import com.segment.analytics.destinations.plugins.*
 import com.segment.analytics.kotlin.android.Analytics
 import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.platform.plugins.log
 import java.util.concurrent.Executors
 
 class MainApplication : Application() {
@@ -40,5 +48,31 @@ class MainApplication : Application() {
 
         // Try out Intercom destination
         analytics.add(IntercomDestination(this))
+
+        val appsflyerDestination = AppsFlyerDestination(applicationContext, true)
+        analytics.add(appsflyerDestination)
+
+
+        appsflyerDestination.conversionListener =
+            object : AppsFlyerDestination.ExternalAppsFlyerConversionListener {
+                override fun onConversionDataSuccess(map: Map<String, Any>) {
+                    // Process Deferred Deep Linking here
+                    for (attrName in map.keys) {
+                        analytics.log("Appsflyer: attribute: " + attrName + " = " + map[attrName])
+                    }
+                }
+
+                override fun onConversionDataFail(s: String?) {}
+                override fun onAppOpenAttribution(map: Map<String, String>) {
+                    // Process Direct Deep Linking here
+                    for (attrName in map.keys) {
+                        analytics.log("Appsflyer: attribute: " + attrName + " = " + map[attrName])
+                    }
+                }
+
+                override fun onAttributionFailure(s: String?) {}
+            }
+
+        analytics.add(ComscoreDestination())
     }
 }

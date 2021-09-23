@@ -33,7 +33,7 @@ dependencies in your `build.gradle` file:
 dependencies {
     ...
     implementation 'com.appsflyer:af-android-sdk:6.3.2'
-    compileOnly 'com.android.installreferrer:installreferrer:2.2'
+    implementation 'com.android.installreferrer:installreferrer:2.2'
 }
 ```
 
@@ -88,19 +88,21 @@ class AppsFlyerDestination(
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
         if (settings.isDestinationEnabled(key)) {
+            analytics.log("Appsflyer Destination is enabled")
             this.settings = settings.destinationSettings(key)
             if (type == Plugin.UpdateType.Initial) {
-                val afLib = AppsFlyerLib.getInstance()
+                appsflyer = AppsFlyerLib.getInstance()
+                analytics.log("Appsflyer Destination loaded")
                 var listener: AppsFlyerConversionListener? = null
                 this.settings?.let {
                     if (it.trackAttributionData) {
                         listener = ConversionListener(analytics)
                     }
-                    afLib.setDebugLog(isDebug)
-                    afLib.init(it.appsFlyerDevKey, listener, applicationContext)
+                    appsflyer?.setDebugLog(isDebug)
+                    appsflyer?.init(it.appsFlyerDevKey, listener, applicationContext)
                 }
                 deepLinkListener?.let {
-                    AppsFlyerLib.getInstance().subscribeForDeepLink(it)
+                    appsflyer?.subscribeForDeepLink(it)
                 }
             }
         }
@@ -125,7 +127,7 @@ class AppsFlyerDestination(
         val afProperties = properties.mapTransform(propertiesMapper)
 
         appsflyer?.logEvent(applicationContext, event, afProperties)
-        analytics?.log("appsflyer.logEvent(context, $event, $properties)", type = LogType.INFO)
+        analytics.log("appsflyer.logEvent(context, $event, $properties)", type = LogType.INFO)
         return payload
     }
 
@@ -207,7 +209,7 @@ class AppsFlyerDestination(
             }
         }
 
-        fun trackInstallAttributed(attributionData: Map<String, Any>) {
+        private fun trackInstallAttributed(attributionData: Map<String, Any>) {
             // See https://segment.com/docs/spec/mobile/#install-attributed.
             val properties = buildJsonObject {
                 put("provider", key)
