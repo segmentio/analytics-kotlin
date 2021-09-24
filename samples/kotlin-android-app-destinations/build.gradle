@@ -65,6 +65,9 @@ dependencies {
     // Mixpanel
     api 'com.mixpanel.android:mixpanel-android:5.8.7'
 
+    // Comscore
+    api 'com.comscore:android-analytics:6.5.0'
+
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:28.2.1')
     implementation 'com.google.firebase:firebase-analytics-ktx'
