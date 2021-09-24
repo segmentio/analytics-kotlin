@@ -90,7 +90,7 @@ class MixpanelDestination(
     }
 
     override fun track(payload: TrackEvent): BaseEvent? {
-        val settings = settings ?: return null
+        val settings = settings ?: return payload
         // Example of transforming event property keys
         val eventName = payload.event
         val properties = payload.properties
@@ -108,7 +108,7 @@ class MixpanelDestination(
     }
 
     override fun identify(payload: IdentifyEvent): BaseEvent? {
-        val settings = settings ?: return null
+        val settings = settings ?: return payload
         val userId: String = payload.userId
         val traits: JsonObject = payload.traits
 
@@ -204,7 +204,7 @@ class MixpanelDestination(
     }
 
     override fun screen(payload: ScreenEvent): BaseEvent? {
-        val settings = settings ?: return null
+        val settings = settings ?: return payload
         val screenName = payload.name
         val properties = payload.properties
         val screenCategory = payload.category
