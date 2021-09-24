@@ -1,12 +1,12 @@
 package com.segment.analytics.destinations.plugins
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import androidx.core.os.bundleOf
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.FirebaseAnalytics.Event
-import com.google.firebase.analytics.FirebaseAnalytics.Param
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
@@ -15,118 +15,138 @@ import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.getDouble
 import com.segment.analytics.kotlin.core.utilities.getMapList
 import com.segment.analytics.kotlin.core.utilities.getString
-import kotlinx.serialization.json.JsonPrimitive
+import com.segment.analytics.kotlin.core.utilities.toContent
+import kotlinx.serialization.json.JsonObject
+import java.util.*
+
+/*
+This is an example of the Firebase device-mode destination plugin that can be integrated with
+Segment analytics.
+Note: This plugin is NOT SUPPORTED by Segment.  It is here merely as an example,
+and for your convenience should you find it useful.
+# Instructions for adding Firebase:
+- In your top-level build.gradle file add these lines
+```
+buildscript {
+    ...
+    repositories {
+        google()
+    }
+    dependencies {
+        ...
+        classpath 'com.google.gms:google-services:4.3.5'
+    }
+}
+```
+- In your app-module build.gradle file add the following:
+```
+...
+plugins {
+    id 'com.google.gms.google-services'
+}
+dependencies {
+    ...
+    implementation platform('com.google.firebase:firebase-bom:28.2.1')
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+}
+```
+- Copy this entire FirebaseDestination.kt file into your project's codebase.
+- Copy your google-service.json file to your to app-module
+- Go to your project's codebase and wherever u initialize the analytics client add these lines
+```
+val Firebase = FirebaseDestination()
+analytics.add(Firebase)
+```
+MIT License
+Copyright (c) 2021 Segment
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 
 class FirebaseDestination(
     private val context: Context
 ) : DestinationPlugin(), AndroidLifecycle {
 
     override val key: String = "Firebase"
-    private lateinit var firebaseAnalytics: FirebaseAnalytics
+    internal lateinit var firebaseAnalytics: FirebaseAnalytics
     private var activity: Activity? = null
-
-    companion object {
-        private val EVENT_MAPPER: Map<String, String> = mapOf(
-            "Product Added" to Event.ADD_TO_CART,
-            "Checkout Started" to Event.BEGIN_CHECKOUT,
-            "Order Completed" to Event.ECOMMERCE_PURCHASE,
-            "Order Refunded" to Event.PURCHASE_REFUND,
-            "Product Viewed" to Event.VIEW_ITEM,
-            "Product List Viewed" to Event.VIEW_ITEM_LIST,
-            "Payment Info Entered" to Event.ADD_PAYMENT_INFO,
-            "Promotion Viewed" to Event.PRESENT_OFFER,
-            "Product Added to Wishlist" to Event.ADD_TO_WISHLIST,
-            "Product Shared" to Event.SHARE,
-            "Product Clicked" to Event.SELECT_CONTENT,
-            "Products Searched" to Event.SEARCH
-        )
-
-        private val PROPERTY_MAPPER: Map<String, String> = mapOf(
-            "category" to Param.ITEM_CATEGORY,
-            "product_id" to Param.ITEM_ID,
-            "name" to Param.ITEM_NAME,
-            "price" to Param.PRICE,
-            "quantity" to Param.QUANTITY,
-            "query" to Param.SEARCH_TERM,
-            "shipping" to Param.SHIPPING,
-            "tax" to Param.TAX,
-            "total" to Param.VALUE,
-            "revenue" to Param.VALUE,
-            "order_id" to Param.TRANSACTION_ID,
-            "currency" to Param.CURRENCY,
-            "products" to Param.ITEM_LIST
-        )
-
-        private val PRODUCT_MAPPER: Map<String, String> = mapOf(
-            "category" to Param.ITEM_CATEGORY,
-            "product_id" to Param.ITEM_ID,
-            "id" to Param.ITEM_ID,
-            "name" to Param.ITEM_NAME,
-            "price" to Param.PRICE,
-            "quantity" to Param.QUANTITY
-        )
-    }
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-
-        firebaseAnalytics = FirebaseAnalytics.getInstance(context)
     }
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
-        // if we've already set up this singleton SDK, can't do it again, so skip.
-        if (type != Plugin.UpdateType.Initial) return
-
         super.update(settings, type)
+        if (type == Plugin.UpdateType.Initial) {
+            @SuppressLint("MissingPermission") // Suppress need for INTERNET, WAKE_LOCK, NETWORK_STATE perms
+            firebaseAnalytics = FirebaseAnalytics.getInstance(context)
+        }
     }
 
-    override fun identify(payload: IdentifyEvent): BaseEvent? {
-        var returnPayload = super.identify(payload)
+    // Make sure keys do not contain ".", "-", " ", ":" and are replaced with _
+    private fun makeKey(key: String): String {
+        val charsToFilter = """[. \-:]""".toRegex()
+        return key.replace(charsToFilter, "_")
+    }
 
-        firebaseAnalytics.setUserId(payload.userId)
+    override fun identify(payload: IdentifyEvent): BaseEvent {
+        val userId: String = payload.userId
+        val traits: JsonObject = payload.traits
+        firebaseAnalytics.setUserId(userId)
 
-        payload.traits.let {
+        traits.let {
             for ((traitKey, traitValue) in it) {
-                val updatedTrait = makeKey(traitValue.toString())
-                firebaseAnalytics.setUserProperty(traitKey, updatedTrait)
+                val normalizedKey = makeKey(traitKey)
+                val updatedTraitValue = traitValue.toContent().toString()
+                firebaseAnalytics.setUserProperty(normalizedKey, updatedTraitValue)
+                analytics.log("firebaseAnalytics.setUserProperty($normalizedKey, $updatedTraitValue)")
             }
         }
 
-        return returnPayload
+        return payload
     }
 
-    override fun track(payload: TrackEvent): BaseEvent? {
-        var returnPayload = super.track(payload)
+    override fun screen(payload: ScreenEvent): BaseEvent? {
+        val screenName = payload.name
 
-        // Clean the eventName up
-        var eventName = payload.event
-        if (EVENT_MAPPER.containsKey(eventName)) {
-            eventName = EVENT_MAPPER[eventName].toString()
-        } else {
-            eventName = makeKey(eventName)
+        val tempActivity = activity
+        if (tempActivity != null) {
+            val bundle = bundleOf(
+                FirebaseAnalytics.Param.SCREEN_NAME to screenName,
+                FirebaseAnalytics.Param.SCREEN_CLASS to tempActivity::class.simpleName
+            )
+            firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
+            analytics.log("firebaseAnalytics.logEvent(SCREEN_VIEW, $bundle)")
         }
+
+        return payload
+    }
+
+    override fun track(payload: TrackEvent): BaseEvent {
+        val event = payload.event
+        // Clean the eventName up
+        val eventName = EVENT_MAPPER[event] ?: makeKey(event)
 
         val bundledProperties = formatProperties(payload.properties)
 
         firebaseAnalytics.logEvent(eventName, bundledProperties)
         analytics.log("firebaseAnalytics.logEvent($eventName, $bundledProperties)")
 
-        return returnPayload
+        return payload
     }
-
-    override fun screen(payload: ScreenEvent): BaseEvent? {
-        var returnPayload = super.screen(payload)
-
-        val tempActivity = activity
-        if (tempActivity != null) {
-            val bundle = Bundle()
-            bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, payload.name)
-            firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
-        }
-
-        return returnPayload
-    }
-
 
     // AndroidActivity Methods
     override fun onActivityResumed(activity: Activity?) {
@@ -138,8 +158,7 @@ class FirebaseDestination(
             packageManager.getActivityInfo(activity.componentName, PackageManager.GET_META_DATA)
                 .let {
                     it.loadLabel(packageManager).toString().let { activityName ->
-                        val bundle = Bundle()
-                        bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, activityName)
+                        val bundle = bundleOf(FirebaseAnalytics.Param.SCREEN_NAME to activityName)
                         firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
                         analytics.log(
                             "firebaseAnalytics.setCurrentScreen(activity, $activityName, null"
@@ -147,7 +166,7 @@ class FirebaseDestination(
                     }
                 }
         } catch (exception: PackageManager.NameNotFoundException) {
-            analytics.log("Activity Not Found: " + exception.toString())
+            analytics.log("Activity Not Found: $exception")
         }
     }
 
@@ -161,57 +180,93 @@ class FirebaseDestination(
         this.activity = null
     }
 
+
     // Private Helper Methods
 
-    // Format properties into a format needed by firebase
-    private fun formatProperties(properties: Properties): Bundle? {
+    companion object {
+        private val PROPERTY_MAPPER: Map<String, String> = mapOf(
+            "category" to FirebaseAnalytics.Param.ITEM_CATEGORY,
+            "product_id" to FirebaseAnalytics.Param.ITEM_ID,
+            "name" to FirebaseAnalytics.Param.ITEM_NAME,
+            "price" to FirebaseAnalytics.Param.PRICE,
+            "quantity" to FirebaseAnalytics.Param.QUANTITY,
+            "query" to FirebaseAnalytics.Param.SEARCH_TERM,
+            "shipping" to FirebaseAnalytics.Param.SHIPPING,
+            "tax" to FirebaseAnalytics.Param.TAX,
+            "total" to FirebaseAnalytics.Param.VALUE,
+            "revenue" to FirebaseAnalytics.Param.VALUE,
+            "order_id" to FirebaseAnalytics.Param.TRANSACTION_ID,
+            "currency" to FirebaseAnalytics.Param.CURRENCY,
+            "products" to FirebaseAnalytics.Param.ITEM_LIST
+        )
 
-        var bundle: Bundle? = Bundle()
+        private val PRODUCT_MAPPER: Map<String, String> = mapOf(
+            "category" to FirebaseAnalytics.Param.ITEM_CATEGORY,
+            "product_id" to FirebaseAnalytics.Param.ITEM_ID,
+            "id" to FirebaseAnalytics.Param.ITEM_ID,
+            "name" to FirebaseAnalytics.Param.ITEM_NAME,
+            "price" to FirebaseAnalytics.Param.PRICE,
+            "quantity" to FirebaseAnalytics.Param.QUANTITY
+        )
+
+        private val EVENT_MAPPER: Map<String, String> = mapOf(
+            "Product Added" to FirebaseAnalytics.Event.ADD_TO_CART,
+            "Checkout Started" to FirebaseAnalytics.Event.BEGIN_CHECKOUT,
+            "Order Completed" to FirebaseAnalytics.Event.ECOMMERCE_PURCHASE,
+            "Order Refunded" to FirebaseAnalytics.Event.PURCHASE_REFUND,
+            "Product Viewed" to FirebaseAnalytics.Event.VIEW_ITEM,
+            "Product List Viewed" to FirebaseAnalytics.Event.VIEW_ITEM_LIST,
+            "Payment Info Entered" to FirebaseAnalytics.Event.ADD_PAYMENT_INFO,
+            "Promotion Viewed" to FirebaseAnalytics.Event.PRESENT_OFFER,
+            "Product Added to Wishlist" to FirebaseAnalytics.Event.ADD_TO_WISHLIST,
+            "Product Shared" to FirebaseAnalytics.Event.SHARE,
+            "Product Clicked" to FirebaseAnalytics.Event.SELECT_CONTENT,
+            "Products Searched" to FirebaseAnalytics.Event.SEARCH
+        )
+    }
+
+    private fun formatProperties(properties: JsonObject): Bundle? {
+        val bundle = Bundle()
 
         val revenue = properties.getDouble("revenue") ?: 0.0
         val total = properties.getDouble("total") ?: 0.0
         val currency = properties.getString("currency") ?: ""
         if ((revenue != 0.0 || total != 0.0) && currency.isNotEmpty()) {
-            bundle?.putString(Param.CURRENCY, "USD")
+            bundle.putString(FirebaseAnalytics.Param.CURRENCY, "USD")
         }
 
         for ((property, value) in properties.entries) {
             var finalProperty = makeKey(property)
             if (PROPERTY_MAPPER.containsKey(property)) {
-                finalProperty = PROPERTY_MAPPER.get(property).toString()
+                finalProperty = PROPERTY_MAPPER[property].toString()
             }
 
-            if (finalProperty == Param.ITEM_LIST) {
-                val products = properties.getMapList("products")?.toSet() ?: continue
+            if (finalProperty == FirebaseAnalytics.Param.ITEM_LIST) {
+                val products = properties.getMapList("products") ?: continue
                 val formattedProducts = formatProducts(products)
-                bundle?.putParcelableArrayList(finalProperty, formattedProducts)
-            } else if (bundle != null) {
-                putValue(bundle, finalProperty, value)
+                bundle.putParcelableArrayList(finalProperty, formattedProducts)
+            } else {
+                bundle.putValue(finalProperty, value.toContent())
             }
         }
 
         // Don't return a valid bundle if there wasn't anything added
-        if (bundle?.isEmpty == true) {
-            bundle = null
+        return if (bundle.isEmpty) {
+            null
+        } else {
+            bundle
         }
-
-        return bundle
     }
 
-    private fun formatProducts(products: Set<Map<String, Any?>>): ArrayList<Bundle>? {
-
-        val mappedProducts: ArrayList<Bundle> = ArrayList()
+    private fun formatProducts(products: List<Map<String, Any?>>): ArrayList<Bundle> {
+        val mappedProducts = ArrayList<Bundle>()
 
         for (product in products) {
             val mappedProduct = Bundle()
             for (key in product.keys) {
-                var value = product[key] as JsonPrimitive
-                val finalKey = if (PRODUCT_MAPPER.containsKey(key)) {
-                    PRODUCT_MAPPER[key] ?: makeKey(key)
-                } else {
-                    makeKey(key)
-                }
-                putValue(mappedProduct, finalKey, value.content)
+                val value = product[key]
+                val finalKey = PRODUCT_MAPPER[key] ?: makeKey(key)
+                mappedProduct.putValue(finalKey, value)
             }
             mappedProducts.add(mappedProduct)
         }
@@ -219,29 +274,29 @@ class FirebaseDestination(
         return mappedProducts
     }
 
-    // Make sure keys do not contain ".", "-", " ", ":" and are replaced with _
-    private fun makeKey(key: String): String {
-        val charsToFilter = """[\. \-:]""".toRegex()
-        return key.replace(charsToFilter, "_")
-    }
-
     // Adds the appropriate value & type to a supplied bundle
-    private fun putValue(bundle: Bundle, key: String, value: Any) {
-
+    private fun Bundle.putValue(key: String, value: Any?) {
         when (value) {
+            is Boolean -> {
+                putBoolean(key, value)
+            }
             is Int -> {
-                bundle.putInt(key, value)
+                putInt(key, value)
             }
             is Double -> {
-                bundle.putDouble(key, value)
+                putDouble(key, value)
             }
             is Long -> {
-                bundle.putLong(key, value)
+                putLong(key, value)
+            }
+            is String -> {
+                putString(key, value)
             }
             else -> {
                 val stringValue = value.toString()
-                bundle.putString(key, stringValue)
+                putString(key, stringValue)
             }
         }
     }
+
 }
