@@ -17,6 +17,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.appsflyer.deeplink.DeepLinkListener
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.mapTransform
+import com.segment.analytics.kotlin.core.utilities.toContent
 import kotlinx.serialization.json.*
 
 /*
@@ -93,9 +94,9 @@ class AppsFlyerDestination(
                     appsflyer?.setDebugLog(isDebug)
                     appsflyer?.init(it.appsFlyerDevKey, listener, applicationContext)
                 }
-                deepLinkListener?.let {
-                    appsflyer?.subscribeForDeepLink(it)
-                }
+            }
+            deepLinkListener?.let {
+                appsflyer?.subscribeForDeepLink(it)
             }
         }
     }
@@ -116,7 +117,7 @@ class AppsFlyerDestination(
         val event: String = payload.event
         val properties: Properties = payload.properties
 
-        val afProperties = properties.mapTransform(propertiesMapper)
+        val afProperties = properties.mapTransform(propertiesMapper).mapValues { (_, v) -> v.toContent() }
 
         appsflyer?.logEvent(applicationContext, event, afProperties)
         analytics.log("appsflyer.logEvent(context, $event, $properties)", type = LogType.INFO)
