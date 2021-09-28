@@ -19,8 +19,14 @@ jobs:
             - ~/.gradle
           key: jars-{{ checksum "build.gradle" }}-{{ checksum  "samples/kotlin-android-app/build.gradle" }}-{{ checksum  "samples/java-android-app/build.gradle" }}
       - run:
-          name: Run Tests
-          command: ./gradlew lint test
+          name: Run Core Tests
+          command: ./gradlew core:test
+      - run:
+          name: Run Android Tests
+          command: ./gradlew android:test
+      - run:
+          name: Run Sample Destination Tests
+          command: ./gradlew samples:kotlin-android-app-destinations:test
       - run:
           name: Snyk
           command: curl -sL https://raw.githubusercontent.com/segmentio/snyk_helpers/master/initialization/snyk.sh | sh

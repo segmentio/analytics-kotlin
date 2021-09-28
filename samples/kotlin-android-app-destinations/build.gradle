@@ -28,6 +28,7 @@ android {
         }
     }
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -35,6 +36,8 @@ android {
         jvmTarget = '1.8'
     }
     testOptions {
+        unitTests.returnDefaultValues = true
+        unitTests.includeAndroidResources = true
         unitTests.all {
             useJUnitPlatform()
         }
@@ -42,41 +45,55 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
+    implementation project(':android')
+    implementation 'androidx.multidex:multidex:2.0.1'
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'androidx.core:core-ktx:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'com.google.android.material:material:1.4.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
+
+    implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
+}
+
+// Partner Dependencies
+dependencies {
     // Mixpanel
     api 'com.mixpanel.android:mixpanel-android:5.8.7'
 
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:28.2.1')
-    // Declare the dependency for the Analytics library
-    // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation 'com.google.firebase:firebase-analytics-ktx'
 
     // Intercom
     implementation 'io.intercom.android:intercom-sdk-base:10.1.1'
     implementation 'io.intercom.android:intercom-sdk-fcm:10.1.1'
+}
 
-    implementation project(':android')
-
-    implementation 'androidx.multidex:multidex:2.0.1'
-
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9'
-
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.3.2'
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.google.android.material:material:1.3.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-
-    implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
-    implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
-
-    testImplementation 'io.mockk:mockk:1.10.6'
+// Test Dependencies
+dependencies {
     testImplementation 'junit:junit:4.+'
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.2'
-    testImplementation platform("org.junit:junit-bom:5.7.2")
-    testImplementation "org.junit.jupiter:junit-jupiter"
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.2'
+
+    testImplementation 'io.mockk:mockk:1.10.6'
+    testImplementation(platform("org.junit:junit-bom:5.7.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+
+    // Add Roboelectric dependencies.
+    testImplementation 'org.robolectric:robolectric:4.5'
+    testImplementation 'androidx.test:core:1.3.0'
+
+    // Add JUnit4 legacy dependencies.
+    testImplementation 'junit:junit:4.13.2'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.7.0'
+
+    // For JSON Object testing
+    testImplementation 'org.json:json:20180813'
+    testImplementation 'org.skyscreamer:jsonassert:1.5.0'
 }
