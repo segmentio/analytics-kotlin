@@ -137,7 +137,7 @@ class ComscoreDestination(
     override val key: String = "comScore"
 
     internal var streamingAnalytics: StreamingAnalytics? = null
-    internal val configurationLabels = hashMapOf<String, String>()
+    internal val configurationLabels = hashMapOf<String, String?>()
     internal var settings: ComscoreSettings? = null
     internal var comscoreOptionsPlugin: ComscoreOptionsPlugin? = null
 
@@ -279,7 +279,7 @@ class ComscoreDestination(
                 // The label ns_st_ci must be set through a setAsset call
                 val mappedContentProperties = mapSpecialKeys(properties, CONTENT_ID_MAPPER)
                 it.setMetadata(getContentMetadata(mappedContentProperties))
-                mappedContentProperties["ns_st_ci"]?.let { asset_id ->
+                mappedContentProperties["ns_st_ci"].let { asset_id ->
                     configurationLabels["ns_st_ci"] = asset_id
                 }
             }

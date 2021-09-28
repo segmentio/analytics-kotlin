@@ -959,28 +959,6 @@ class ComscoreDestinationTests {
             .map { it.first().trim() to it.last().trim() }
             .toMap()
 
-    private fun assertEquals(
-        expected: Map<String, String>,
-        actual: Map<String, String>
-    ) {
-        assertEquals(
-            expected.size,
-            actual.size,
-            "$expected is not the same size as $actual"
-        )
-        expected.forEach {
-            assertTrue(
-                actual.containsKey(it.key),
-                "$actual does not contain (${it.key}=${it.value})"
-            )
-            assertEquals(
-                actual[it.key],
-                expected[it.key],
-                "$actual contains wrong value (${it.key}=${it.value})"
-            )
-        }
-    }
-
     private fun BaseEvent.applyBaseEventData() = apply {
         messageId = "qwerty-1234"
         anonymousId = "anonId"
