@@ -3,8 +3,6 @@ package com.segment.analytics.destinations.plugins
 import android.app.Application
 import android.util.Log
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.utilities.getString
 import io.intercom.android.sdk.Company
 import io.intercom.android.sdk.Intercom
 import io.intercom.android.sdk.UserAttributes
@@ -15,9 +13,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
@@ -77,27 +77,23 @@ internal class IntercomDestinationTest {
     @BeforeEach
     internal fun setUp() {
         analytics = Analytics(configuration)
-        intercomDestination = spyk(IntercomDestination(application))
+        intercomDestination = IntercomDestination(application)
     }
 
     @Test
     fun `intercom client initialized when settings is updated`() {
-        val settings = slot<Settings>()
+        val mobileApiKey = slot<String>()
+        val appId = slot<String>()
 
         analytics.add(intercomDestination)
 
         verify {
-            intercomDestination.update(capture(settings), Plugin.UpdateType.Initial)
-            Intercom.initialize(any(), any(), any())
+            Intercom.initialize(any(), capture(mobileApiKey), capture(appId))
             Intercom.client()
         }
         assertEquals(intercom, intercomDestination.intercom)
-        with(settings.captured) {
-            val integration = this.integrations[intercomDestination.key]?.jsonObject
-            assertNotNull(integration)
-            assertEquals("android_sdk-4c2bc22f45f0f20629d4a70c3bb803845039800b", integration?.getString("mobileApiKey"))
-            assertEquals("qe2y1u8q", integration?.getString("appId"))
-        }
+        assertEquals("android_sdk-4c2bc22f45f0f20629d4a70c3bb803845039800b", mobileApiKey.captured)
+        assertEquals("qe2y1u8q", appId.captured)
     }
 
     @Test
@@ -105,7 +101,6 @@ internal class IntercomDestinationTest {
         analytics.add(intercomDestination)
         analytics.checkSettings()
         verify (exactly = 1) {
-            intercomDestination.update(any(), Plugin.UpdateType.Initial)
             Intercom.initialize(any(), any(), any())
             Intercom.client()
         }
