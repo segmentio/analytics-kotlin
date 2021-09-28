@@ -89,7 +89,7 @@ class AppsFlyerDestination(
                 var listener: AppsFlyerConversionListener? = null
                 this.settings?.let {
                     if (it.trackAttributionData) {
-                        listener = ConversionListener(analytics)
+                        listener = ConversionListener()
                     }
                     appsflyer?.setDebugLog(isDebug)
                     appsflyer?.init(it.appsFlyerDevKey, listener, applicationContext)
@@ -157,7 +157,7 @@ class AppsFlyerDestination(
     interface ExternalAppsFlyerConversionListener : AppsFlyerConversionListener
     interface ExternalDeepLinkListener : DeepLinkListener
 
-    inner class ConversionListener(val analytics: Analytics) : AppsFlyerConversionListener {
+    inner class ConversionListener : AppsFlyerConversionListener {
         override fun onConversionDataSuccess(conversionData: Map<String, Any>) {
             if (!getFlag(CONV_KEY)) {
                 trackInstallAttributed(conversionData)
@@ -207,7 +207,7 @@ class AppsFlyerDestination(
             val properties = buildJsonObject {
                 put("provider", key)
                 attributionData.forEach { (k, v) ->
-                    if (k != "media_source" && k != "adGroup") {
+                    if (k !in setOf("media_source", "adgroup")) {
                         put(k, convertToPrimitive(v))
                     }
                 }
@@ -225,19 +225,16 @@ class AppsFlyerDestination(
         }
 
         private fun getFlag(key: String): Boolean {
-            val context: Context = applicationContext
             val sharedPreferences: SharedPreferences =
-                context.getSharedPreferences(AF_SEGMENT_SHARED_PREF, 0)
+                applicationContext.getSharedPreferences(AF_SEGMENT_SHARED_PREF, 0)
             return sharedPreferences.getBoolean(key, false)
         }
 
         private fun setFlag(key: String, value: Boolean) {
-            val context: Context = applicationContext
             val sharedPreferences: SharedPreferences =
-                context.getSharedPreferences(AF_SEGMENT_SHARED_PREF, 0)
+                applicationContext.getSharedPreferences(AF_SEGMENT_SHARED_PREF, 0)
             val editor = sharedPreferences.edit()
-            editor.putBoolean(key, value)
-            editor.apply()
+            editor.putBoolean(key, value).apply()
         }
     }
 
