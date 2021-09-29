@@ -49,6 +49,8 @@ NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_C
 
 You can find usage documentation at [https://segment.com/docs/sources/mobile/kotlin-android/](https://segment.com/docs/sources/mobile/kotlin-android/).
 
+Explore more via the [example projects](samples) which showcase analytics instrumentation on different platforms/languages and usage of plugins. These projects contain sample [plugins](samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins) and [destination plugins](samples/kotlin-android-app-destinations/src/main/java/com/segment/analytics/destinations/plugins) 
+
 ## Contributing
 
 See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
