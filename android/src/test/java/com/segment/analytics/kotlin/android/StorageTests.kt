@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import com.segment.analytics.kotlin.android.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.android.utils.mockAnalytics
 import com.segment.analytics.kotlin.android.utils.mockContext
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.serialization.decodeFromString
@@ -33,7 +34,7 @@ class StorageTests {
         private var mockContext: Context = mockContext()
 
         @BeforeEach
-        fun setup() {
+        fun setup() = runBlocking  {
             clearPersistentStorage()
             store.provide(
                 UserInfo(
