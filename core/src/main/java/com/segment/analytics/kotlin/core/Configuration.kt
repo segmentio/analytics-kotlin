@@ -38,11 +38,11 @@ data class Configuration(
 ) {
     internal var analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
-    internal var analyticsDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
+    internal var analyticsDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
 
-    internal var networkIODispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    internal var networkIODispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
-    internal var fileIODispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+    internal var fileIODispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
