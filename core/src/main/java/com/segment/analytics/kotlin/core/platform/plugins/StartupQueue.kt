@@ -27,7 +27,7 @@ class StartupQueue : Plugin, Subscriber {
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         with(analytics) {
-            analyticsScope.launch(Dispatchers.Analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
                 store.subscribe(
                     subscriber = this@StartupQueue,
                     stateClazz = System::class,

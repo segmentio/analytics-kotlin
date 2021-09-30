@@ -58,7 +58,7 @@ suspend fun Analytics.checkSettings() {
     // stop things; queue in case our settings have changed.
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
 
-    analyticsScope.launch(Dispatchers.NetworkIO) {
+    analyticsScope.launch(networkIODispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
         val settingsObj: Settings? = try {
             val connection = HTTPClient(writeKey).settings(cdnHost)
@@ -79,14 +79,14 @@ suspend fun Analytics.checkSettings() {
                                 systemState.settings?.plan != null
             val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial
 
-            withContext(Dispatchers.Analytics) {
+            withContext(analyticsDispatcher) {
                 store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
             }
             update(settingsObj, updateType)
         }
 
         // we're good to go back to a running state.
-        withContext(Dispatchers.Analytics) {
+        withContext(analyticsDispatcher) {
             store.dispatch(System.ToggleRunningAction(running = true), System::class)
         }
     }

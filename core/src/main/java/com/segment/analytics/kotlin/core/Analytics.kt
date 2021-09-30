@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.log
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,17 +33,23 @@ class Analytics(val configuration: Configuration) : Subscriber {
     internal val timeline: Timeline
     val storage: Storage
     val analyticsScope: CoroutineScope
+    val analyticsDispatcher: CoroutineDispatcher
+    val networkIODispatcher: CoroutineDispatcher
+    val fileIODispatcher: CoroutineDispatcher
 
     init {
         require(configuration.isValid()) { "invalid configuration" }
         analyticsScope = configuration.analyticsScope
+        analyticsDispatcher = configuration.analyticsDispatcher
+        networkIODispatcher = configuration.networkIODispatcher
+        fileIODispatcher = configuration.fileIODispatcher
         timeline = Timeline().also { it.analytics = this }
         _store = Store()
 
         storage = configuration.storageProvider.getStorage(
             analytics = this,
             writeKey = configuration.writeKey,
-            ioDispatcher = Dispatchers.FileIO,
+            ioDispatcher = fileIODispatcher,
             store = store,
             application = configuration.application!!
         )
@@ -53,7 +60,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
         // Setup store
-        analyticsScope.launch(Dispatchers.Analytics) {
+        analyticsScope.launch(analyticsDispatcher) {
             store.also {
                 it.provide(UserInfo.defaultState(storage))
                 it.provide(System.defaultState(configuration, storage))
@@ -145,7 +152,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
      */
     @JvmOverloads
     fun identify(userId: String, traits: JsonObject = emptyJsonObject) {
-        analyticsScope.launch(Dispatchers.Analytics) {
+        analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.SetUserIdAndTraitsAction(userId, traits), UserInfo::class)
         }
         val event = IdentifyEvent(userId = userId, traits = traits)
@@ -321,7 +328,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
      * @see <a href="https://segment.com/docs/tracking-api/alias/">Alias Documentation</a>
      */
     fun alias(newId: String) {
-        analyticsScope.launch(Dispatchers.Analytics) {
+        analyticsScope.launch(analyticsDispatcher) {
             val curUserInfo = store.currentState(UserInfo::class)
             if (curUserInfo != null) {
                 val event = AliasEvent(
@@ -340,7 +347,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
 
     fun process(event: BaseEvent) {
         log("applying base attributes on ${Thread.currentThread().name}")
-        analyticsScope.launch(Dispatchers.Analytics) {
+        analyticsScope.launch(analyticsDispatcher) {
             event.applyBaseEventData(store)
             log("processing event on ${Thread.currentThread().name}")
             timeline.process(event)
@@ -356,7 +363,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     fun add(plugin: Plugin): Analytics {
         this.timeline.add(plugin)
         if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(Dispatchers.Analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
                 store.dispatch(System.AddIntegrationAction(plugin.key), System::class)
             }
         }
@@ -376,7 +383,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     fun remove(plugin: Plugin): Analytics {
         this.timeline.remove(plugin)
         if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(Dispatchers.Analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
                 store.dispatch(System.RemoveIntegrationAction(plugin.key), System::class)
             }
         }

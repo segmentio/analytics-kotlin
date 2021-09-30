@@ -63,7 +63,7 @@ internal class Timeline {
         plugin.setup(analytics)
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
-            analyticsScope.launch(Dispatchers.Analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
                 store.currentState(System::class)?.settings?.let {
                     // if we have settings then update plugin with it
                     plugin.update(it, Plugin.UpdateType.Initial)

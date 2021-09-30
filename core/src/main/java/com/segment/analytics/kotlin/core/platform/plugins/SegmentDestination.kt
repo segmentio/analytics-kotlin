@@ -8,7 +8,6 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -130,7 +129,7 @@ class SegmentDestination(
 
     override fun flush() {
         analytics.run {
-            analyticsScope.launch(Dispatchers.NetworkIO) {
+            analyticsScope.launch(networkIODispatcher) {
                 performFlush()
             }
         }
