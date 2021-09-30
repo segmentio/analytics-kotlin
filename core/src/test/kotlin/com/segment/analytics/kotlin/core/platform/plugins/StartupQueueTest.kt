@@ -29,7 +29,8 @@ internal class StartupQueueTest {
             application = "Tetst",
             autoAddSegmentDestination = false
         )
-        config.ioDispatcher = testDispatcher
+        config.fileIODispatcher = testDispatcher
+        config.networkIODispatcher = testDispatcher
         config.analyticsDispatcher = testDispatcher
         config.analyticsScope = testScope
         analytics = Analytics(config)

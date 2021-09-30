@@ -9,6 +9,7 @@ import io.mockk.CapturingSlot
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.JsonObject
@@ -34,7 +35,8 @@ internal class JavaAnalyticsTest {
             .setAutoAddSegmentDestination(false)
             .build()
 
-        config.ioDispatcher = testDispatcher
+        config.fileIODispatcher = testDispatcher
+        config.networkIODispatcher = testDispatcher
         config.analyticsDispatcher = testDispatcher
         config.analyticsScope = testScope
 
@@ -393,13 +395,13 @@ internal class JavaAnalyticsTest {
     }
 
     @Test
-    fun userId() {
+    fun userId() = runBlocking {
         analytics.identify("userId")
         assertEquals("userId", analytics.userId())
     }
 
     @Test
-    fun traits() {
+    fun traits() = runBlocking  {
         val json = buildJsonObject { put("name", "bar") }
         analytics.identify("userId", json)
         assertEquals(json, analytics.traits())

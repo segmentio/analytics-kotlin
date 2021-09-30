@@ -10,6 +10,7 @@ import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import io.mockk.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
@@ -50,7 +51,8 @@ class AnalyticsTests {
             writeKey = "123",
             application = "Test"
         )
-        config.ioDispatcher = testDispatcher
+        config.fileIODispatcher = testDispatcher
+        config.networkIODispatcher = testDispatcher
         config.analyticsDispatcher = testDispatcher
         config.analyticsScope = testScope
 
@@ -105,7 +107,7 @@ class AnalyticsTests {
         }
 
         @Test
-        fun `adding destination plugin modifies integrations object`() {
+        fun `adding destination plugin modifies integrations object`() = runBlocking  {
             val testPlugin1 = object : DestinationPlugin() {
                 override val key: String = "TestDestination"
             }
@@ -123,7 +125,7 @@ class AnalyticsTests {
         }
 
         @Test
-        fun `removing destination plugin modifies integrations object`() {
+        fun `removing destination plugin modifies integrations object`() = runBlocking  {
             val testPlugin1 = object : DestinationPlugin() {
                 override val key: String = "TestDestination"
             }
@@ -174,7 +176,7 @@ class AnalyticsTests {
         }
 
         @Test
-        fun `event gets populated with correct integrations`() {
+        fun `event gets populated with correct integrations`() = runBlocking  {
             val mockPlugin = spyk(StubPlugin())
             analytics.add(mockPlugin)
             analytics.store.dispatch(System.AddIntegrationAction("plugin1"), System::class)
@@ -252,7 +254,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `identify() overwrites userId and traits`() {
+            fun `identify() overwrites userId and traits`() = runBlocking  {
                 analytics.store.dispatch(
                     UserInfo.SetUserIdAndTraitsAction(
                         "oldUserId",
@@ -360,7 +362,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `alias event modifies underlying userId`() {
+            fun `alias event modifies underlying userId`() = runBlocking  {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.identify("oldId")

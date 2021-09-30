@@ -57,7 +57,8 @@ class SegmentDestinationTests {
             application = "Test",
             storageProvider = ConcreteStorageProvider
         )
-        config.ioDispatcher = testDispatcher
+        config.fileIODispatcher = testDispatcher
+        config.networkIODispatcher = testDispatcher
         config.analyticsDispatcher = testDispatcher
         config.analyticsScope = testScope
         analytics = Analytics(config)

@@ -2,6 +2,7 @@ package com.segment.analytics.kotlin.core.utilities
 
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.serialization.decodeFromString
@@ -25,7 +26,7 @@ internal class StorageImplTest {
     private lateinit var storage: StorageImpl
 
     @BeforeEach
-    fun setup() {
+    fun setup() = runBlocking  {
         clearPersistentStorage()
         store.provide(
             UserInfo(

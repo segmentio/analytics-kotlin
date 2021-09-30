@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
@@ -24,7 +25,8 @@ internal class StateTest {
             writeKey = "123",
             application = "Test"
         )
-        config.ioDispatcher = testDispatcher
+        config.fileIODispatcher = testDispatcher
+        config.networkIODispatcher = testDispatcher
         config.analyticsDispatcher = testDispatcher
         config.analyticsScope = testScope
 
@@ -36,7 +38,7 @@ internal class StateTest {
     inner class UserInfoTests {
 
         @Test
-        fun resetAction() {
+        fun resetAction() = runBlocking  {
             val traits = buildJsonObject { put("behaviour", "bad") }
             analytics.store.dispatch(
                 UserInfo.SetUserIdAndTraitsAction(
@@ -54,7 +56,7 @@ internal class StateTest {
         }
 
         @Test
-        fun setUserIdAction() {
+        fun setUserIdAction() = runBlocking  {
             analytics.store.dispatch(UserInfo.SetUserIdAction("oldUserId"), UserInfo::class)
             assertEquals("oldUserId", analytics.userId())
 
@@ -63,13 +65,13 @@ internal class StateTest {
         }
 
         @Test
-        fun setAnonymousIdAction() {
+        fun setAnonymousIdAction() = runBlocking  {
             analytics.store.dispatch(UserInfo.SetAnonymousIdAction("anonymous"), UserInfo::class)
             assertEquals("anonymous", analytics.store.currentState(UserInfo::class)?.anonymousId)
         }
 
         @Test
-        fun setTraitsAction() {
+        fun setTraitsAction() = runBlocking  {
             val traits = buildJsonObject { put("behaviour", "bad") }
 
             analytics.store.dispatch(UserInfo.SetUserIdAction("oldUserId"), UserInfo::class)
@@ -81,7 +83,7 @@ internal class StateTest {
         }
 
         @Test
-        fun setUserIdAndTraitsAction() {
+        fun setUserIdAndTraitsAction() = runBlocking  {
             val traits = buildJsonObject { put("behaviour", "bad") }
             analytics.store.dispatch(
                 UserInfo.SetUserIdAndTraitsAction(
