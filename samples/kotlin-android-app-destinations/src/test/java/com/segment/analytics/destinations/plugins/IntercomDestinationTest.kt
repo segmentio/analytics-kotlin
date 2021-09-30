@@ -11,6 +11,7 @@ import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.JsonObject
@@ -97,7 +98,7 @@ internal class IntercomDestinationTest {
     }
 
     @Test
-    fun `intercom client not re-initialized when settings is fresh`() {
+    fun `intercom client not re-initialized when settings is fresh`() = runBlocking  {
         analytics.add(intercomDestination)
         analytics.checkSettings()
         verify (exactly = 1) {
