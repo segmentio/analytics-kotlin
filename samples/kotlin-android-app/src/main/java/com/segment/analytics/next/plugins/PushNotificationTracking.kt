@@ -8,6 +8,14 @@ import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/**
+ * Used alongside with MyFirebaseService.kt
+ *
+ * Firebase Service handles the incoming push notification and fires the Push Notification Received event,
+ * if we choose to create a notification based on the incoming push, then this plugin will act upon the
+ * opening of that notification and fire the Push Notification Tapped event.
+ */
+
 object PushNotificationTracking: Plugin, AndroidLifecycle {
     override val type: Plugin.Type = Plugin.Type.Utility
     override lateinit var analytics: Analytics
