@@ -32,7 +32,7 @@ class StorageImpl(
         propertiesFile.load()
     }
 
-    override fun subscribeToStore() {
+    override suspend fun subscribeToStore() {
         store.subscribe(
             this,
             UserInfo::class,

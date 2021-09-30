@@ -39,7 +39,7 @@ interface Storage {
         AppBuild("segment.app.build")
     }
 
-    fun subscribeToStore()
+    suspend fun subscribeToStore()
     fun write(key: Constants, value: String)
     fun read(key: Constants): String?
     fun remove(key: Constants): Boolean

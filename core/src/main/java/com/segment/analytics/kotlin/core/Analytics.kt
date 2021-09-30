@@ -7,8 +7,8 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.log
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -33,22 +33,16 @@ class Analytics(val configuration: Configuration) : Subscriber {
     val storage: Storage
     val analyticsScope: CoroutineScope
 
-    // Coroutine context used for analytics timeline processing
-    val processingDispatcher: CoroutineDispatcher
-    val ioDispatcher: CoroutineDispatcher
-
     init {
         require(configuration.isValid()) { "invalid configuration" }
         analyticsScope = configuration.analyticsScope
-        processingDispatcher = configuration.analyticsDispatcher
-        ioDispatcher = configuration.ioDispatcher
         timeline = Timeline().also { it.analytics = this }
         _store = Store()
 
         storage = configuration.storageProvider.getStorage(
             analytics = this,
             writeKey = configuration.writeKey,
-            ioDispatcher = ioDispatcher,
+            ioDispatcher = Dispatchers.FileIO,
             store = store,
             application = configuration.application!!
         )
@@ -59,26 +53,29 @@ class Analytics(val configuration: Configuration) : Subscriber {
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
         // Setup store
-        store.also {
-            it.provide(UserInfo.defaultState(storage))
-            it.provide(System.defaultState(configuration, storage))
+        analyticsScope.launch(Dispatchers.Analytics) {
+            store.also {
+                it.provide(UserInfo.defaultState(storage))
+                it.provide(System.defaultState(configuration, storage))
 
-            // subscribe to store after state is provided
-            storage.subscribeToStore()
-        }
+                // subscribe to store after state is provided
+                storage.subscribeToStore()
+            }
 
-        checkSettings()
-        add(StartupQueue())
-        add(ContextPlugin())
-        if (configuration.autoAddSegmentDestination) {
-            add(
-                SegmentDestination(
-                    configuration.writeKey,
-                    configuration.flushAt,
-                    configuration.flushInterval * 1000L,
-                    configuration.apiHost
+            checkSettings()
+
+            add(StartupQueue())
+            add(ContextPlugin())
+            if (configuration.autoAddSegmentDestination) {
+                add(
+                    SegmentDestination(
+                        configuration.writeKey,
+                        configuration.flushAt,
+                        configuration.flushInterval * 1000L,
+                        configuration.apiHost
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -148,7 +145,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
      */
     @JvmOverloads
     fun identify(userId: String, traits: JsonObject = emptyJsonObject) {
-        analyticsScope.launch(ioDispatcher) {
+        analyticsScope.launch(Dispatchers.Analytics) {
             store.dispatch(UserInfo.SetUserIdAndTraitsAction(userId, traits), UserInfo::class)
         }
         val event = IdentifyEvent(userId = userId, traits = traits)
@@ -324,25 +321,27 @@ class Analytics(val configuration: Configuration) : Subscriber {
      * @see <a href="https://segment.com/docs/tracking-api/alias/">Alias Documentation</a>
      */
     fun alias(newId: String) {
-        val curUserInfo = store.currentState(UserInfo::class)
-        if (curUserInfo != null) {
-            val event = AliasEvent(
-                userId = newId,
-                previousId = curUserInfo.userId ?: curUserInfo.anonymousId
-            )
-            analyticsScope.launch(ioDispatcher) {
-                store.dispatch(UserInfo.SetUserIdAction(newId), UserInfo::class)
+        analyticsScope.launch(Dispatchers.Analytics) {
+            val curUserInfo = store.currentState(UserInfo::class)
+            if (curUserInfo != null) {
+                val event = AliasEvent(
+                    userId = newId,
+                    previousId = curUserInfo.userId ?: curUserInfo.anonymousId
+                )
+                launch {
+                    store.dispatch(UserInfo.SetUserIdAction(newId), UserInfo::class)
+                }
+                process(event)
+            } else {
+                log("failed to fetch current UserInfo state")
             }
-            process(event)
-        } else {
-            log("failed to fetch current UserInfo state")
         }
     }
 
     fun process(event: BaseEvent) {
         log("applying base attributes on ${Thread.currentThread().name}")
-        event.applyBaseEventData(store)
-        analyticsScope.launch(processingDispatcher) {
+        analyticsScope.launch(Dispatchers.Analytics) {
+            event.applyBaseEventData(store)
             log("processing event on ${Thread.currentThread().name}")
             timeline.process(event)
         }
@@ -357,7 +356,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     fun add(plugin: Plugin): Analytics {
         this.timeline.add(plugin)
         if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(ioDispatcher) {
+            analyticsScope.launch(Dispatchers.Analytics) {
                 store.dispatch(System.AddIntegrationAction(plugin.key), System::class)
             }
         }
@@ -377,7 +376,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     fun remove(plugin: Plugin): Analytics {
         this.timeline.remove(plugin)
         if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(ioDispatcher) {
+            analyticsScope.launch(Dispatchers.Analytics) {
                 store.dispatch(System.RemoveIntegrationAction(plugin.key), System::class)
             }
         }
@@ -401,7 +400,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     /**
      * Retrieve the userId registered by a previous `identify` call
      */
-    fun userId(): String? {
+    suspend fun userId(): String? {
         val userInfo = store.currentState(UserInfo::class)
         return userInfo?.userId
     }
@@ -409,7 +408,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    fun traits(): JsonObject? {
+    suspend fun traits(): JsonObject? {
         val userInfo = store.currentState(UserInfo::class)
         return userInfo?.traits
     }
@@ -417,7 +416,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+    suspend inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
         }

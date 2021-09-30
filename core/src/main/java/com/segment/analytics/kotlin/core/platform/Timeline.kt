@@ -3,6 +3,8 @@ package com.segment.analytics.kotlin.core.platform
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
 // Platform abstraction for managing all plugins and their execution
@@ -60,9 +62,13 @@ internal class Timeline {
     fun add(plugin: Plugin) {
         plugin.setup(analytics)
         plugins[plugin.type]?.add(plugin)
-        analytics.store.currentState(System::class)?.settings?.let {
-            // if we have settings then update plugin with it
-            plugin.update(it, Plugin.UpdateType.Initial)
+        with(analytics) {
+            analyticsScope.launch(Dispatchers.Analytics) {
+                store.currentState(System::class)?.settings?.let {
+                    // if we have settings then update plugin with it
+                    plugin.update(it, Plugin.UpdateType.Initial)
+                }
+            }
         }
     }
 

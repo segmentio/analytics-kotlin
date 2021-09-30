@@ -79,7 +79,7 @@ sealed class BaseEvent {
     // the userId tied to the event
     abstract var userId: String
 
-    internal fun applyBaseEventData(store: Store) {
+    internal suspend fun applyBaseEventData(store: Store) {
         this.timestamp = Instant.now().toString()
         val system = store.currentState(System::class) ?: return
         val userInfo = store.currentState(UserInfo::class) ?: return

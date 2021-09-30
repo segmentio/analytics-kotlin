@@ -46,9 +46,6 @@ class JavaAnalytics private constructor() {
     lateinit var analyticsScope: CoroutineScope
         private set
 
-    lateinit var ioDispatcher: CoroutineDispatcher
-        private set
-
     /**
      * The track method is how you record any actions your users perform. Each action is known by a
      * name, like 'Purchased a T-Shirt'. You can also record properties specific to those actions.
@@ -218,17 +215,16 @@ class JavaAnalytics private constructor() {
     /**
      * Retrieve the userId registered by a previous `identify` call
      */
-    fun userId() = analytics.userId()
+    suspend fun userId() = analytics.userId()
 
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    fun traits() = analytics.traits()
+    suspend fun traits() = analytics.traits()
 
     private fun setup(analytics: Analytics) {
         store = analytics.store
         storage = analytics.storage
         analyticsScope = analytics.analyticsScope
-        ioDispatcher = analytics.ioDispatcher
     }
 }

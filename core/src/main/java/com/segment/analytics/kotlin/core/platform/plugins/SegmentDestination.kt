@@ -1,23 +1,14 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.AliasEvent
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
-import com.segment.analytics.kotlin.core.GroupEvent
-import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.HTTPException
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.Settings
-import com.segment.analytics.kotlin.core.Storage
-import com.segment.analytics.kotlin.core.TrackEvent
-import com.segment.analytics.kotlin.core.emptyJsonObject
-import com.segment.analytics.kotlin.core.parseFilePaths
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -139,7 +130,7 @@ class SegmentDestination(
 
     override fun flush() {
         analytics.run {
-            analyticsScope.launch(ioDispatcher) {
+            analyticsScope.launch(Dispatchers.NetworkIO) {
                 performFlush()
             }
         }
