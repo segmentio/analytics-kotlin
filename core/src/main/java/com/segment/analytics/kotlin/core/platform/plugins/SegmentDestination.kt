@@ -6,7 +6,6 @@ import com.segment.analytics.kotlin.core.HTTPException
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -16,7 +15,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.io.FileInputStream
-import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -44,7 +42,7 @@ class SegmentDestination(
 
     override val key: String = "Segment.io"
     internal val httpClient: HTTPClient = HTTPClient(apiKey)
-    internal lateinit var storage: WeakReference<Storage>
+    internal  val storage get() = analytics.storage
     lateinit var flushScheduler: ScheduledExecutorService
     internal val eventCount = AtomicInteger(0)
 
@@ -84,7 +82,7 @@ class SegmentDestination(
         val stringVal = Json.encodeToString(jsonVal)
         analytics.log("$key running $stringVal")
         try {
-            storage.get()?.write(Storage.Constants.Events, stringVal)
+            storage.write(Storage.Constants.Events, stringVal)
             if (eventCount.incrementAndGet() >= flushCount) {
                 flush()
             }
@@ -95,7 +93,6 @@ class SegmentDestination(
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        storage = WeakReference(analytics.storage)
 
         // register timer for flush interval
         flushScheduler = Executors.newScheduledThreadPool(1)
@@ -104,7 +101,7 @@ class SegmentDestination(
 
             // If we have events in queue flush them
             val eventFilePaths =
-                parseFilePaths(storage.get()?.read(Storage.Constants.Events))
+                parseFilePaths(storage.read(Storage.Constants.Events))
             if (eventFilePaths.isNotEmpty()) {
                 initialDelay = 0
             }
@@ -140,7 +137,7 @@ class SegmentDestination(
             return
         }
         analytics.log("$key performing flush")
-        val fileUrls = parseFilePaths(storage.get()?.read(Storage.Constants.Events))
+        val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
         if (fileUrls.isEmpty()) {
             analytics.log("No events to upload")
             return
@@ -165,7 +162,7 @@ class SegmentDestination(
                     connection.close()
                 }
                 // Cleanup uploaded payloads
-                storage.get()?.removeFile(fileUrl)
+                storage.removeFile(fileUrl)
                 analytics.log("$key uploaded $fileUrl")
             } catch (e: HTTPException) {
                 analytics.log("$key exception while uploading, ${e.message}")
@@ -175,7 +172,7 @@ class SegmentDestination(
                         message = "Payloads were rejected by server. Marked for removal.",
                         type = LogType.ERROR
                     )
-                    storage.get()?.removeFile(fileUrl)
+                    storage.removeFile(fileUrl)
                 } else {
                     analytics.log(
                         message = "Error while uploading payloads",
