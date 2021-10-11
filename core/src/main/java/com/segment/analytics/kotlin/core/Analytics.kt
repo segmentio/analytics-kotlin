@@ -7,10 +7,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.log
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
@@ -20,31 +17,24 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
+import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 
-class Analytics(val configuration: Configuration) : Subscriber {
-
-    private val _store: Store
-    val store: Store
-        get() {
-            return _store
-        }
+class Analytics internal constructor(
+    val configuration: Configuration,
+    val store: Store,
+    val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob()),
+    val analyticsDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher(),
+    val networkIODispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
+    val fileIODispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+) : Subscriber {
 
     internal val timeline: Timeline
     val storage: Storage
-    val analyticsScope: CoroutineScope
-    val analyticsDispatcher: CoroutineDispatcher
-    val networkIODispatcher: CoroutineDispatcher
-    val fileIODispatcher: CoroutineDispatcher
 
     init {
         require(configuration.isValid()) { "invalid configuration" }
-        analyticsScope = configuration.analyticsScope
-        analyticsDispatcher = configuration.analyticsDispatcher
-        networkIODispatcher = configuration.networkIODispatcher
-        fileIODispatcher = configuration.fileIODispatcher
         timeline = Timeline().also { it.analytics = this }
-        _store = Store()
 
         storage = configuration.storageProvider.getStorage(
             analytics = this,
@@ -56,9 +46,15 @@ class Analytics(val configuration: Configuration) : Subscriber {
         build()
     }
 
+    constructor(configuration: Configuration): this(configuration, Store())
+
     // This function provides a default state to the store & attaches the storage and store instances
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
+        // because startup queue doesn't depend on a state, we can add it first
+        add(StartupQueue())
+        add(ContextPlugin())
+        
         // Setup store
         analyticsScope.launch(analyticsDispatcher) {
             store.also {
@@ -71,8 +67,6 @@ class Analytics(val configuration: Configuration) : Subscriber {
 
             checkSettings()
 
-            add(StartupQueue())
-            add(ContextPlugin())
             if (configuration.autoAddSegmentDestination) {
                 add(
                     SegmentDestination(
@@ -405,9 +399,18 @@ class Analytics(val configuration: Configuration) : Subscriber {
     }
 
     /**
+     * Retrieve the userId registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
+     */
+    fun userId(): String? = runBlocking {
+        userIdAsync()
+    }
+
+    /**
      * Retrieve the userId registered by a previous `identify` call
      */
-    suspend fun userId(): String? {
+    suspend fun userIdAsync(): String? {
         val userInfo = store.currentState(UserInfo::class)
         return userInfo?.userId
     }
@@ -415,16 +418,38 @@ class Analytics(val configuration: Configuration) : Subscriber {
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    suspend fun traits(): JsonObject? {
+    fun traits(): JsonObject? = runBlocking {
+        traitsAsync()
+    }
+
+    /**
+     * Retrieve the traits registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
+     */
+    suspend fun traitsAsync(): JsonObject? {
         val userInfo = store.currentState(UserInfo::class)
         return userInfo?.traits
     }
 
     /**
-     * Retrieve the traits registered by a previous `identify` call
+     * Retrieve the traits registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
      */
-    suspend inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+    inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits()?.let {
+            decodeFromJsonElement(deserializationStrategy, it)
+        }
+    }
+
+    /**
+     * Retrieve the traits registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
+     */
+    suspend inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+        return traitsAsync()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
         }
     }

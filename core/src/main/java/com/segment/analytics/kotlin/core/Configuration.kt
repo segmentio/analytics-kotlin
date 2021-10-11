@@ -36,14 +36,6 @@ data class Configuration(
     var apiHost: String = DEFAULT_API_HOST,
     var cdnHost: String = DEFAULT_CDN_HOST
 ) {
-    internal var analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob())
-
-    internal var analyticsDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-
-    internal var networkIODispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-
-    internal var fileIODispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
-
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
     }
