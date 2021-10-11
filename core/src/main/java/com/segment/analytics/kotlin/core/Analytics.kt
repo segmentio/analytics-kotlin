@@ -340,6 +340,8 @@ class Analytics internal constructor(
     }
 
     fun process(event: BaseEvent) {
+        event.applyBaseData()
+
         log("applying base attributes on ${Thread.currentThread().name}")
         analyticsScope.launch(analyticsDispatcher) {
             event.applyBaseEventData(store)
