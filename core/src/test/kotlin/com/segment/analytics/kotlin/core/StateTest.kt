@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.spyStore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -19,6 +20,10 @@ internal class StateTest {
     private val testDispatcher = TestCoroutineDispatcher()
     private val testScope = TestCoroutineScope(testDispatcher)
 
+    init {
+        mockHTTPClient()
+    }
+
     @BeforeEach
     fun setup() {
         clearPersistentStorage()
@@ -29,7 +34,6 @@ internal class StateTest {
         val store = spyStore(testScope, testDispatcher)
         analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
 
-        analytics = Analytics(config)
         analytics.configuration.autoAddSegmentDestination = false
     }
 
