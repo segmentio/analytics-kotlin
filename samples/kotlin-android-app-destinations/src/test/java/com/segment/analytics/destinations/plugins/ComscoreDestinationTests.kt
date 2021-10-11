@@ -14,15 +14,10 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.getString
-import io.mockk.MockKAnnotations
-import io.mockk.Runs
-import io.mockk.clearMocks
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import io.mockk.just
-import io.mockk.mockkStatic
-import io.mockk.slot
-import io.mockk.verify
+import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -65,6 +60,10 @@ class ComscoreDestinationTests {
     @MockK
     lateinit var mockedContext: Context
 
+    private val testDispatcher = TestCoroutineDispatcher()
+
+    private val testScope = TestCoroutineScope(testDispatcher)
+
     init {
         MockKAnnotations.init(this)
     }
@@ -75,7 +74,11 @@ class ComscoreDestinationTests {
         comscoreDestination = ComscoreDestination(mockedComscoreAnalytics)
         every { mockedAnalytics.configuration.application } returns mockedContext
         every { mockedAnalytics.store } returns mockedStore
-        every { mockedStore.currentState(System::class) } returns null
+        every { mockedAnalytics.analyticsScope } returns testScope
+        every { mockedAnalytics.networkIODispatcher } returns testDispatcher
+        every { mockedAnalytics.analyticsDispatcher } returns testDispatcher
+        every { mockedAnalytics.fileIODispatcher } returns testDispatcher
+        coEvery { mockedStore.currentState(System::class) } returns null
         comscoreDestination.setup(mockedAnalytics)
         every { mockedComscoreAnalytics.createStreamingAnalytics() } returns mockedStreamingAnalytics
         every { mockedStreamingAnalytics.configuration } returns mockedStreamingConfiguration

@@ -3,26 +3,19 @@ package com.segment.analytics.destinations.plugins
 import android.app.Application
 import android.util.Log
 import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.log
 import io.intercom.android.sdk.Company
 import io.intercom.android.sdk.Intercom
 import io.intercom.android.sdk.UserAttributes
 import io.intercom.android.sdk.identity.Registration
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.net.HttpURLConnection
 
 internal class IntercomDestinationTest {
 
@@ -32,15 +25,12 @@ internal class IntercomDestinationTest {
     @MockK(relaxUnitFun = true)
     lateinit var intercom: Intercom
 
-    private var configuration: Configuration
-
+    @MockK(relaxUnitFun = true)
     private lateinit var analytics: Analytics
 
     private lateinit var intercomDestination: IntercomDestination
 
-    private val testDispatcher = TestCoroutineDispatcher()
-
-    private val testScope = TestCoroutineScope(testDispatcher)
+    val settings: Settings
 
     init {
         MockKAnnotations.init(this)
@@ -50,11 +40,6 @@ internal class IntercomDestinationTest {
         every { Intercom.client() } returns intercom
         every { Intercom.initialize(any(), any(), any()) } just Runs
 
-        // mock configuration
-        configuration = spyk(Configuration("123", application))
-        every { configuration getProperty "ioDispatcher" } propertyType CoroutineDispatcher::class returns testDispatcher
-        every { configuration getProperty "analyticsScope"} propertyType CoroutineScope::class returns testScope
-
         // mock java log
         mockkStatic(Log::class)
         every { Log.println(any(), any(), any()) } returns 0
@@ -63,22 +48,17 @@ internal class IntercomDestinationTest {
         every { Log.i(any(), any()) } returns 0
         every { Log.e(any(), any()) } returns 0
 
-        // mock http client
-        mockkConstructor(HTTPClient::class)
-        val settingsStream = ByteArrayInputStream(
-            """
-                {"integrations":{"Intercom":{"appId":"qe2y1u8q","collectContext":false,"mobileApiKey":"android_sdk-4c2bc22f45f0f20629d4a70c3bb803845039800b"}},"plan":{},"edgeFunction":{}}
-            """.trimIndent().toByteArray()
-        )
-        val httpConnection: HttpURLConnection = mockk()
-        val connection = object : Connection(httpConnection, settingsStream, null) {}
-        every { anyConstructed<HTTPClient>().settings(any()) } returns connection
-    }
+        // mock analytics log
+        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt").kotlin)
+        every { analytics.log(any(), any(), any()) } just Runs
 
-    @BeforeEach
-    internal fun setUp() {
-        analytics = Analytics(configuration)
+        settings = Json.decodeFromString(
+            """
+            {"integrations":{"Intercom":{"appId":"qe2y1u8q","collectContext":false,"mobileApiKey":"android_sdk-4c2bc22f45f0f20629d4a70c3bb803845039800b"}},"plan":{},"edgeFunction":{}}
+        """.trimIndent()
+        )
         intercomDestination = IntercomDestination(application)
+        intercomDestination.setup(analytics)
     }
 
     @Test
@@ -86,7 +66,7 @@ internal class IntercomDestinationTest {
         val mobileApiKey = slot<String>()
         val appId = slot<String>()
 
-        analytics.add(intercomDestination)
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
 
         verify {
             Intercom.initialize(any(), capture(mobileApiKey), capture(appId))
@@ -99,9 +79,8 @@ internal class IntercomDestinationTest {
 
     @Test
     fun `intercom client not re-initialized when settings is fresh`() = runBlocking  {
-        analytics.add(intercomDestination)
-        analytics.checkSettings()
-        verify (exactly = 1) {
+        intercomDestination.update(settings, Plugin.UpdateType.Refresh)
+        verify (exactly = 0) {
             Intercom.initialize(any(), any(), any())
             Intercom.client()
         }
@@ -119,16 +98,20 @@ internal class IntercomDestinationTest {
             put("others", "other")
         }
 
-        analytics.add(intercomDestination)
-        analytics.track("track", buildJsonObject {
-            put("revenue", 1)
-            put("total", 2)
-            put("currency", "USD")
-            put("products", "products")
-            put("others", "other")
-        })
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
+        intercomDestination.track(
+            TrackEvent(
+                event = "track",
+                properties = buildJsonObject {
+                    put("revenue", 1)
+                    put("total", 2)
+                    put("currency", "USD")
+                    put("products", "products")
+                    put("others", "other")
+                })
+        )
 
-        verify (timeout = 1000) { intercom.logEvent(capture(eventName), capture(event)) }
+        verify { intercom.logEvent(capture(eventName), capture(event)) }
         assertEquals("track", eventName.captured)
         assertEquals(expected, event.captured)
     }
@@ -143,12 +126,16 @@ internal class IntercomDestinationTest {
             }
         }
 
-        analytics.add(intercomDestination)
-        analytics.track("track", buildJsonObject {
-            put("total", 2)
-        })
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
+        intercomDestination.track(
+            TrackEvent(
+                event = "track",
+                properties = buildJsonObject {
+                    put("total", 2)
+                })
+        )
 
-        verify (timeout = 1000) { intercom.logEvent(capture(eventName), capture(event)) }
+        verify { intercom.logEvent(capture(eventName), capture(event)) }
         assertEquals("track", eventName.captured)
         assertEquals(expected, event.captured)
     }
@@ -158,11 +145,19 @@ internal class IntercomDestinationTest {
         val attributes = slot<UserAttributes>()
         val expected = UserAttributes.Builder().build()
 
-        analytics.add(intercomDestination)
-        analytics.identify("")
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
+        intercomDestination.identify(
+            IdentifyEvent("", emptyJsonObject).apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = "2021-07-13T00:59:09"
+            }
+        )
 
-        verify (timeout = 1000) { intercom.registerUnidentifiedUser() }
-        verify (timeout = 1000) { intercom.updateUser(capture(attributes)) }
+        verify { intercom.registerUnidentifiedUser() }
+        verify { intercom.updateUser(capture(attributes)) }
         assertEquals(expected, attributes.captured)
     }
 
@@ -204,11 +199,19 @@ internal class IntercomDestinationTest {
             }
         }
 
-        analytics.add(intercomDestination)
-        analytics.identify("test", payload)
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
+        intercomDestination.identify(
+            IdentifyEvent("test", payload).apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = "2021-07-13T00:59:09"
+            }
+        )
 
-        verify (timeout = 1000) { intercom.registerIdentifiedUser(capture(registration)) }
-        verify (timeout = 1000) { intercom.updateUser(capture(attributes)) }
+        verify { intercom.registerIdentifiedUser(capture(registration)) }
+        verify { intercom.updateUser(capture(attributes)) }
         assertEquals(expectedRegistration, registration.captured)
         assertEquals(expectedAttributes, attributes.captured)
     }
@@ -223,10 +226,12 @@ internal class IntercomDestinationTest {
             )
             .build()
 
-        analytics.add(intercomDestination)
-        analytics.group("company123")
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
+        intercomDestination.group(
+            GroupEvent("company123", emptyJsonObject)
+        )
 
-        verify (timeout = 1000) { intercom.updateUser(capture(attributes)) }
+        verify { intercom.updateUser(capture(attributes)) }
         assertEquals(expected, attributes.captured)
     }
 
@@ -245,22 +250,24 @@ internal class IntercomDestinationTest {
             )
             .build()
 
-        analytics.add(intercomDestination)
-        analytics.group("company123", buildJsonObject {
-            put("name", "kotlin company")
-            put("monthlySpend", 123456)
-            put("plan", "abc")
-            put("other", "other")
-            put("createdAt", 9876543210987L)
-        })
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
+        intercomDestination.group(
+            GroupEvent("company123", buildJsonObject {
+                put("name", "kotlin company")
+                put("monthlySpend", 123456)
+                put("plan", "abc")
+                put("other", "other")
+                put("createdAt", 9876543210987L)
+            })
+        )
 
-        verify (timeout = 1000) { intercom.updateUser(capture(attributes)) }
+        verify { intercom.updateUser(capture(attributes)) }
         assertEquals(expected, attributes.captured)
     }
 
     @Test
     fun reset() {
-        analytics.add(intercomDestination)
+        intercomDestination.update(settings, Plugin.UpdateType.Initial)
         intercomDestination.reset()
         verify { intercom.logout() }
     }
