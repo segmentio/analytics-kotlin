@@ -215,12 +215,12 @@ class JavaAnalytics private constructor() {
     /**
      * Retrieve the userId registered by a previous `identify` call
      */
-    suspend fun userId() = analytics.userId()
+    fun userId() = analytics.userId()
 
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    suspend fun traits() = analytics.traits()
+    fun traits() = analytics.traits()
 
     private fun setup(analytics: Analytics) {
         store = analytics.store
