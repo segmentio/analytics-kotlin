@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.CapturingSlot
 import io.mockk.slot
 import io.mockk.spyk
@@ -35,12 +36,10 @@ internal class JavaAnalyticsTest {
             .setAutoAddSegmentDestination(false)
             .build()
 
-        config.fileIODispatcher = testDispatcher
-        config.networkIODispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
-
-        analytics = JavaAnalytics(config)
+        val store = spyStore(testScope, testDispatcher)
+        analytics = JavaAnalytics(
+            Analytics(config, store, testScope, testDispatcher, testDispatcher)
+        )
         mockPlugin = spyk(StubPlugin())
     }
 

@@ -2,7 +2,10 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
+import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -25,15 +28,7 @@ class SettingsTests {
     private val testScope = TestCoroutineScope(testDispatcher)
 
     init {
-        mockkConstructor(HTTPClient::class)
-        val settingsStream = ByteArrayInputStream(
-            """
-                {"integrations":{"Segment.io":{"apiKey":"1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ"}},"plan":{},"edgeFunction":{}}
-            """.trimIndent().toByteArray()
-        )
-        val httpConnection: HttpURLConnection = mockk()
-        val connection = object : Connection(httpConnection, settingsStream, null) {}
-        every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } returns connection
+        mockHTTPClient()
     }
 
     @BeforeEach
@@ -42,7 +37,11 @@ class SettingsTests {
             Configuration(
                 writeKey = "123",
                 application = "Test"
-            )
+            ),
+            spyStore(testScope, testDispatcher),
+            testScope,
+            testDispatcher,
+            testDispatcher
         )
         analytics.configuration.autoAddSegmentDestination = false
     }

@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.platform.plugins
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.every
 import io.mockk.spyk
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -29,10 +30,8 @@ internal class StartupQueueTest {
             application = "Tetst",
             autoAddSegmentDestination = false
         )
-        config.fileIODispatcher = testDispatcher
-        config.networkIODispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
+        val store = spyStore(testScope, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
         analytics = Analytics(config)
     }
 

@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.spyStore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -25,10 +26,8 @@ internal class StateTest {
             writeKey = "123",
             application = "Test"
         )
-        config.fileIODispatcher = testDispatcher
-        config.networkIODispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
+        val store = spyStore(testScope, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
 
         analytics = Analytics(config)
         analytics.configuration.autoAddSegmentDestination = false

@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.*
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -42,11 +43,8 @@ class DeviceTokenPluginTests {
                 application = "Test",
                 autoAddSegmentDestination = false
             )
-        config.fileIODispatcher = testDispatcher
-        config.networkIODispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
-        analytics = Analytics(config)
+        val store = spyStore(testScope, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
     }
 
     @Test

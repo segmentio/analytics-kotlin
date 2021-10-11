@@ -37,13 +37,15 @@ class StorageImpl(
             this,
             UserInfo::class,
             initialState = true,
-            handler = ::userInfoUpdate
+            handler = ::userInfoUpdate,
+            queue = ioDispatcher
         )
         store.subscribe(
             this,
             System::class,
             initialState = true,
-            handler = ::systemUpdate
+            handler = ::systemUpdate,
+            queue = ioDispatcher
         )
     }
 

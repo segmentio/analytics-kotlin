@@ -6,9 +6,7 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.MetricType
 import com.segment.analytics.kotlin.core.platform.plugins.addMetric
-import com.segment.analytics.kotlin.core.utils.StubPlugin
-import com.segment.analytics.kotlin.core.utils.TestRunPlugin
-import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -42,6 +40,7 @@ class AnalyticsTests {
         every { Instant.now() } returns Date(0).toInstant()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
+        mockHTTPClient()
     }
 
     @BeforeEach
@@ -51,12 +50,9 @@ class AnalyticsTests {
             writeKey = "123",
             application = "Test"
         )
-        config.fileIODispatcher = testDispatcher
-        config.networkIODispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
 
-        analytics = Analytics(config)
+        val store = spyStore(testScope, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
     }
 
@@ -199,13 +195,16 @@ class AnalyticsTests {
                 override lateinit var analytics: Analytics
                 override fun track(payload: TrackEvent): BaseEvent? {
                     payload.addMetric(MetricType.Counter, "test", 1.0)
+                    trackResult(payload)
                     return super.track(payload)
                 }
+
+                fun trackResult(payload: TrackEvent) {}
             })
             analytics.add(mockPlugin)
             analytics.track("track", buildJsonObject { put("foo", "bar") })
             val track = slot<TrackEvent>()
-            verify { mockPlugin.track(capture(track)) }
+            verify  { mockPlugin.trackResult(capture(track)) }
             track.captured.let {
                 assertTrue(it.anonymousId.isNotBlank())
                 assertTrue(it.messageId.isNotBlank())
