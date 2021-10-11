@@ -405,6 +405,7 @@ class Analytics internal constructor(
      * Note: this method invokes `runBlocking` internal, it's not recommended to be used
      * in coroutines.
      */
+    @BlockingApi
     fun userId(): String? = runBlocking {
         userIdAsync()
     }
@@ -418,16 +419,17 @@ class Analytics internal constructor(
     }
 
     /**
-     * Retrieve the traits registered by a previous `identify` call
+     * Retrieve the traits registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
      */
+    @BlockingApi
     fun traits(): JsonObject? = runBlocking {
         traitsAsync()
     }
 
     /**
-     * Retrieve the traits registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the traits registered by a previous `identify` call
      */
     suspend fun traitsAsync(): JsonObject? {
         val userInfo = store.currentState(UserInfo::class)
@@ -439,6 +441,7 @@ class Analytics internal constructor(
      * Note: this method invokes `runBlocking` internal, it's not recommended to be used
      * in coroutines.
      */
+    @BlockingApi
     inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
@@ -446,9 +449,7 @@ class Analytics internal constructor(
     }
 
     /**
-     * Retrieve the traits registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the traits registered by a previous `identify` call
      */
     suspend inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traitsAsync()?.let {
@@ -469,3 +470,9 @@ fun Analytics(writeKey: String, configs: Configuration.() -> Unit): Analytics {
     configs.invoke(config)
     return Analytics(config)
 }
+
+@RequiresOptIn(
+    level = RequiresOptIn.Level.WARNING,
+    message = "This method invokes `runBlocking` internal, it's not recommended to be used in coroutines."
+)
+annotation class BlockingApi
