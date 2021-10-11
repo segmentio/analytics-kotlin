@@ -63,7 +63,7 @@ class StorageTests {
 
 
         @Test
-        fun `userInfo update calls write`() = runBlockingTest {
+        fun `userInfo update calls write`() = runBlocking {
             val action = object : Action<UserInfo> {
                 override fun reduce(state: UserInfo): UserInfo {
                     return UserInfo(
@@ -84,7 +84,7 @@ class StorageTests {
         }
 
         @Test
-        fun `system update calls write for settings`() = runBlockingTest {
+        fun `system update calls write for settings`() = runBlocking {
             val action = object : Action<System> {
                 override fun reduce(state: System): System {
                     return System(
