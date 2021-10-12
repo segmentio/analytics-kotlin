@@ -470,9 +470,3 @@ fun Analytics(writeKey: String, configs: Configuration.() -> Unit): Analytics {
     configs.invoke(config)
     return Analytics(config)
 }
-
-@RequiresOptIn(
-    level = RequiresOptIn.Level.WARNING,
-    message = "This method invokes `runBlocking` internal, it's not recommended to be used in coroutines."
-)
-annotation class BlockingApi
