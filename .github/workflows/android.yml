@@ -30,7 +30,8 @@ jobs:
     - name: Run Sample Destination Tests
       run: ./gradlew samples:kotlin-android-app-destinations:test
     - name: Snyk
-      run: curl -sL https://raw.githubusercontent.com/segmentio/snyk_helpers/master/initialization/snyk.sh | sh
+      run: snyk/actions/gradle-jdk11@master
       env:
-        SNYK_FAIL_ON: upgradable
-        SNYK_SEVERITY_THRESHOLD: high
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
