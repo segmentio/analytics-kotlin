@@ -31,9 +31,9 @@ jobs:
       run: ./gradlew android:test
     - name: Run Sample Destination Tests
       run: ./gradlew samples:kotlin-android-app-destinations:test
-#    - name: Snyk
-#      uses: snyk/actions/gradle-jdk11@master
-#      env:
-#        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-#      with:
-#        args: --severity-threshold=high
+    - name: Snyk
+      uses: snyk/actions/gradle-jdk11@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
