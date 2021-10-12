@@ -30,7 +30,7 @@ jobs:
     - name: Run Sample Destination Tests
       run: ./gradlew samples:kotlin-android-app-destinations:test
     - name: Snyk
-      run: snyk/actions/gradle-jdk11@master
+      uses: snyk/actions/gradle-jdk11@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
