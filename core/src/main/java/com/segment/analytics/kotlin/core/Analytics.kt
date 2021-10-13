@@ -20,6 +20,15 @@ import sovran.kotlin.Subscriber
 import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 
+/**
+ * Internal constructor of Analytics. Used for internal unit tests injection
+ * @property configuration configuration that analytics can use
+ * @property store sovran state management instance
+ * @property analyticsScope coroutine scope where analytics tasks run in
+ * @property analyticsDispatcher coroutine dispatcher that runs the analytics tasks
+ * @property networkIODispatcher coroutine dispatcher that runs the network tasks
+ * @property fileIODispatcher coroutine dispatcher that runs the file related tasks
+ */
 class Analytics internal constructor(
     val configuration: Configuration,
     val store: Store,
@@ -46,6 +55,10 @@ class Analytics internal constructor(
         build()
     }
 
+    /**
+     * Public constructor of Analytics.
+     * @property configuration configuration that analytics can use
+     */
     constructor(configuration: Configuration): this(configuration, Store())
 
     // This function provides a default state to the store & attaches the storage and store instances
