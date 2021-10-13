@@ -2,15 +2,16 @@ package com.segment.analytics.kotlin.core.utilities
 
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.spyStore
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
-
 import org.junit.jupiter.api.Test
 import sovran.kotlin.Action
 import sovran.kotlin.Store
@@ -21,11 +22,11 @@ internal class StorageImplTest {
 
     private val epochTimestamp = Date(0).toInstant().toString()
 
-    private var store = Store()
+    private var store = spyStore(TestCoroutineScope(), TestCoroutineDispatcher())
     private lateinit var storage: StorageImpl
 
     @BeforeEach
-    fun setup() {
+    fun setup() = runBlocking  {
         clearPersistentStorage()
         store.provide(
             UserInfo(
@@ -53,7 +54,7 @@ internal class StorageImplTest {
 
 
     @Test
-    fun `userInfo update calls write`() = runBlockingTest {
+    fun `userInfo update calls write`() = runBlocking {
         val action = object : Action<UserInfo> {
             override fun reduce(state: UserInfo): UserInfo {
                 return UserInfo(
@@ -74,7 +75,7 @@ internal class StorageImplTest {
     }
 
     @Test
-    fun `system update calls write for settings`() = runBlockingTest {
+    fun `system update calls write for settings`() = runBlocking {
         val action = object : Action<System> {
             override fun reduce(state: System): System {
                 return System(
@@ -241,7 +242,7 @@ internal class StorageImplTest {
         }
 
         @Test
-        fun remove() = runBlockingTest{
+        fun remove() = runBlocking {
             val action = object : Action<UserInfo> {
                 override fun reduce(state: UserInfo): UserInfo {
                     return UserInfo(

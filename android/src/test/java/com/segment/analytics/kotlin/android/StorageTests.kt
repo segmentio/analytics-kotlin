@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import com.segment.analytics.kotlin.android.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.android.utils.mockAnalytics
 import com.segment.analytics.kotlin.android.utils.mockContext
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.serialization.decodeFromString
@@ -33,7 +34,7 @@ class StorageTests {
         private var mockContext: Context = mockContext()
 
         @BeforeEach
-        fun setup() {
+        fun setup() = runBlocking  {
             clearPersistentStorage()
             store.provide(
                 UserInfo(
@@ -62,7 +63,7 @@ class StorageTests {
 
 
         @Test
-        fun `userInfo update calls write`() = runBlockingTest {
+        fun `userInfo update calls write`() = runBlocking {
             val action = object : Action<UserInfo> {
                 override fun reduce(state: UserInfo): UserInfo {
                     return UserInfo(
@@ -83,7 +84,7 @@ class StorageTests {
         }
 
         @Test
-        fun `system update calls write for settings`() = runBlockingTest {
+        fun `system update calls write for settings`() = runBlocking {
             val action = object : Action<System> {
                 override fun reduce(state: System): System {
                     return System(

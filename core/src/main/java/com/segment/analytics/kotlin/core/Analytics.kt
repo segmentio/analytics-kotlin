@@ -7,9 +7,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.log
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
@@ -19,66 +17,79 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
+import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 
-class Analytics(val configuration: Configuration) : Subscriber {
-
-    private val _store: Store
-    val store: Store
-        get() {
-            return _store
-        }
+/**
+ * Internal constructor of Analytics. Used for internal unit tests injection
+ * @property configuration configuration that analytics can use
+ * @property store sovran state management instance
+ * @property analyticsScope coroutine scope where analytics tasks run in
+ * @property analyticsDispatcher coroutine dispatcher that runs the analytics tasks
+ * @property networkIODispatcher coroutine dispatcher that runs the network tasks
+ * @property fileIODispatcher coroutine dispatcher that runs the file related tasks
+ */
+class Analytics internal constructor(
+    val configuration: Configuration,
+    val store: Store,
+    val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob()),
+    val analyticsDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher(),
+    val networkIODispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
+    val fileIODispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+) : Subscriber {
 
     internal val timeline: Timeline
     val storage: Storage
-    val analyticsScope: CoroutineScope
-
-    // Coroutine context used for analytics timeline processing
-    val processingDispatcher: CoroutineDispatcher
-    val ioDispatcher: CoroutineDispatcher
 
     init {
         require(configuration.isValid()) { "invalid configuration" }
-        analyticsScope = configuration.analyticsScope
-        processingDispatcher = configuration.analyticsDispatcher
-        ioDispatcher = configuration.ioDispatcher
         timeline = Timeline().also { it.analytics = this }
-        _store = Store()
 
         storage = configuration.storageProvider.getStorage(
             analytics = this,
             writeKey = configuration.writeKey,
-            ioDispatcher = ioDispatcher,
+            ioDispatcher = fileIODispatcher,
             store = store,
             application = configuration.application!!
         )
         build()
     }
 
+    /**
+     * Public constructor of Analytics.
+     * @property configuration configuration that analytics can use
+     */
+    constructor(configuration: Configuration): this(configuration, Store())
+
     // This function provides a default state to the store & attaches the storage and store instances
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
-        // Setup store
-        store.also {
-            it.provide(UserInfo.defaultState(storage))
-            it.provide(System.defaultState(configuration, storage))
-
-            // subscribe to store after state is provided
-            storage.subscribeToStore()
-        }
-
-        checkSettings()
+        // because startup queue doesn't depend on a state, we can add it first
         add(StartupQueue())
         add(ContextPlugin())
-        if (configuration.autoAddSegmentDestination) {
-            add(
-                SegmentDestination(
-                    configuration.writeKey,
-                    configuration.flushAt,
-                    configuration.flushInterval * 1000L,
-                    configuration.apiHost
+        
+        // Setup store
+        analyticsScope.launch(analyticsDispatcher) {
+            store.also {
+                it.provide(UserInfo.defaultState(storage))
+                it.provide(System.defaultState(configuration, storage))
+
+                // subscribe to store after state is provided
+                storage.subscribeToStore()
+            }
+
+            checkSettings()
+
+            if (configuration.autoAddSegmentDestination) {
+                add(
+                    SegmentDestination(
+                        configuration.writeKey,
+                        configuration.flushAt,
+                        configuration.flushInterval * 1000L,
+                        configuration.apiHost
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -148,7 +159,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
      */
     @JvmOverloads
     fun identify(userId: String, traits: JsonObject = emptyJsonObject) {
-        analyticsScope.launch(ioDispatcher) {
+        analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.SetUserIdAndTraitsAction(userId, traits), UserInfo::class)
         }
         val event = IdentifyEvent(userId = userId, traits = traits)
@@ -324,25 +335,29 @@ class Analytics(val configuration: Configuration) : Subscriber {
      * @see <a href="https://segment.com/docs/tracking-api/alias/">Alias Documentation</a>
      */
     fun alias(newId: String) {
-        val curUserInfo = store.currentState(UserInfo::class)
-        if (curUserInfo != null) {
-            val event = AliasEvent(
-                userId = newId,
-                previousId = curUserInfo.userId ?: curUserInfo.anonymousId
-            )
-            analyticsScope.launch(ioDispatcher) {
-                store.dispatch(UserInfo.SetUserIdAction(newId), UserInfo::class)
+        analyticsScope.launch(analyticsDispatcher) {
+            val curUserInfo = store.currentState(UserInfo::class)
+            if (curUserInfo != null) {
+                val event = AliasEvent(
+                    userId = newId,
+                    previousId = curUserInfo.userId ?: curUserInfo.anonymousId
+                )
+                launch {
+                    store.dispatch(UserInfo.SetUserIdAction(newId), UserInfo::class)
+                }
+                process(event)
+            } else {
+                log("failed to fetch current UserInfo state")
             }
-            process(event)
-        } else {
-            log("failed to fetch current UserInfo state")
         }
     }
 
     fun process(event: BaseEvent) {
+        event.applyBaseData()
+
         log("applying base attributes on ${Thread.currentThread().name}")
-        event.applyBaseEventData(store)
-        analyticsScope.launch(processingDispatcher) {
+        analyticsScope.launch(analyticsDispatcher) {
+            event.applyBaseEventData(store)
             log("processing event on ${Thread.currentThread().name}")
             timeline.process(event)
         }
@@ -357,7 +372,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     fun add(plugin: Plugin): Analytics {
         this.timeline.add(plugin)
         if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(ioDispatcher) {
+            analyticsScope.launch(analyticsDispatcher) {
                 store.dispatch(System.AddIntegrationAction(plugin.key), System::class)
             }
         }
@@ -377,7 +392,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     fun remove(plugin: Plugin): Analytics {
         this.timeline.remove(plugin)
         if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(ioDispatcher) {
+            analyticsScope.launch(analyticsDispatcher) {
                 store.dispatch(System.RemoveIntegrationAction(plugin.key), System::class)
             }
         }
@@ -399,26 +414,58 @@ class Analytics(val configuration: Configuration) : Subscriber {
     }
 
     /**
+     * Retrieve the userId registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
+     */
+    @BlockingApi
+    fun userId(): String? = runBlocking {
+        userIdAsync()
+    }
+
+    /**
      * Retrieve the userId registered by a previous `identify` call
      */
-    fun userId(): String? {
+    suspend fun userIdAsync(): String? {
         val userInfo = store.currentState(UserInfo::class)
         return userInfo?.userId
     }
 
     /**
-     * Retrieve the traits registered by a previous `identify` call
+     * Retrieve the traits registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
      */
-    fun traits(): JsonObject? {
-        val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.traits
+    @BlockingApi
+    fun traits(): JsonObject? = runBlocking {
+        traitsAsync()
     }
 
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
+    suspend fun traitsAsync(): JsonObject? {
+        val userInfo = store.currentState(UserInfo::class)
+        return userInfo?.traits
+    }
+
+    /**
+     * Retrieve the traits registered by a previous `identify` call in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
+     */
+    @BlockingApi
     inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits()?.let {
+            decodeFromJsonElement(deserializationStrategy, it)
+        }
+    }
+
+    /**
+     * Retrieve the traits registered by a previous `identify` call
+     */
+    suspend inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+        return traitsAsync()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
         }
     }

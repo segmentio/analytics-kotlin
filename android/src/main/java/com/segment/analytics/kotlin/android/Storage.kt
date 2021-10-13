@@ -29,18 +29,20 @@ class AndroidStorage(
     internal val eventsFile =
         EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences))
 
-    override fun subscribeToStore() {
+    override suspend fun subscribeToStore() {
         store.subscribe(
             this,
             UserInfo::class,
             initialState = true,
-            handler = ::userInfoUpdate
+            handler = ::userInfoUpdate,
+            queue = ioDispatcher
         )
         store.subscribe(
             this,
             System::class,
             initialState = true,
-            handler = ::systemUpdate
+            handler = ::systemUpdate,
+            queue = ioDispatcher
         )
     }
 

@@ -10,9 +10,6 @@ import java.util.concurrent.Executors
  * Configuration that analytics can use
  * @property writeKey the Segment writeKey
  * @property application defaults to `null`
- * @property analyticsScope CoroutineScope on which all analytics coroutines will run, defaults to `MainScope()`
- * @property analyticsDispatcher Dispatcher running analytics tasks, defaults to `Executors.newSingleThreadExecutor().asCoroutineDispatcher()`
- * @property ioDispatcher Dispatcher running IO tasks, defaults to `Dispatchers.IO`
  * @property storageProvider Provider for storage class, defaults to `ConcreteStorageProvider`
  * @property collectDeviceId collect deviceId, defaults to `false`
  * @property trackApplicationLifecycleEvents automatically send track for Lifecycle events (eg: Application Opened, Application Backgrounded, etc.), defaults to `false`
@@ -39,13 +36,6 @@ data class Configuration(
     var apiHost: String = DEFAULT_API_HOST,
     var cdnHost: String = DEFAULT_CDN_HOST
 ) {
-    internal var analyticsDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    internal var ioDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor()
-        .asCoroutineDispatcher()
-
-    internal var analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob())
-
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
     }
