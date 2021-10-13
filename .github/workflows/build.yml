@@ -31,10 +31,6 @@ jobs:
       run: ./gradlew android:test
     - name: Run Sample Destination Tests
       run: ./gradlew samples:kotlin-android-app-destinations:test
-  security:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
     - name: Snyk
       uses: snyk/actions/gradle-jdk11@master
       env:
