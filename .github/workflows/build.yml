@@ -39,7 +39,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Snyk
-      uses: snyk/actions/gradle-jdk11@master
+      uses: snyk/actions/gradle@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
