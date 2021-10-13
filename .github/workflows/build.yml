@@ -29,6 +29,17 @@ jobs:
       run: ./gradlew android:test
     - name: Run Sample Destination Tests
       run: ./gradlew samples:kotlin-android-app-destinations:test
+      
+  secuirty:
+    runs-on: macos11
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: set up JDK
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'temurin'
+        java-version: '11'
     - name: Snyk
       uses: snyk/actions/gradle-jdk11@master
       env:
