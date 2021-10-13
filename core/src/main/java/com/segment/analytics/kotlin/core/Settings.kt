@@ -6,7 +6,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -49,14 +49,14 @@ internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
 /**
  * Make analytics client call into Segment's settings API, to refresh certain configurations.
  */
-fun Analytics.checkSettings() {
+suspend fun Analytics.checkSettings() {
     val writeKey = configuration.writeKey
     val cdnHost = configuration.cdnHost
 
     // stop things; queue in case our settings have changed.
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
 
-    analyticsScope.launch(ioDispatcher) {
+    withContext(networkIODispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
         val settingsObj: Settings? = try {
             val connection = HTTPClient(writeKey).settings(cdnHost)
@@ -77,11 +77,15 @@ fun Analytics.checkSettings() {
                                 systemState.settings?.plan != null
             val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial
 
-            store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
+            withContext(analyticsDispatcher) {
+                store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
+            }
             update(settingsObj, updateType)
         }
 
         // we're good to go back to a running state.
-        store.dispatch(System.ToggleRunningAction(running = true), System::class)
+        withContext(analyticsDispatcher) {
+            store.dispatch(System.ToggleRunningAction(running = true), System::class)
+        }
     }
 }

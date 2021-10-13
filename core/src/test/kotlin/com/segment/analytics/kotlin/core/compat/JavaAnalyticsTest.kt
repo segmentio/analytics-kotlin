@@ -5,10 +5,12 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.CapturingSlot
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.JsonObject
@@ -34,11 +36,10 @@ internal class JavaAnalyticsTest {
             .setAutoAddSegmentDestination(false)
             .build()
 
-        config.ioDispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
-
-        analytics = JavaAnalytics(config)
+        val store = spyStore(testScope, testDispatcher)
+        analytics = JavaAnalytics(
+            Analytics(config, store, testScope, testDispatcher, testDispatcher)
+        )
         mockPlugin = spyk(StubPlugin())
     }
 
@@ -393,13 +394,13 @@ internal class JavaAnalyticsTest {
     }
 
     @Test
-    fun userId() {
+    fun userId() = runBlocking {
         analytics.identify("userId")
         assertEquals("userId", analytics.userId())
     }
 
     @Test
-    fun traits() {
+    fun traits() = runBlocking  {
         val json = buildJsonObject { put("name", "bar") }
         analytics.identify("userId", json)
         assertEquals(json, analytics.traits())

@@ -12,6 +12,7 @@ import com.segment.analytics.kotlin.android.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
+import com.segment.analytics.kotlin.android.utils.mockHTTPClient
 import io.mockk.*
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -47,6 +48,8 @@ class AndroidLifecyclePluginTests {
         every { Instant.now() } returns Date(0).toInstant()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
+
+        mockHTTPClient()
     }
 
     @Before

@@ -4,11 +4,11 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 
 import org.junit.jupiter.api.Test
@@ -28,10 +28,8 @@ internal class LoggerTest {
             application = "Tetst",
             autoAddSegmentDestination = false
         )
-        config.ioDispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
-        analytics = Analytics(config)
+        val store = spyStore(testScope, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
     }
 
     @Test

@@ -6,10 +6,9 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.MetricType
 import com.segment.analytics.kotlin.core.platform.plugins.addMetric
-import com.segment.analytics.kotlin.core.utils.StubPlugin
-import com.segment.analytics.kotlin.core.utils.TestRunPlugin
-import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
@@ -41,6 +40,7 @@ class AnalyticsTests {
         every { Instant.now() } returns Date(0).toInstant()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
+        mockHTTPClient()
     }
 
     @BeforeEach
@@ -50,11 +50,9 @@ class AnalyticsTests {
             writeKey = "123",
             application = "Test"
         )
-        config.ioDispatcher = testDispatcher
-        config.analyticsDispatcher = testDispatcher
-        config.analyticsScope = testScope
 
-        analytics = Analytics(config)
+        val store = spyStore(testScope, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
     }
 
@@ -105,7 +103,7 @@ class AnalyticsTests {
         }
 
         @Test
-        fun `adding destination plugin modifies integrations object`() {
+        fun `adding destination plugin modifies integrations object`() = runBlocking  {
             val testPlugin1 = object : DestinationPlugin() {
                 override val key: String = "TestDestination"
             }
@@ -123,7 +121,7 @@ class AnalyticsTests {
         }
 
         @Test
-        fun `removing destination plugin modifies integrations object`() {
+        fun `removing destination plugin modifies integrations object`() = runBlocking  {
             val testPlugin1 = object : DestinationPlugin() {
                 override val key: String = "TestDestination"
             }
@@ -174,7 +172,7 @@ class AnalyticsTests {
         }
 
         @Test
-        fun `event gets populated with correct integrations`() {
+        fun `event gets populated with correct integrations`() = runBlocking  {
             val mockPlugin = spyk(StubPlugin())
             analytics.add(mockPlugin)
             analytics.store.dispatch(System.AddIntegrationAction("plugin1"), System::class)
@@ -197,13 +195,16 @@ class AnalyticsTests {
                 override lateinit var analytics: Analytics
                 override fun track(payload: TrackEvent): BaseEvent? {
                     payload.addMetric(MetricType.Counter, "test", 1.0)
+                    trackResult(payload)
                     return super.track(payload)
                 }
+
+                fun trackResult(payload: TrackEvent) {}
             })
             analytics.add(mockPlugin)
             analytics.track("track", buildJsonObject { put("foo", "bar") })
             val track = slot<TrackEvent>()
-            verify { mockPlugin.track(capture(track)) }
+            verify  { mockPlugin.trackResult(capture(track)) }
             track.captured.let {
                 assertTrue(it.anonymousId.isNotBlank())
                 assertTrue(it.messageId.isNotBlank())
@@ -252,7 +253,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `identify() overwrites userId and traits`() {
+            fun `identify() overwrites userId and traits`() = runBlocking  {
                 analytics.store.dispatch(
                     UserInfo.SetUserIdAndTraitsAction(
                         "oldUserId",
@@ -360,7 +361,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `alias event modifies underlying userId`() {
+            fun `alias event modifies underlying userId`() = runBlocking  {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.identify("oldId")
