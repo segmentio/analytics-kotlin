@@ -41,6 +41,8 @@ jobs:
     - uses: actions/setup-java@v2
       with:
         java-version: '11'
+        distribution: 'adopt'
+        cache: gradle
     - name: Snyk
       uses: snyk/actions/gradle-jdk11@master
       env:
