@@ -14,6 +14,8 @@ import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.android.utils.mockHTTPClient
 import io.mockk.*
+import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.*
@@ -32,6 +34,9 @@ class AndroidLifecyclePluginTests {
 
     private lateinit var analytics: Analytics
     private val mockContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
+
+    private val testDispatcher = TestCoroutineDispatcher()
+    private val testScope = TestCoroutineScope(testDispatcher)
 
     init {
         val packageInfo = PackageInfo()
@@ -54,13 +59,15 @@ class AndroidLifecyclePluginTests {
 
     @Before
     fun setup() {
-        analytics = Analytics(
+        analytics = spyk(Analytics(
             Configuration(
                 writeKey = "123",
                 application = mockContext,
                 storageProvider = AndroidStorageProvider
             )
-        )
+        ))
+        every { analytics.analyticsScope } returns testScope
+        every { analytics.analyticsDispatcher } returns testDispatcher
     }
 
     @Test
