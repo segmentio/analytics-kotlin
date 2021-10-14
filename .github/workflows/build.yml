@@ -20,7 +20,16 @@ jobs:
       run: ./gradlew dependencies
     - name: Run Tests
       run: ./gradlew clean test
-    - name: Snyk
-      run: ./gradlew snyk-test
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  security:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Snyk
+        run: ./gradlew snyk-test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
