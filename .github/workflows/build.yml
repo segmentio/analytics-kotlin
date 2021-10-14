@@ -14,27 +14,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-        distribution: 'adopt'
-        cache: gradle
-
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Download Dependencies
       run: ./gradlew dependencies
-    - name: Run Core Tests
-      run: ./gradlew core:test
-    - name: Run Android Tests
-      run: ./gradlew android:test
-    - name: Run Sample Destination Tests
-      run: ./gradlew samples:kotlin-android-app-destinations:test
+    - name: Run Tests
+      run: ./gradlew clean test
+      
+  secuirty:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: "finnp/create-file-action@master"
+      env:
+        FILE_NAME: "/github/workspace/local.properties"
+        FILE_DATA: "sdk.dir = /usr/local/lib/android/sdk"
     - name: Snyk
       uses: snyk/actions/gradle-jdk11@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       with:
         args: --severity-threshold=high --fail-on=upgradable
 
