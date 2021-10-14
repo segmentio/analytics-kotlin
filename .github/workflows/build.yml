@@ -18,9 +18,9 @@ jobs:
       run: chmod +x gradlew
     - name: Download Dependencies
       run: ./gradlew dependencies
+    - name: Run Tests
+      run: ./gradlew clean test
     - name: Snyk
       run: ./gradlew snyk-test
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-    - name: Run Tests
-      run: ./gradlew clean test
