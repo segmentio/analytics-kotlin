@@ -30,6 +30,7 @@ jobs:
       uses: snyk/actions/gradle-jdk11@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       with:
         args: --severity-threshold=high --fail-on=upgradable
 
