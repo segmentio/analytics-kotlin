@@ -18,12 +18,8 @@ jobs:
       run: chmod +x gradlew
     - name: Download Dependencies
       run: ./gradlew dependencies
-    - name: Run Core Tests
-      run: ./gradlew core:test
-    - name: Run Android Tests
-      run: ./gradlew android:test
-    - name: Run Sample Destination Tests
-      run: ./gradlew samples:kotlin-android-app-destinations:test
+    - name: Run Tests
+      run: ./gradlew clean test
       
   secuirty:
     runs-on: ubuntu-latest
@@ -31,7 +27,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Snyk
-      uses: snyk/actions/gradle@master
+      uses: snyk/actions/gradle-jdk11@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
