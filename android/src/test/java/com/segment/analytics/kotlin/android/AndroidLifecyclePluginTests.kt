@@ -15,6 +15,7 @@ import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.android.utils.mockHTTPClient
 import com.segment.analytics.kotlin.android.utils.spyStore
 import io.mockk.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -77,7 +78,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `plugins get notified when lifecycle hooks get triggered`() = runBlocking {
+    fun `plugins get notified when lifecycle hooks get triggered`() {
         analytics.configuration.trackApplicationLifecycleEvents = false
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
@@ -132,7 +133,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application opened is tracked`() {
+    fun `application opened is tracked`() = runBlocking{
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
@@ -145,7 +146,9 @@ class AndroidLifecyclePluginTests {
 
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
+        delay(500)
         lifecyclePlugin.onActivityStarted(mockActivity)
+        delay(500)
         lifecyclePlugin.onActivityResumed(mockActivity)
 
         verify (timeout = 2000){  mockPlugin.updateState(true) }
