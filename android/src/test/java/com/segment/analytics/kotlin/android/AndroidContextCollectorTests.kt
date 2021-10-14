@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -83,8 +85,9 @@ class AndroidContextCollectorTests {
     }
 
     @Test
-    fun `getDeviceId returns anonId when disabled`() {
+    fun `getDeviceId returns anonId when disabled`() = runBlocking {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
+        delay(500)
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
         val deviceId = contextCollector.getDeviceId(false, appContext)
