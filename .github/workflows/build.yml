@@ -26,6 +26,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: "finnp/create-file-action@master"
+      env:
+        FILE_NAME: "/github/workspace/local.properties"
+        FILE_DATA: "sdk.dir = /usr/local/lib/android/sdk"
     - name: Snyk
       uses: snyk/actions/gradle-jdk11@master
       env:
