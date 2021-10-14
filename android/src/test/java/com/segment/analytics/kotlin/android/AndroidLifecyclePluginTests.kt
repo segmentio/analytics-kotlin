@@ -13,7 +13,9 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.android.utils.mockHTTPClient
+import com.segment.analytics.kotlin.android.utils.spyStore
 import io.mockk.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
@@ -30,7 +32,7 @@ import java.util.*
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class AndroidLifecyclePluginTests {
-    private val lifecyclePlugin = AndroidLifecyclePlugin()
+    private lateinit var lifecyclePlugin: AndroidLifecyclePlugin
 
     private lateinit var analytics: Analytics
     private val mockContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
@@ -68,10 +70,14 @@ class AndroidLifecyclePluginTests {
         ))
         every { analytics.analyticsScope } returns testScope
         every { analytics.analyticsDispatcher } returns testDispatcher
+        every { analytics.networkIODispatcher } returns testDispatcher
+        every { analytics.fileIODispatcher } returns testDispatcher
+        every { analytics.store } returns spyStore(testScope, testDispatcher)
+        lifecyclePlugin = AndroidLifecyclePlugin()
     }
 
     @Test
-    fun `plugins get notified when lifecycle hooks get triggered`() {
+    fun `plugins get notified when lifecycle hooks get triggered`() = runBlocking {
         analytics.configuration.trackApplicationLifecycleEvents = false
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
