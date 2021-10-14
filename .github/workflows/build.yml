@@ -20,21 +20,5 @@ jobs:
       run: ./gradlew dependencies
     - name: Run Tests
       run: ./gradlew clean test
-      
-  secuirty:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - uses: "finnp/create-file-action@master"
-      env:
-        FILE_NAME: "/github/workspace/local.properties"
-        FILE_DATA: "sdk.dir = /usr/local/lib/android/sdk"
     - name: Snyk
-      uses: snyk/actions/gradle-jdk11@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      with:
-        args: --severity-threshold=high --fail-on=upgradable
-
+      run: ./gradlew snyk-test
