@@ -22,3 +22,5 @@ jobs:
       run: ./gradlew clean test
     - name: Snyk
       run: ./gradlew snyk-test
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
