@@ -133,7 +133,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application opened is tracked`() = runBlocking{
+    fun `application opened is tracked`() {
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
@@ -146,9 +146,7 @@ class AndroidLifecyclePluginTests {
 
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
-        delay(500)
         lifecyclePlugin.onActivityStarted(mockActivity)
-        delay(500)
         lifecyclePlugin.onActivityResumed(mockActivity)
 
         verify (timeout = 2000){  mockPlugin.updateState(true) }
