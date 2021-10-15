@@ -1,11 +1,13 @@
 package com.segment.analytics.kotlin.android
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
+import io.mockk.every
+import io.mockk.spyk
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -18,14 +20,22 @@ import java.util.*
 @Config(manifest = Config.NONE)
 class AndroidContextCollectorTests {
 
-    val appContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    val analytics = Analytics(
-        Configuration(
-            writeKey = "123",
-            application = appContext,
-            storageProvider = AndroidStorageProvider
+    val appContext: Context
+    val analytics: Analytics
+
+    init {
+        appContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
+        val sharedPreferences: SharedPreferences = MemorySharedPreferences()
+        every { appContext.getSharedPreferences(any(), any()) } returns sharedPreferences
+
+        analytics  = Analytics(
+            Configuration(
+                writeKey = "123",
+                application = appContext,
+                storageProvider = AndroidStorageProvider
+            )
         )
-    )
+    }
 
     @Test
     fun `context fields applied correctly`() {
@@ -85,9 +95,8 @@ class AndroidContextCollectorTests {
     }
 
     @Test
-    fun `getDeviceId returns anonId when disabled`() = runBlocking {
+    fun `getDeviceId returns anonId when disabled`() {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
-        delay(500)
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
         val deviceId = contextCollector.getDeviceId(false, appContext)
