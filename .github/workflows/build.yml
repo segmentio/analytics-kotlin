@@ -13,38 +13,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Download Dependencies
-      run: ./gradlew dependencies
-    - name: Run Tests
-      run: ./gradlew core:test
-
-  android-test:
-
-    runs-on: ubuntu-latest
-
-    steps:
       - uses: actions/checkout@v2
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Download Dependencies
-        run: ./gradlew dependencies
-      - name: Run Tests
+      - name: cache gradle dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Build
+        run: ./gradlew build
+      - name: Run core tests
+        run: ./gradlew core:test
+      - name: Run android tests
         run: ./gradlew android:test
-
-  destination-test:
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Download Dependencies
-        run: ./gradlew dependencies
-      - name: Run Tests
+      - name: Run destination tests
         run: ./gradlew samples:kotlin-android-app-destinations:test
 
   security:
