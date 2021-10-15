@@ -1,6 +1,6 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
-    ext.kotlin_version = "1.5.30"
+    ext.kotlin_version = "1.5.31"
     ext.writeKey = "hAh3QxoRCsQsnyabTLMpWbpxoIN4O2mU"
     repositories {
         google()
@@ -22,6 +22,10 @@ buildscript {
     }
 }
 
+plugins {
+    id "io.snyk.gradle.plugin.snykplugin" version "0.4"
+}
+
 allprojects {
     repositories {
         google()
@@ -31,6 +35,13 @@ allprojects {
         maven { url "https://kotlin.bintray.com/kotlinx" }
         maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     }
+}
+
+snyk {
+    // severity = 'high'
+    autoDownload = true
+    autoUpdate = true
+    arguments = '--all-sub-projects --fail-on=upgradable'
 }
 
 task clean(type: Delete) {

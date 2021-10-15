@@ -15,5 +15,5 @@ repositories {
 
 dependencies {
     implementation project(':core')
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0-M1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
 }
