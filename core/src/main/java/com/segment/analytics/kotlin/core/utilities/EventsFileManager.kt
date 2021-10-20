@@ -46,6 +46,8 @@ class EventsFileManager(
 
     private var os: FileOutputStream? = null
 
+    private var curFile: File? = null
+
     companion object {
         const val MAX_FILE_SIZE = 475_000 // 475KB
     }
@@ -57,21 +59,21 @@ class EventsFileManager(
      */
     fun storeEvent(event: String) {
         var newFile = false
-        var curFile = currentFile()
-        if (!curFile.exists()) {
+        var file = currentFile()
+        if (!file.exists()) {
             // create it
-            curFile.createNewFile()
-            start(curFile)
+            file.createNewFile()
+            start(file)
             newFile = true
         }
 
         // check if file is at capacity
-        if (curFile.length() > MAX_FILE_SIZE) {
-            finish(curFile)
+        if (file.length() > MAX_FILE_SIZE) {
+            finish(file)
             // update index
-            curFile = currentFile()
-            curFile.createNewFile()
-            start(curFile)
+            file = currentFile()
+            file.createNewFile()
+            start(file)
             newFile = true
         }
 
@@ -80,7 +82,7 @@ class EventsFileManager(
             contents += ","
         }
         contents += event
-        writeToFile(contents.toByteArray(), curFile)
+        writeToFile(contents.toByteArray(), file)
     }
 
     private fun incrementFileIndex(): Boolean {
@@ -124,14 +126,18 @@ class EventsFileManager(
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
         os?.close()
-        os = null
         incrementFileIndex()
+        reset()
     }
 
     // return the current tmp file
     private fun currentFile(): File {
-        val index = kvs.getInt(fileIndexKey, 0)
-        return File(directory, "$writeKey-$index.tmp")
+        curFile = curFile?.run {
+            val index = kvs.getInt(fileIndexKey, 0)
+            File(directory, "$writeKey-$index.tmp")
+        }
+
+        return curFile!!
     }
 
     // Atomic write to underlying file
@@ -142,6 +148,11 @@ class EventsFileManager(
             write(content)
             flush()
         }
+    }
+
+    private fun reset() {
+        os = null
+        curFile = null
     }
 
     private fun registerShutdownHook() {
