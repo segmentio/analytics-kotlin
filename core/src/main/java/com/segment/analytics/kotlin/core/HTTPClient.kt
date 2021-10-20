@@ -2,37 +2,56 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import com.segment.analytics.kotlin.core.utilities.encodeToBase64
-import java.io.BufferedReader
-import java.io.Closeable
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.future.await
 import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
-import java.net.HttpURLConnection
-import java.net.MalformedURLException
-import java.net.URL
-import java.util.zip.GZIPOutputStream
+import java.net.*
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.file.Path
+import java.time.Duration
+import java.util.concurrent.Executors
 
-class HTTPClient(private val writeKey: String) {
-    internal val authHeader = authorizationHeader(writeKey)
+class HTTPClient(
+    private val writeKey: String,
+    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+) {
+    internal val authHeader: String
 
-    fun settings(cdnHost: String): Connection {
-        val connection: HttpURLConnection =
-            openConnection("https://$cdnHost/projects/$writeKey/settings")
-        val responseCode = connection.responseCode
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            connection.disconnect()
-            throw IOException("HTTP " + responseCode + ": " + connection.responseMessage)
-        }
-        return connection.createGetConnection()
+    private val client: HttpClient
+
+    init {
+        authHeader = authorizationHeader(writeKey)
+        client = HttpClient.newBuilder()
+            .executor(dispatcher.asExecutor())
+            .connectTimeout(Duration.ofSeconds(15))
+            .build()
     }
 
-    fun upload(apiHost: String): Connection {
-        val connection: HttpURLConnection = openConnection("https://$apiHost/batch")
-        connection.setRequestProperty("Authorization", authHeader)
-        connection.setRequestProperty("Content-Encoding", "gzip")
-        connection.doOutput = true
-        connection.setChunkedStreamingMode(0)
-        return connection.createPostConnection()
+    suspend fun settings(cdnHost: String): String {
+        val request = makeRequest("https://$cdnHost/projects/$writeKey/settings")
+            .GET()
+            .build()
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await().body()
+    }
+
+    suspend fun upload(apiHost: String, path: Path) {
+        val request = makeRequest("https://$apiHost/batch")
+            .POST(HttpRequest.BodyPublishers.ofFile(path))
+            .header("Authorization", authHeader)
+            .header("Content-Encoding", "gzip")
+            .build()
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await().apply {
+            if (statusCode() >= 300) {
+                throw HTTPException(
+                    statusCode(), body()
+                )
+            }
+        }
     }
 
     private fun authorizationHeader(writeKey: String): String {
@@ -43,97 +62,29 @@ class HTTPClient(private val writeKey: String) {
     /**
      * Configures defaults for connections opened with [.upload], and [ ][.projectSettings].
      */
-    @Throws(IOException::class)
-    private fun openConnection(url: String): HttpURLConnection {
-        val requestedURL: URL = try {
-            URL(url)
-        } catch (e: MalformedURLException) {
+    private fun makeRequest(url: String): HttpRequest.Builder {
+        val requestedURL = try {
+            URI.create(url)
+        } catch (e: URISyntaxException) {
             throw IOException("Attempted to use malformed url: $url", e)
         }
-        val connection = requestedURL.openConnection() as HttpURLConnection
-        connection.connectTimeout = 15_000 // 15s
-        connection.readTimeout = 20_1000 // 20s
 
-        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-        connection.setRequestProperty(
-            "User-Agent",
-            "analytics-kotlin/$LIBRARY_VERSION"
-        )
-        connection.doInput = true
-        return connection
-    }
-}
-
-/**
- * Wraps an HTTP connection. Callers can either read from the connection via the [ ] or write to the connection via [OutputStream].
- */
-abstract class Connection(
-    val connection: HttpURLConnection,
-    val inputStream: InputStream?,
-    val outputStream: OutputStream?
-) : Closeable {
-    @Throws(IOException::class)
-    override fun close() {
-        connection.disconnect()
-    }
-}
-
-fun safeGetInputStream(connection: HttpURLConnection): InputStream? {
-    return try {
-        connection.inputStream
-    } catch (ignored: IOException) {
-        connection.errorStream
-    }
-}
-
-internal fun HttpURLConnection.createGetConnection(): Connection {
-
-    return object : Connection(this, safeGetInputStream(this), null) {
-        override fun close() {
-            super.close()
-            inputStream?.close()
-        }
-    }
-}
-
-internal fun HttpURLConnection.createPostConnection(): Connection {
-    val outputStream: OutputStream
-    outputStream = GZIPOutputStream(this.outputStream)
-    return object : Connection(this, null, outputStream) {
-        @Throws(IOException::class)
-        override fun close() {
-            try {
-                val responseCode: Int = connection.responseCode
-                if (responseCode >= 300) {
-                    var responseBody: String?
-                    var inputStream: InputStream? = null
-                    try {
-                        inputStream = safeGetInputStream(this.connection)
-                        responseBody = inputStream?.bufferedReader()?.use(BufferedReader::readText)
-                    } catch (e: IOException) {
-                        responseBody = ("Could not read response body for rejected message: "
-                                + e.toString())
-                    } finally {
-                        inputStream?.close()
-                    }
-                    throw HTTPException(
-                        responseCode, connection.responseMessage, responseBody
-                    )
-                }
-            } finally {
-                super.close()
-                this.outputStream?.close()
-            }
-        }
+        val request = HttpRequest.newBuilder()
+            .uri(requestedURL)
+            .timeout(Duration.ofSeconds(20))
+            .header("Content-Type", "application/json; charset=utf-8")
+            .header(
+                "User-Agent",
+                "analytics-kotlin/$LIBRARY_VERSION")
+        return request
     }
 }
 
 internal class HTTPException(
     val responseCode: Int,
-    val responseMessage: String,
-    val responseBody: String?
+    responseBody: String?
 ) :
-    IOException("HTTP $responseCode: $responseMessage. Response: ${responseBody ?: "No response"}") {
+    IOException("HTTP $responseCode: Response: ${responseBody ?: "No response"}") {
     fun is4xx(): Boolean {
         return responseCode in 400..499
     }
