@@ -16,12 +16,18 @@ import java.time.Duration
 import java.util.concurrent.Executors
 
 class HTTPClient(
-    private val writeKey: String,
+    writeKey: String,
     dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 ) {
-    internal val authHeader: String
+    internal var authHeader: String
 
     private val client: HttpClient
+
+    internal var writeKey: String = writeKey
+        set(value) {
+            field = value
+            authHeader = authorizationHeader(field)
+        }
 
     init {
         authHeader = authorizationHeader(writeKey)
