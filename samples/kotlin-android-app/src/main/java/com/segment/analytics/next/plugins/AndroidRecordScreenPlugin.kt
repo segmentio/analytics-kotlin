@@ -4,9 +4,9 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 
 class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {
 
@@ -25,9 +25,9 @@ class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {
         } catch (e: PackageManager.NameNotFoundException) {
             throw AssertionError("Activity Not Found: $e")
         } catch (e: Exception) {
-            analytics.log(
+            Analytics.segmentLog(
                 "Unable to track screen view for ${activity.toString()}",
-                type = LogType.ERROR
+                kind = LogFilterKind.ERROR
             )
         }
     }

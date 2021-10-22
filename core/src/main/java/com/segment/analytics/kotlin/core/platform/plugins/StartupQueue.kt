@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import sovran.kotlin.Subscriber
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -34,7 +35,7 @@ class StartupQueue : Plugin, Subscriber {
 
     override fun execute(event: BaseEvent): BaseEvent? {
         if (!started.get()) {
-            analytics.log("SegmentStartupQueue queueing event", event = event)
+            analytics.log("SegmentStartupQueue queueing event")
             // timeline hasn't started, so queue it up.
             if (queuedEvents.size >= maxSize) {
                 // if we've exceeded the max queue size start dropping events

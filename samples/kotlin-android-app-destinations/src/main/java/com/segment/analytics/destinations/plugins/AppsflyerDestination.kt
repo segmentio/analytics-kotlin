@@ -12,9 +12,8 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import com.appsflyer.AFInAppEventParameterName
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
 import com.appsflyer.deeplink.DeepLinkListener
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.mapTransform
 import com.segment.analytics.kotlin.core.utilities.toContent
@@ -120,7 +119,7 @@ class AppsFlyerDestination(
         val afProperties = properties.mapTransform(propertiesMapper).mapValues { (_, v) -> v.toContent() }
 
         appsflyer?.logEvent(applicationContext, event, afProperties)
-        analytics.log("appsflyer.logEvent(context, $event, $properties)", type = LogType.INFO)
+        analytics.log("appsflyer.logEvent(context, $event, $properties)")
         return payload
     }
 
@@ -135,11 +134,11 @@ class AppsFlyerDestination(
 
     private fun updateEndUserAttributes() {
         appsflyer?.setCustomerUserId(customerUserId)
-        analytics.log("appsflyer.setCustomerUserId($customerUserId)", type = LogType.INFO)
+        analytics.log("appsflyer.setCustomerUserId($customerUserId)")
         appsflyer?.setCurrencyCode(currencyCode)
-        analytics.log("appsflyer.setCurrencyCode($currencyCode)", type = LogType.INFO)
+        analytics.log("appsflyer.setCurrencyCode($currencyCode)")
         appsflyer?.setDebugLog(isDebug)
-        analytics.log("appsflyer.setDebugLog($isDebug)", type = LogType.INFO)
+        analytics.log("appsflyer.setDebugLog($isDebug)")
     }
 
 

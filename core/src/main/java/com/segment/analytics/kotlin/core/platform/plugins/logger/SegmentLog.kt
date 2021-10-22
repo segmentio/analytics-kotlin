@@ -5,25 +5,33 @@ import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.*
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonPrimitive
 import java.lang.Exception
 import java.util.*
 
 // Analytics Utility plugin for logging purposes
-open class Logger : EventPlugin {
+open class SegmentLog : EventPlugin {
 
     override val type: Plugin.Type = Plugin.Type.Utility
     override lateinit var analytics: Analytics
 
     open var filterKind: LogFilterKind = LogFilterKind.DEBUG
 
-    private val messages = mutableListOf<LogMessage>()
     private var loggingMediator = mutableMapOf<LoggingType, LogTarget>()
 
     companion object {
         var loggingEnabled = true
+
+        // For internal use only. Note: This will contain the last created instance
+        // of analytics when used in a multi-analytics environment.
+        var sharedAnalytics: Analytics? = null
+    }
+
+    override fun setup(analytics: Analytics) {
+        super.setup(analytics)
+        sharedAnalytics = analytics
+        add(target = ConsoleTarget(), loggingType = LoggingType.log)
     }
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
@@ -39,13 +47,12 @@ open class Logger : EventPlugin {
                 logTarget.parseLog(logMessage)
             }
         }
-
     }
 
     open fun add(target: LogTarget, loggingType: LoggingType) {
 
         // Verify the target does not exist, if it does bail out
-        val filtered = loggingMediator.filter { (type, existingTarget) -> Boolean
+        val filtered = loggingMediator.filter { (_, existingTarget) -> Boolean
             existingTarget::class == target::class
         }
         if (filtered.isNotEmpty()) {
@@ -79,16 +86,17 @@ class LogFactory {
                      tags: List<String>? = null): LogMessage {
             return when (destination) {
                 LoggingType.LogDestination.LOG ->
-                    GenericLog(kind, message, function, line)
+                    GenericLog(kind = kind, message = message, function = function, line = line)
                 LoggingType.LogDestination.METRIC ->
-                    MetricLog(title, message, event, function, line)
+                    MetricLog(title = title, message = message, value = ((value ?: 1) as Double), event = event, function = function, line = line)
                 LoggingType.LogDestination.HISTORY ->
-                    HistoryLog(message, event, function, line, sender)
+                    HistoryLog(message = message, event = event, function = function, line = line, sender = sender)
             }
         }
     }
 
     private class GenericLog(override val kind: LogFilterKind,
+                             override val title: String? = null,
                              override val message: String,
                              override val function: String?,
                              override val line: Int?,
@@ -97,33 +105,36 @@ class LogFactory {
                              override val dateTime: Date = Date()
     ): LogMessage
 
-    private class MetricLog(val title: String,
+    private class MetricLog(override val title: String,
+                            override val kind: LogFilterKind = LogFilterKind.DEBUG,
                             override val message: String,
+                            val value: Double,
                             override val event: BaseEvent?,
                             override val function: String?,
                             override val line: Int?,
-                            override val kind: LogFilterKind = LogFilterKind.DEBUG,
                             override val logType: LoggingType.LogDestination = LoggingType.LogDestination.METRIC,
                             override val dateTime: Date = Date()
     ): LogMessage
 
-    private class HistoryLog(override val message: String,
+    private class HistoryLog(override val kind: LogFilterKind = LogFilterKind.DEBUG,
+                             override val title: String? = null,
+                             override val message: String,
                              override val event: BaseEvent?,
                              override val function: String?,
                              override val line: Int?,
                              val sender: Any?,
-                             override val kind: LogFilterKind = LogFilterKind.DEBUG,
                              override val logType: LoggingType.LogDestination = LoggingType.LogDestination.HISTORY,
                              override val dateTime: Date = Date()
     ): LogMessage
 }
 
+// Default implementation
 fun LogTarget.flush() { }
 
-//
-fun Analytics.segmentLog(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = 0) {
-    applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is Logger) {
+// Internal log usage
+public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = 0) {
+    SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
+        if (plugin is SegmentLog) {
             var filterKind = plugin.filterKind
             if (kind != null) {
                 filterKind = kind
@@ -139,9 +150,9 @@ fun Analytics.segmentLog(message: String, kind: LogFilterKind? = null, function:
     }
 }
 
-fun Analytics.segmentMetric(type: String, name: String, value: Double, tags: List<String>?) {
-    applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is Logger) {
+public fun Analytics.Companion.segmentMetric(type: String, name: String, value: Double, tags: List<String>?) {
+    SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
+        if (plugin is SegmentLog) {
             try {
                 val log = LogFactory.buildLog(LoggingType.LogDestination.METRIC,
                     type,
@@ -154,6 +165,7 @@ fun Analytics.segmentMetric(type: String, name: String, value: Double, tags: Lis
                     value,
                     tags)
                 plugin.log(log, LoggingType.LogDestination.METRIC)
+                // TODO: Capture function and line
             } catch (exception: Exception) {
                 // TODO: LOG TO PRIVATE SEGMENT LOG
             }

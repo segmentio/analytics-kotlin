@@ -16,6 +16,10 @@ import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.parseFilePaths
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -24,6 +28,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import sun.rmi.runtime.Log
 import java.io.File
 import java.io.FileInputStream
 import java.lang.ref.WeakReference
@@ -99,7 +104,7 @@ class SegmentDestination(
                 flush()
             }
         } catch (ex: Exception) {
-            analytics.log("Error adding payload", type = LogType.ERROR, event = payload)
+            Analytics.segmentLog("Error adding payload", kind = LogFilterKind.ERROR)
         }
     }
 
@@ -178,27 +183,27 @@ class SegmentDestination(
                 storage.get()?.removeFile(fileUrl)
                 analytics.log("$key uploaded $fileUrl")
             } catch (e: HTTPException) {
-                analytics.log("$key exception while uploading, ${e.message}")
+                Analytics.segmentLog("$key exception while uploading, ${e.message}", kind = LogFilterKind.ERROR)
                 if (e.is4xx() && e.responseCode != 429) {
                     // Simply log and proceed to remove the rejected payloads from the queue.
-                    analytics.log(
+                    Analytics.segmentLog(
                         message = "Payloads were rejected by server. Marked for removal.",
-                        type = LogType.ERROR
+                        kind = LogFilterKind.ERROR
                     )
                     storage.get()?.removeFile(fileUrl)
                 } else {
-                    analytics.log(
+                    Analytics.segmentLog(
                         message = "Error while uploading payloads",
-                        type = LogType.ERROR
+                        kind = LogFilterKind.ERROR
                     )
                 }
             } catch (e: Exception) {
-                analytics.log(
+                Analytics.segmentLog(
                     """
                     | Error uploading events from batch file
                     | fileUrl="$fileUrl"
                     | msg=${e.message}
-                """.trimMargin(), type = LogType.ERROR
+                """.trimMargin(), kind = LogFilterKind.ERROR
                 )
                 e.printStackTrace()
             }

@@ -6,7 +6,8 @@ import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogTarget
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -32,6 +33,7 @@ class Analytics(val configuration: Configuration) : Subscriber {
     internal val timeline: Timeline
     val storage: Storage
     val analyticsScope: CoroutineScope
+    companion object { }
 
     // Coroutine context used for analytics timeline processing
     val processingDispatcher: CoroutineDispatcher
@@ -335,7 +337,8 @@ class Analytics(val configuration: Configuration) : Subscriber {
             }
             process(event)
         } else {
-            log("failed to fetch current UserInfo state")
+            log(message = "Failed to fetch current UserInfo state")
+//            log("failed to fetch current UserInfo state")
         }
     }
 

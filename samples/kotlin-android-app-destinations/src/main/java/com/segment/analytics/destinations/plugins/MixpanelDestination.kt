@@ -9,8 +9,7 @@ import com.segment.analytics.kotlin.android.utilities.toJSONObject
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.utilities.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
@@ -114,7 +113,7 @@ class MixpanelDestination(
 
         if (userId.isNotEmpty()) {
             mixpanel?.identify(userId)
-            analytics.log("mixpanel.identify($userId)", type = LogType.INFO, event = payload)
+            analytics.log("mixpanel.identify($userId)")
         }
 
         with(settings) {
@@ -134,27 +133,15 @@ class MixpanelDestination(
 
             if (superProperties.isNotEmpty()) {
                 mixpanel?.registerSuperProperties(superProperties.toJSONObject())
-                analytics.log(
-                    "mixpanel.registerSuperProperties($superProperties)",
-                    type = LogType.INFO,
-                    event = payload
-                )
+                analytics.log("mixpanel.registerSuperProperties($superProperties)")
             }
 
             if (isPeopleEnabled) {
                 mixpanel?.people?.identify(userId)
-                analytics.log(
-                    "mixpanel.people.identify($userId)",
-                    type = LogType.INFO,
-                    event = payload
-                )
+                analytics.log("mixpanel.people.identify($userId)")
                 if (peopleProperties.isNotEmpty()) {
                     mixpanel?.people?.set(peopleProperties.toJSONObject())
-                    analytics.log(
-                        "mixpanel.getPeople().set($peopleProperties)",
-                        type = LogType.INFO,
-                        event = payload
-                    )
+                    analytics.log("mixpanel.getPeople().set($peopleProperties)")
                 }
             }
         }
@@ -179,11 +166,7 @@ class MixpanelDestination(
         }
 
         mixpanel?.setGroup(groupName, groupId)
-        analytics.log(
-            "mixpanel.setGroup($groupName, $groupId)",
-            type = LogType.INFO,
-            event = payload
-        )
+        analytics.log("mixpanel.setGroup($groupName, $groupId)")
 
         return payload
     }
@@ -198,7 +181,7 @@ class MixpanelDestination(
         }
         if (userId.isNotBlank()) {
             mixpanel?.alias(userId, previousId)
-            analytics.log("mixpanel.alias($userId, $previousId)", type = LogType.INFO, event = payload)
+            analytics.log("mixpanel.alias($userId, $previousId)")
         }
         return payload
     }
@@ -252,14 +235,14 @@ class MixpanelDestination(
     private fun trackEvent(name: String, properties: JsonObject) {
         val props = properties.toJSONObject()
         mixpanel?.track(name, props)
-        analytics.log("mixpanel.track($name, $properties)", type = LogType.INFO)
+        analytics.log("mixpanel.track($name, $properties)")
 
         val revenue = properties.getDouble("revenue")
 
         with(settings!!) {
             if (isPeopleEnabled && revenue != null && revenue != 0.0) {
                 mixpanel?.people?.trackCharge(revenue, props)
-                analytics.log("mixpanel.people.trackCharge($name, $props)", type = LogType.INFO)
+                analytics.log("mixpanel.people.trackCharge($name, $props)")
             }
         }
     }

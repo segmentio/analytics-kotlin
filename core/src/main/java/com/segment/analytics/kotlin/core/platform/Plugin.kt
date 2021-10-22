@@ -27,7 +27,7 @@ interface Plugin {
     val type: Type
     var analytics: Analytics // ideally will be auto-assigned by setup(), and can be declared as lateinit
 
-    // A simple setup function thats executed when plugin is attached to analytics
+    // A simple setup function that's executed when plugin is attached to analytics
     // If overridden, ensure that super.setup() is invoked
     fun setup(analytics: Analytics) {
         this.analytics = analytics

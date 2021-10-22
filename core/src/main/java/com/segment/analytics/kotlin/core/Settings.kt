@@ -2,8 +2,9 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.launch
@@ -57,15 +58,16 @@ fun Analytics.checkSettings() {
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
 
     analyticsScope.launch(ioDispatcher) {
+
         log("Fetching settings on ${Thread.currentThread().name}")
         val settingsObj: Settings? = try {
             val connection = HTTPClient(writeKey).settings(cdnHost)
             val settingsString =
                 connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-            log("Fetched Settings: $settingsString")
+            log( "Fetched Settings: $settingsString")
             LenientJson.decodeFromString(settingsString)
         } catch (ex: Exception) {
-            log(message = "${ex.message}: failed to fetch settings", type = LogType.ERROR)
+            Analytics.segmentLog("${ex.message}: failed to fetch settings", kind = LogFilterKind.ERROR)
             null
         }
         settingsObj?.let {

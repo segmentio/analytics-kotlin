@@ -2,8 +2,9 @@ package com.segment.analytics.destinations.plugins
 
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LoggingType
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.utilities.putIntegrations
 import java.util.*
 import kotlin.concurrent.schedule
@@ -30,8 +31,7 @@ class AmplitudeSession : Plugin {
         payload?.let {
             analytics.log(
                 message = "Running ${payload.type} payload through AmplitudeSession",
-                event = payload,
-                type = LogType.INFO
+                kind = LogFilterKind.DEBUG
             )
             returnPayload =
                 payload.putIntegrations(key, mapOf("session_id" to sessionID)) as T?
