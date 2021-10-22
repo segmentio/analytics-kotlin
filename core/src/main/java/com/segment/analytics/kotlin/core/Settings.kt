@@ -13,7 +13,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
-import java.io.BufferedReader
 
 @Serializable
 data class Settings(
@@ -59,9 +58,7 @@ suspend fun Analytics.checkSettings() {
     withContext(networkIODispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
         val settingsObj: Settings? = try {
-            val connection = HTTPClient(writeKey).settings(cdnHost)
-            val settingsString =
-                connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+            val settingsString = HTTPClient(writeKey).settings(cdnHost)
             log("Fetched Settings: $settingsString")
             LenientJson.decodeFromString(settingsString)
         } catch (ex: Exception) {
