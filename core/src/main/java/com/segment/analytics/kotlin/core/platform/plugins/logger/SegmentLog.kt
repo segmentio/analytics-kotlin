@@ -129,10 +129,15 @@ class LogFactory {
 }
 
 // Default implementation
-fun LogTarget.flush() { }
+fun LogTarget.flush() {
+    // Empty implementation. Used for implementors to override.
+}
 
 // Internal log usage
-public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = 0) {
+public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? = LogFilterKind.ERROR, function: String? = null, line: Int? = null) {
+
+    val methodInfo = Analytics.callingMethodDetails(function, line)
+
     SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
             var filterKind = plugin.filterKind
@@ -140,12 +145,8 @@ public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? 
                 filterKind = kind
             }
 
-            try {
-                val log = LogFactory.buildLog(LoggingType.LogDestination.LOG, "", message, filterKind, function, line)
-                plugin.log(log, LoggingType.LogDestination.LOG)
-            } catch (exception: Exception) {
-                // TODO: LOG TO PRIVATE SEGMENT LOG
-            }
+            val log = LogFactory.buildLog(LoggingType.LogDestination.LOG, "", message, filterKind, methodInfo.first, methodInfo.second)
+            plugin.log(log, LoggingType.LogDestination.LOG)
         }
     }
 }
@@ -153,22 +154,34 @@ public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? 
 public fun Analytics.Companion.segmentMetric(type: String, name: String, value: Double, tags: List<String>?) {
     SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
-            try {
-                val log = LogFactory.buildLog(LoggingType.LogDestination.METRIC,
-                    type,
-                    name,
-                    LogFilterKind.DEBUG,
-                    null,
-                    null,
-                    null,
-                    null,
-                    value,
-                    tags)
-                plugin.log(log, LoggingType.LogDestination.METRIC)
-                // TODO: Capture function and line
-            } catch (exception: Exception) {
-                // TODO: LOG TO PRIVATE SEGMENT LOG
-            }
+            val log = LogFactory.buildLog(LoggingType.LogDestination.METRIC,
+                type,
+                name,
+                LogFilterKind.DEBUG,
+                null,
+                null,
+                null,
+                null,
+                value,
+                tags)
+            plugin.log(log, LoggingType.LogDestination.METRIC)
+            // TODO: Capture function and line
         }
     }
+}
+
+private fun Analytics.Companion.callingMethodDetails(function: String?, lineNumber: Int?): Pair<String, Int> {
+
+    var fromFunction = function ?: ""
+    var fromLineNumber = lineNumber ?: 0
+    if (function == null) {
+        Exception().stackTrace[1].methodName.let {
+            fromFunction = it
+        }
+        Exception().stackTrace[1].lineNumber.let {
+            fromLineNumber = it
+        }
+    }
+
+    return Pair(fromFunction, fromLineNumber)
 }
