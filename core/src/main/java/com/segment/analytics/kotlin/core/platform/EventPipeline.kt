@@ -36,6 +36,10 @@ class EventPipeline(
 
     private var running: Boolean
 
+    companion object {
+        private const val FLUSH_POISON = "#!flush"
+    }
+
     var apiKey: String = apiKey
         set(value) {
             field = value
@@ -57,10 +61,7 @@ class EventPipeline(
     }
 
     fun flush() {
-        val eventFilePaths = parseFilePaths(storage.read(Storage.Constants.Events))
-        if (eventFilePaths.isNotEmpty()) {
-            uploadChannel.trySend(eventFilePaths)
-        }
+        writeChannel.trySend(FLUSH_POISON)
     }
 
     fun start() {
@@ -81,10 +82,13 @@ class EventPipeline(
     private fun write() = scope.launch(analytics.fileIODispatcher) {
         for (event in writeChannel) {
             // write to storage
-            storage.write(Storage.Constants.Events, event)
+            val isPoison = (event == FLUSH_POISON)
+            if (!isPoison) {
+                storage.write(Storage.Constants.Events, event)
+            }
 
             // if flush condition met, generate paths
-            if (eventCount.incrementAndGet() >= flushCount) {
+            if (eventCount.incrementAndGet() >= flushCount || isPoison) {
                 eventCount.set(0)
                 val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
                 uploadChannel.send(fileUrls)

@@ -99,6 +99,4 @@ class SegmentDestination : DestinationPlugin() {
     override fun flush() {
         pipeline.flush()
     }
-
-
 }
