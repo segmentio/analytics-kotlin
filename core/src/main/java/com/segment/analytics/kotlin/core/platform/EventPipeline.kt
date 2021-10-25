@@ -7,11 +7,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import java.io.File
 import java.lang.Exception
-import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.io.path.Path
-import kotlin.io.path.deleteIfExists
 
 class EventPipeline(
     private val analytics: Analytics,
@@ -26,7 +24,7 @@ class EventPipeline(
 
     private val uploadChannel: Channel<List<String>>
 
-    private val cleanupChannel: Channel<Path>
+    private val cleanupChannel: Channel<File>
 
     private val eventCount: AtomicInteger = AtomicInteger(0)
 
@@ -100,27 +98,31 @@ class EventPipeline(
 
             for (url in fileUrlList) {
                 // upload event file
-                val path = Path(url)
+                val file = File(url)
                 var shouldCleanup = true
 
                 try {
-                    httpClient.upload(apiHost, path)
-                    analytics.log("$logTag uploaded $path")
+                    httpClient.upload(apiHost, file)
+                    analytics.log("$logTag uploaded $file")
                 } catch (e: Exception) {
-                    shouldCleanup = handleUploadException(e, path)
+                    shouldCleanup = handleUploadException(e, file)
                 }
 
                 if (shouldCleanup) {
                     // send path for deletion
-                    cleanupChannel.send(path)
+                    cleanupChannel.send(file)
                 }
             }
         }
     }
 
+    /*
+        We have processed this file, so it's ok now to delegate it to a dispatcher
+        that is not under our control for clean up tasks.
+     */
     private fun cleanup() = scope.launch(Dispatchers.IO) {
         cleanupChannel.consumeEach {
-            it.deleteIfExists()
+            it.delete()
         }
     }
 
@@ -138,7 +140,7 @@ class EventPipeline(
         }
     }
 
-    private fun handleUploadException(e: Exception, path: Path): Boolean {
+    private fun handleUploadException(e: Exception, file: File): Boolean {
         var shouldCleanup = false
         if (e is HTTPException) {
             analytics.log("$logTag exception while uploading, ${e.message}")
@@ -160,7 +162,7 @@ class EventPipeline(
             analytics.log(
                 """
                     | Error uploading events from batch file
-                    | fileUrl="$path"
+                    | fileUrl="${file.path}"
                     | msg=${e.message}
                 """.trimMargin(), type = LogType.ERROR
             )

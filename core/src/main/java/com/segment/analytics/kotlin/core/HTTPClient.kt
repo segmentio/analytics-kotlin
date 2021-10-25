@@ -2,17 +2,18 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import com.segment.analytics.kotlin.core.utilities.encodeToBase64
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.asExecutor
-import kotlinx.coroutines.future.await
+import java.io.File
 import java.io.IOException
-import java.net.*
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.file.Path
-import java.time.Duration
 import java.util.concurrent.Executors
 
 class HTTPClient(
@@ -31,30 +32,34 @@ class HTTPClient(
 
     init {
         authHeader = authorizationHeader(writeKey)
-        client = HttpClient.newBuilder()
-            .executor(dispatcher.asExecutor())
-            .connectTimeout(Duration.ofSeconds(15))
-            .build()
+        client = HttpClient(CIO) {
+            engine {
+                requestTimeout = 20_000
+                endpoint {
+                    connectTimeout = 15_000
+                    socketTimeout = 20_000
+                }
+            }
+        }
     }
 
     suspend fun settings(cdnHost: String): String {
         val request = makeRequest("https://$cdnHost/projects/$writeKey/settings")
-            .GET()
-            .build()
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await().body()
+        return client.get<HttpResponse>(request).readText()
     }
 
-    suspend fun upload(apiHost: String, path: Path) {
+    suspend fun upload(apiHost: String, file: File) {
         val request = makeRequest("https://$apiHost/batch")
-            .POST(HttpRequest.BodyPublishers.ofFile(path))
-            .header("Authorization", authHeader)
-            .header("Content-Encoding", "gzip")
-            .build()
+        request.headers {
+            append("Authorization", authHeader)
+            append("Content-Encoding", "gzip")
+        }
+        request.body = FileContent(file)
 
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await().apply {
-            if (statusCode() >= 300) {
+        client.post<HttpResponse>(request).apply {
+            if (status.value >= 300) {
                 throw HTTPException(
-                    statusCode(), body()
+                    status.value, readText()
                 )
             }
         }
@@ -68,22 +73,31 @@ class HTTPClient(
     /**
      * Configures defaults for connections opened with [.upload], and [ ][.projectSettings].
      */
-    private fun makeRequest(url: String): HttpRequest.Builder {
-        val requestedURL = try {
-            URI.create(url)
-        } catch (e: URISyntaxException) {
+    private fun makeRequest(url: String): HttpRequestBuilder {
+        val request = try {
+            HttpRequestBuilder {
+                takeFrom(url)
+            }
+        } catch (e: URLParserException) {
             throw IOException("Attempted to use malformed url: $url", e)
         }
 
-        val request = HttpRequest.newBuilder()
-            .uri(requestedURL)
-            .timeout(Duration.ofSeconds(20))
-            .header("Content-Type", "application/json; charset=utf-8")
-            .header(
-                "User-Agent",
-                "analytics-kotlin/$LIBRARY_VERSION")
+        request.headers {
+            append("User-Agent","analytics-kotlin/$LIBRARY_VERSION")
+        }
+        request.contentType(ContentType.Application.Json)
+
         return request
     }
+}
+
+
+class FileContent(private val file: File): OutgoingContent.WriteChannelContent() {
+    override suspend fun writeTo(channel: ByteWriteChannel) {
+        file.inputStream().copyTo(channel, 1024)
+    }
+    override val contentType = ContentType.Application.Json
+    override val contentLength: Long = file.length()
 }
 
 internal class HTTPException(
