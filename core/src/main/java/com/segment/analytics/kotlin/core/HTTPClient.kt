@@ -54,6 +54,7 @@ class HTTPClient(
             append("Authorization", authHeader)
             append("Content-Encoding", "gzip")
         }
+        request.contentType(ContentType.Application.Json)
         request.body = FileContent(file)
 
         client.post<HttpResponse>(request).apply {
@@ -85,7 +86,6 @@ class HTTPClient(
         request.headers {
             append("User-Agent","analytics-kotlin/$LIBRARY_VERSION")
         }
-        request.contentType(ContentType.Application.Json)
 
         return request
     }
@@ -96,7 +96,6 @@ class FileContent(private val file: File): OutgoingContent.WriteChannelContent()
     override suspend fun writeTo(channel: ByteWriteChannel) {
         file.inputStream().copyTo(channel, 1024)
     }
-    override val contentType = ContentType.Application.Json
     override val contentLength: Long = file.length()
 }
 

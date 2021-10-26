@@ -134,7 +134,7 @@ class EventsFileManager(
 
     // return the current tmp file
     private fun currentFile(): File {
-        curFile = curFile?.run {
+        curFile = curFile ?: run {
             val index = kvs.getInt(fileIndexKey, 0)
             File(directory, "$writeKey-$index.tmp")
         }
