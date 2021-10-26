@@ -103,8 +103,9 @@ class EventPipeline(
             for (url in fileUrlList) {
                 // upload event file
                 val file = File(url)
-                var shouldCleanup = true
+                if (!file.exists()) continue
 
+                var shouldCleanup = true
                 try {
                     httpClient.upload(apiHost, file)
                     analytics.log("$logTag uploaded $file")
@@ -161,6 +162,15 @@ class EventPipeline(
                     type = LogType.ERROR
                 )
             }
+        }
+        else if (e is FileIOException) {
+            analytics.log(
+                """
+                    | Error uploading events from batch file
+                    | fileUrl="${file.path}"
+                    | msg=${e.message}
+                """.trimMargin(), type = LogType.INFO
+            )
         }
         else {
             analytics.log(

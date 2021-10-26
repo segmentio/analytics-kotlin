@@ -10,15 +10,12 @@ import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.Executors
+import java.lang.Exception
 
 class HTTPClient(
-    writeKey: String,
-    dispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    writeKey: String
 ) {
     internal var authHeader: String
 
@@ -52,9 +49,7 @@ class HTTPClient(
         val request = makeRequest("https://$apiHost/batch")
         request.headers {
             append("Authorization", authHeader)
-            append("Content-Encoding", "gzip")
         }
-        request.contentType(ContentType.Application.Json)
         request.body = FileContent(file)
 
         client.post<HttpResponse>(request).apply {
@@ -94,8 +89,23 @@ class HTTPClient(
 
 class FileContent(private val file: File): OutgoingContent.WriteChannelContent() {
     override suspend fun writeTo(channel: ByteWriteChannel) {
-        file.inputStream().copyTo(channel, 1024)
+        if (!file.exists()) return
+
+        try {
+            file.inputStream().run {
+                copyTo(channel, 8192)
+                close()
+            }
+        }
+        catch (e : Exception) {
+            throw FileIOException(e)
+        }
+        finally {
+            channel.close()
+        }
     }
+
+    override val contentType: ContentType = ContentType.Application.Json
     override val contentLength: Long = file.length()
 }
 
@@ -108,3 +118,5 @@ internal class HTTPException(
         return responseCode in 400..499
     }
 }
+
+internal class FileIOException(e: Exception) : IOException(e)
