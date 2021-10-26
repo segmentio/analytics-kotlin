@@ -4,8 +4,7 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

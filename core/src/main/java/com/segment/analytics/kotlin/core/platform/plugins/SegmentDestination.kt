@@ -1,25 +1,11 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.AliasEvent
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
-import com.segment.analytics.kotlin.core.GroupEvent
-import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.HTTPException
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.Settings
-import com.segment.analytics.kotlin.core.Storage
-import com.segment.analytics.kotlin.core.TrackEvent
-import com.segment.analytics.kotlin.core.emptyJsonObject
-import com.segment.analytics.kotlin.core.parseFilePaths
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
-import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
-import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -31,7 +17,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import sun.rmi.runtime.Log
 import java.io.File
 import java.io.FileInputStream
-import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -59,7 +44,7 @@ class SegmentDestination(
 
     override val key: String = "Segment.io"
     internal val httpClient: HTTPClient = HTTPClient(apiKey)
-    internal lateinit var storage: WeakReference<Storage>
+    internal  val storage get() = analytics.storage
     lateinit var flushScheduler: ScheduledExecutorService
     internal val eventCount = AtomicInteger(0)
 
@@ -99,7 +84,7 @@ class SegmentDestination(
         val stringVal = Json.encodeToString(jsonVal)
         analytics.log("$key running $stringVal")
         try {
-            storage.get()?.write(Storage.Constants.Events, stringVal)
+            storage.write(Storage.Constants.Events, stringVal)
             if (eventCount.incrementAndGet() >= flushCount) {
                 flush()
             }
@@ -110,7 +95,6 @@ class SegmentDestination(
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        storage = WeakReference(analytics.storage)
 
         // register timer for flush interval
         flushScheduler = Executors.newScheduledThreadPool(1)
@@ -119,7 +103,7 @@ class SegmentDestination(
 
             // If we have events in queue flush them
             val eventFilePaths =
-                parseFilePaths(storage.get()?.read(Storage.Constants.Events))
+                parseFilePaths(storage.read(Storage.Constants.Events))
             if (eventFilePaths.isNotEmpty()) {
                 initialDelay = 0
             }
@@ -144,7 +128,7 @@ class SegmentDestination(
 
     override fun flush() {
         analytics.run {
-            analyticsScope.launch(ioDispatcher) {
+            analyticsScope.launch(networkIODispatcher) {
                 performFlush()
             }
         }
@@ -155,7 +139,7 @@ class SegmentDestination(
             return
         }
         analytics.log("$key performing flush")
-        val fileUrls = parseFilePaths(storage.get()?.read(Storage.Constants.Events))
+        val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
         if (fileUrls.isEmpty()) {
             analytics.log("No events to upload")
             return
@@ -180,7 +164,7 @@ class SegmentDestination(
                     connection.close()
                 }
                 // Cleanup uploaded payloads
-                storage.get()?.removeFile(fileUrl)
+                storage.removeFile(fileUrl)
                 analytics.log("$key uploaded $fileUrl")
             } catch (e: HTTPException) {
                 Analytics.segmentLog("$key exception while uploading, ${e.message}", kind = LogFilterKind.ERROR)
@@ -190,7 +174,7 @@ class SegmentDestination(
                         message = "Payloads were rejected by server. Marked for removal.",
                         kind = LogFilterKind.ERROR
                     )
-                    storage.get()?.removeFile(fileUrl)
+                    storage.removeFile(fileUrl)
                 } else {
                     Analytics.segmentLog(
                         message = "Error while uploading payloads",

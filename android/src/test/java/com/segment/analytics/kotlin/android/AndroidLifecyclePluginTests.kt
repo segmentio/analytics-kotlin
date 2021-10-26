@@ -12,7 +12,10 @@ import com.segment.analytics.kotlin.android.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
+import com.segment.analytics.kotlin.android.utils.mockHTTPClient
 import io.mockk.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.*
@@ -47,6 +50,8 @@ class AndroidLifecyclePluginTests {
         every { Instant.now() } returns Date(0).toInstant()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
+
+        mockHTTPClient()
     }
 
     @Before
@@ -116,7 +121,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application opened is tracked`() {
+    fun `application opened is tracked`() = runBlocking{
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
@@ -129,7 +134,9 @@ class AndroidLifecyclePluginTests {
 
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
+        delay(500)
         lifecyclePlugin.onActivityStarted(mockActivity)
+        delay(500)
         lifecyclePlugin.onActivityResumed(mockActivity)
 
         verify (timeout = 2000){  mockPlugin.updateState(true) }

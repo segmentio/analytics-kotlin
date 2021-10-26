@@ -11,7 +11,7 @@ import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.getDouble
 import com.segment.analytics.kotlin.core.utilities.getMapList
 import com.segment.analytics.kotlin.core.utilities.getString

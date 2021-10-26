@@ -5,7 +5,7 @@ import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
-import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 
 // A set of functions tailored to the Android implementation of analytics
 

@@ -13,7 +13,7 @@ import android.os.Bundle
 import com.appsflyer.AFInAppEventParameterName
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.appsflyer.deeplink.DeepLinkListener
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.mapTransform
 import com.segment.analytics.kotlin.core.utilities.toContent

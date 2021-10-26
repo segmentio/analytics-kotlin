@@ -4,7 +4,7 @@ import android.app.Application
 import com.segment.analytics.destinations.plugins.*
 import com.segment.analytics.kotlin.android.Analytics
 import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import java.util.concurrent.Executors
 
 class MainApplication : Application() {

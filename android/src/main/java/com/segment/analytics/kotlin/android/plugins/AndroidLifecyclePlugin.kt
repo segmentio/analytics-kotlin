@@ -73,7 +73,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
     }
 
     private fun runOnAnalyticsThread(block: () -> Unit) = with(analytics) {
-        analyticsScope.launch(processingDispatcher) {
+        analyticsScope.launch(analyticsDispatcher) {
             block()
         }
     }

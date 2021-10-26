@@ -9,7 +9,7 @@ import com.segment.analytics.kotlin.android.utilities.toJSONObject
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*

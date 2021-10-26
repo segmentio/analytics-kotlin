@@ -46,10 +46,10 @@ android {
 dependencies {
     // MAIN DEPS
     api project(':core')
-    api 'com.github.segmentio:sovran-kotlin:0.1.0'
-    api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1"
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9'
+    api 'com.github.segmentio:sovran-kotlin:1.1.0'
+    api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
     implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
 
@@ -58,23 +58,23 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
     // TESTING
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
     testImplementation 'io.mockk:mockk:1.10.6'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
     // Add JUnit5 dependencies.
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.2'
 
     // Add JUnit4 legacy dependencies.
     testImplementation 'junit:junit:4.13.2'
-    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.7.0'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.7.2'
 
     // Add Roboelectric dependencies.
     testImplementation 'org.robolectric:robolectric:4.5'
-    testImplementation 'androidx.test:core:1.3.0'
+    testImplementation 'androidx.test:core:1.4.0'
 }
 
 apply from: rootProject.file('gradle/jitpack-android.gradle')

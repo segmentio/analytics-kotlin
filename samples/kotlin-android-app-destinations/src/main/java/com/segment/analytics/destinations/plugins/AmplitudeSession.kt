@@ -2,9 +2,7 @@ package com.segment.analytics.destinations.plugins
 
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LoggingType
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.putIntegrations
 import java.util.*
 import kotlin.concurrent.schedule

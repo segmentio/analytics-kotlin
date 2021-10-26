@@ -4,7 +4,9 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import sovran.kotlin.Subscriber
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -25,12 +27,16 @@ class StartupQueue : Plugin, Subscriber {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        analytics.store.subscribe(
-            subscriber = this,
-            stateClazz = System::class,
-            initialState = true,
-            handler = this::runningUpdate
-        )
+        with(analytics) {
+            analyticsScope.launch(analyticsDispatcher) {
+                store.subscribe(
+                    subscriber = this@StartupQueue,
+                    stateClazz = System::class,
+                    initialState = true,
+                    handler = this@StartupQueue::runningUpdate
+                )
+            }
+        }
     }
 
     override fun execute(event: BaseEvent): BaseEvent? {

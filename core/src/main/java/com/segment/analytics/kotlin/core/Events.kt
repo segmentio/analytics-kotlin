@@ -79,14 +79,17 @@ sealed class BaseEvent {
     // the userId tied to the event
     abstract var userId: String
 
-    internal fun applyBaseEventData(store: Store) {
+    internal fun applyBaseData() {
         this.timestamp = Instant.now().toString()
+        this.context = emptyJsonObject
+        this.messageId = UUID.randomUUID().toString()
+    }
+
+    internal suspend fun applyBaseEventData(store: Store) {
         val system = store.currentState(System::class) ?: return
         val userInfo = store.currentState(UserInfo::class) ?: return
 
         this.anonymousId = userInfo.anonymousId
-        this.messageId = UUID.randomUUID().toString()
-        this.context = emptyJsonObject
         this.integrations = system.integrations ?: emptyJsonObject
 
         if (this.userId.isBlank()) {

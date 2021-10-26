@@ -5,9 +5,7 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
-import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.putAll
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.Dispatchers
