@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import java.io.File
+import java.io.FileInputStream
 import java.lang.Exception
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -107,8 +108,19 @@ class EventPipeline(
 
                 var shouldCleanup = true
                 try {
-                    httpClient.upload(apiHost, file)
-                    analytics.log("$logTag uploaded $file")
+                    val connection = httpClient.upload(apiHost)
+                    connection.outputStream?.let {
+                        // Write the payloads into the OutputStream.
+                        val fileInputStream = FileInputStream(file)
+                        fileInputStream.copyTo(connection.outputStream)
+                        fileInputStream.close()
+                        connection.outputStream.close()
+
+                        // Upload the payloads.
+                        connection.close()
+                    }
+                    // Cleanup uploaded payloads
+                    analytics.log("$logTag uploaded $url")
                 } catch (e: Exception) {
                     shouldCleanup = handleUploadException(e, file)
                 }
@@ -162,15 +174,6 @@ class EventPipeline(
                     type = LogType.ERROR
                 )
             }
-        }
-        else if (e is FileIOException) {
-            analytics.log(
-                """
-                    | Error uploading events from batch file
-                    | fileUrl="${file.path}"
-                    | msg=${e.message}
-                """.trimMargin(), type = LogType.INFO
-            )
         }
         else {
             analytics.log(

@@ -2,24 +2,18 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import com.segment.analytics.kotlin.core.utilities.encodeToBase64
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.http.content.*
-import io.ktor.utils.io.*
-import io.ktor.utils.io.jvm.javaio.*
-import java.io.File
+import java.io.BufferedReader
+import java.io.Closeable
 import java.io.IOException
-import java.lang.Exception
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.HttpURLConnection
+import java.net.MalformedURLException
+import java.net.URL
+import java.util.zip.GZIPOutputStream
 
-class HTTPClient(
-    writeKey: String
-) {
-    internal var authHeader: String
-
-    private val client: HttpClient
+class HTTPClient(writeKey: String) {
+    internal var authHeader = authorizationHeader(writeKey)
 
     internal var writeKey: String = writeKey
         set(value) {
@@ -27,38 +21,24 @@ class HTTPClient(
             authHeader = authorizationHeader(field)
         }
 
-    init {
-        authHeader = authorizationHeader(writeKey)
-        client = HttpClient(CIO) {
-            engine {
-                requestTimeout = 20_000
-                endpoint {
-                    connectTimeout = 15_000
-                    socketTimeout = 20_000
-                }
-            }
+    fun settings(cdnHost: String): Connection {
+        val connection: HttpURLConnection =
+            openConnection("https://$cdnHost/projects/$writeKey/settings")
+        val responseCode = connection.responseCode
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            connection.disconnect()
+            throw IOException("HTTP " + responseCode + ": " + connection.responseMessage)
         }
+        return connection.createGetConnection()
     }
 
-    suspend fun settings(cdnHost: String): String {
-        val request = makeRequest("https://$cdnHost/projects/$writeKey/settings")
-        return client.get<HttpResponse>(request).readText()
-    }
-
-    suspend fun upload(apiHost: String, file: File) {
-        val request = makeRequest("https://$apiHost/batch")
-        request.headers {
-            append("Authorization", authHeader)
-        }
-        request.body = FileContent(file)
-
-        client.post<HttpResponse>(request).apply {
-            if (status.value >= 300) {
-                throw HTTPException(
-                    status.value, readText()
-                )
-            }
-        }
+    fun upload(apiHost: String): Connection {
+        val connection: HttpURLConnection = openConnection("https://$apiHost/batch")
+        connection.setRequestProperty("Authorization", authHeader)
+        connection.setRequestProperty("Content-Encoding", "gzip")
+        connection.doOutput = true
+        connection.setChunkedStreamingMode(0)
+        return connection.createPostConnection()
     }
 
     private fun authorizationHeader(writeKey: String): String {
@@ -69,54 +49,98 @@ class HTTPClient(
     /**
      * Configures defaults for connections opened with [.upload], and [ ][.projectSettings].
      */
-    private fun makeRequest(url: String): HttpRequestBuilder {
-        val request = try {
-            HttpRequestBuilder {
-                takeFrom(url)
-            }
-        } catch (e: URLParserException) {
+    @Throws(IOException::class)
+    private fun openConnection(url: String): HttpURLConnection {
+        val requestedURL: URL = try {
+            URL(url)
+        } catch (e: MalformedURLException) {
             throw IOException("Attempted to use malformed url: $url", e)
         }
+        val connection = requestedURL.openConnection() as HttpURLConnection
+        connection.connectTimeout = 15_000 // 15s
+        connection.readTimeout = 20_1000 // 20s
 
-        request.headers {
-            append("User-Agent","analytics-kotlin/$LIBRARY_VERSION")
-        }
-
-        return request
+        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        connection.setRequestProperty(
+            "User-Agent",
+            "analytics-kotlin/$LIBRARY_VERSION"
+        )
+        connection.doInput = true
+        return connection
     }
 }
 
+/**
+ * Wraps an HTTP connection. Callers can either read from the connection via the [ ] or write to the connection via [OutputStream].
+ */
+abstract class Connection(
+    val connection: HttpURLConnection,
+    val inputStream: InputStream?,
+    val outputStream: OutputStream?
+) : Closeable {
+    @Throws(IOException::class)
+    override fun close() {
+        connection.disconnect()
+    }
+}
 
-class FileContent(private val file: File): OutgoingContent.WriteChannelContent() {
-    override suspend fun writeTo(channel: ByteWriteChannel) {
-        if (!file.exists()) return
+fun safeGetInputStream(connection: HttpURLConnection): InputStream? {
+    return try {
+        connection.inputStream
+    } catch (ignored: IOException) {
+        connection.errorStream
+    }
+}
 
-        try {
-            file.inputStream().run {
-                copyTo(channel, 8192)
-                close()
-            }
-        }
-        catch (e : Exception) {
-            throw FileIOException(e)
-        }
-        finally {
-            channel.close()
+internal fun HttpURLConnection.createGetConnection(): Connection {
+
+    return object : Connection(this, safeGetInputStream(this), null) {
+        override fun close() {
+            super.close()
+            inputStream?.close()
         }
     }
+}
 
-    override val contentType: ContentType = ContentType.Application.Json
-    override val contentLength: Long = file.length()
+internal fun HttpURLConnection.createPostConnection(): Connection {
+    val outputStream: OutputStream
+    outputStream = GZIPOutputStream(this.outputStream)
+    return object : Connection(this, null, outputStream) {
+        @Throws(IOException::class)
+        override fun close() {
+            try {
+                val responseCode: Int = connection.responseCode
+                if (responseCode >= 300) {
+                    var responseBody: String?
+                    var inputStream: InputStream? = null
+                    try {
+                        inputStream = safeGetInputStream(this.connection)
+                        responseBody = inputStream?.bufferedReader()?.use(BufferedReader::readText)
+                    } catch (e: IOException) {
+                        responseBody = ("Could not read response body for rejected message: "
+                                + e.toString())
+                    } finally {
+                        inputStream?.close()
+                    }
+                    throw HTTPException(
+                        responseCode, connection.responseMessage, responseBody
+                    )
+                }
+            } finally {
+                super.close()
+                this.outputStream?.close()
+            }
+        }
+    }
 }
 
 internal class HTTPException(
     val responseCode: Int,
-    responseBody: String?
+    val responseMessage: String,
+    val responseBody: String?
 ) :
-    IOException("HTTP $responseCode: Response: ${responseBody ?: "No response"}") {
+    IOException("HTTP $responseCode: $responseMessage. Response: ${responseBody ?: "No response"}") {
     fun is4xx(): Boolean {
         return responseCode in 400..499
     }
 }
-
-internal class FileIOException(e: Exception) : IOException(e)
