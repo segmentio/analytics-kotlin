@@ -44,6 +44,7 @@ interface Storage {
     fun read(key: Constants): String?
     fun remove(key: Constants): Boolean
     fun removeFile(filePath: String): Boolean
+    fun new()
 
     fun userInfoUpdate(userInfo: UserInfo) {
         write(Constants.AnonymousId, userInfo.anonymousId)

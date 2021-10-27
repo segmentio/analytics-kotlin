@@ -92,6 +92,10 @@ class AndroidStorage(
     override fun removeFile(filePath: String): Boolean {
         return eventsFile.remove(filePath)
     }
+
+    override fun new() {
+        eventsFile.new()
+    }
 }
 
 object AndroidStorageProvider : StorageProvider {

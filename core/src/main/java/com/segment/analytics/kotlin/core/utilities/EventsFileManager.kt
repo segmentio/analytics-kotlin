@@ -69,7 +69,7 @@ class EventsFileManager(
 
         // check if file is at capacity
         if (file.length() > MAX_FILE_SIZE) {
-            finish()
+            new()
             // update index
             file = currentFile()
             file.createNewFile()
@@ -91,10 +91,9 @@ class EventsFileManager(
     }
 
     /**
-     * closes the current file, and returns a comma-separated list of file paths that are not yet uploaded
+     * Returns a comma-separated list of file paths that are not yet uploaded
      */
     fun read(): List<String> {
-        finish()
         // we need to filter out .temp file, since its operating on the writing thread
         val fileList = directory.listFiles { _, name ->
             name.contains(writeKey) && !name.endsWith(".tmp")
@@ -117,7 +116,11 @@ class EventsFileManager(
         writeToFile(contents.toByteArray(), file)
     }
 
-    private fun finish() {
+    /**
+     * closes current file, and increase the index
+     * so next write go to a new file
+     */
+    fun new() {
         val file = currentFile()
         if (!file.exists()) {
             // if tmp file doesnt exist then we dont need to do anything

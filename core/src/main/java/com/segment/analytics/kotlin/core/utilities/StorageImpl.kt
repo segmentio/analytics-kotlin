@@ -93,6 +93,10 @@ class StorageImpl(
         return eventsFile.remove(filePath)
     }
 
+    override fun new() {
+        eventsFile.new()
+    }
+
 }
 
 object ConcreteStorageProvider : StorageProvider {

@@ -23,9 +23,7 @@ class EventPipeline(
 
     private val writeChannel: Channel<String>
 
-    private val uploadChannel: Channel<List<String>>
-
-    private val cleanupChannel: Channel<File>
+    private val uploadChannel: Channel<String>
 
     private val eventCount: AtomicInteger = AtomicInteger(0)
 
@@ -39,6 +37,8 @@ class EventPipeline(
 
     companion object {
         private const val FLUSH_POISON = "#!flush"
+
+        private const val UPLOAD_SIG = "#!upload"
     }
 
     var apiKey: String = apiKey
@@ -51,8 +51,7 @@ class EventPipeline(
         running = false
 
         writeChannel = Channel(UNLIMITED)
-        uploadChannel = Channel(UNLIMITED)
-        cleanupChannel = Channel()
+        uploadChannel = Channel()
 
         registerShutdownHook()
     }
@@ -70,11 +69,9 @@ class EventPipeline(
         schedule()
         write()
         upload()
-        cleanup()
     }
 
     fun stop() {
-        cleanupChannel.cancel()
         uploadChannel.cancel()
         writeChannel.cancel()
         running = false
@@ -91,16 +88,17 @@ class EventPipeline(
             // if flush condition met, generate paths
             if (eventCount.incrementAndGet() >= flushCount || isPoison) {
                 eventCount.set(0)
-                val fileUrls = parseFilePaths(storage.read(Storage.Constants.Events))
-                uploadChannel.send(fileUrls)
+                storage.new()
+                uploadChannel.send(UPLOAD_SIG)
             }
         }
     }
 
     private fun upload() = scope.launch(analytics.networkIODispatcher) {
-        for (fileUrlList in uploadChannel) {
+        uploadChannel.consumeEach {
             analytics.log("$logTag performing flush")
 
+            val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
                 // upload event file
                 val file = File(url)
@@ -126,20 +124,9 @@ class EventPipeline(
                 }
 
                 if (shouldCleanup) {
-                    // send path for deletion
-                    cleanupChannel.send(file)
+                    file.delete()
                 }
             }
-        }
-    }
-
-    /*
-        We have processed this file, so it's ok now to delegate it to a dispatcher
-        that is not under our control for clean up tasks.
-     */
-    private fun cleanup() = scope.launch(Dispatchers.IO) {
-        cleanupChannel.consumeEach {
-            it.delete()
         }
     }
 
