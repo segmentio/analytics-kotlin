@@ -40,13 +40,13 @@ interface Storage {
     }
 
     suspend fun subscribeToStore()
-    fun write(key: Constants, value: String)
+    suspend fun write(key: Constants, value: String)
     fun read(key: Constants): String?
     fun remove(key: Constants): Boolean
     fun removeFile(filePath: String): Boolean
-    fun new()
+    suspend fun rollover()
 
-    fun userInfoUpdate(userInfo: UserInfo) {
+    suspend fun userInfoUpdate(userInfo: UserInfo) {
         write(Constants.AnonymousId, userInfo.anonymousId)
         userInfo.userId?.let { write(Constants.UserId, it) }
         userInfo.traits?.let {
@@ -57,7 +57,7 @@ interface Storage {
         }
     }
 
-    fun systemUpdate(system: System) {
+    suspend fun systemUpdate(system: System) {
         system.settings?.let {
             write(
                 Constants.Settings,

@@ -49,7 +49,7 @@ class StorageImpl(
         )
     }
 
-    override fun write(key: Storage.Constants, value: String) {
+    override suspend fun write(key: Storage.Constants, value: String) {
         when (key) {
             Storage.Constants.Events -> {
                 if (value.length < MAX_PAYLOAD_SIZE) {
@@ -93,8 +93,8 @@ class StorageImpl(
         return eventsFile.remove(filePath)
     }
 
-    override fun new() {
-        eventsFile.new()
+    override suspend fun rollover() {
+        eventsFile.rollover()
     }
 
 }

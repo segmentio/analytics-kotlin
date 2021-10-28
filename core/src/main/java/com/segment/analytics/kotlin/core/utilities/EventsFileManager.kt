@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core.utilities
 
+import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
@@ -48,6 +49,8 @@ class EventsFileManager(
 
     private var curFile: File? = null
 
+    private val semaphore = Semaphore(1)
+
     companion object {
         const val MAX_FILE_SIZE = 475_000 // 475KB
     }
@@ -57,7 +60,7 @@ class EventsFileManager(
      * opens a new file, if current file is full or uncreated
      * stores the event
      */
-    fun storeEvent(event: String) {
+    suspend fun storeEvent(event: String) = withLock {
         var newFile = false
         var file = currentFile()
         if (!file.exists()) {
@@ -69,7 +72,7 @@ class EventsFileManager(
 
         // check if file is at capacity
         if (file.length() > MAX_FILE_SIZE) {
-            new()
+            finish()
             // update index
             file = currentFile()
             file.createNewFile()
@@ -120,7 +123,11 @@ class EventsFileManager(
      * closes current file, and increase the index
      * so next write go to a new file
      */
-    fun new() {
+    suspend fun rollover() = withLock {
+        finish()
+    }
+
+    private fun finish() {
         val file = currentFile()
         if (!file.exists()) {
             // if tmp file doesnt exist then we dont need to do anything
@@ -167,6 +174,12 @@ class EventsFileManager(
                 os?.close()
             }
         })
+    }
+
+    private suspend fun withLock(block: () -> Unit) {
+        semaphore.acquire()
+        block()
+        semaphore.release()
     }
 }
 

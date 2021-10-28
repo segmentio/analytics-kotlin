@@ -51,7 +51,7 @@ class EventPipeline(
         running = false
 
         writeChannel = Channel(UNLIMITED)
-        uploadChannel = Channel()
+        uploadChannel = Channel(UNLIMITED)
 
         registerShutdownHook()
     }
@@ -88,8 +88,7 @@ class EventPipeline(
             // if flush condition met, generate paths
             if (eventCount.incrementAndGet() >= flushCount || isPoison) {
                 eventCount.set(0)
-                storage.new()
-                uploadChannel.send(UPLOAD_SIG)
+                uploadChannel.trySend(UPLOAD_SIG)
             }
         }
     }
@@ -98,6 +97,7 @@ class EventPipeline(
         uploadChannel.consumeEach {
             analytics.log("$logTag performing flush")
 
+            storage.rollover()
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
                 // upload event file
