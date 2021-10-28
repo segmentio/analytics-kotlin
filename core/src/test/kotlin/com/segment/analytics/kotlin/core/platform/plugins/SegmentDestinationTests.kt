@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
@@ -14,6 +15,7 @@ import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -129,9 +131,10 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorAddingPayload = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error adding payload") {
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Error adding payload" && logMessage.kind == LogFilterKind.ERROR) {
                     errorAddingPayload = true
                 }
             }
@@ -155,9 +158,10 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorAddingPayload = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error adding payload") {
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Error adding payload" && logMessage.kind == LogFilterKind.ERROR) {
                     errorAddingPayload = true
                 }
             }
@@ -211,11 +215,6 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-            }
-        }
-        analytics.add(testLogger)
         val destSpy = spyk(segmentDestination)
 
         val httpConnection: HttpURLConnection = mockk()
@@ -259,9 +258,10 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var payloadsRejected = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Payloads were rejected by server. Marked for removal.") {
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Payloads were rejected by server. Marked for removal." && logMessage.kind == LogFilterKind.ERROR) {
                     payloadsRejected = true
                 }
             }
@@ -297,9 +297,10 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorUploading = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error while uploading payloads") {
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
                     errorUploading = true
                 }
             }
@@ -341,9 +342,11 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorUploading = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error while uploading payloads") {
+
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
                     errorUploading = true
                 }
             }
@@ -385,9 +388,11 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var exceptionUploading = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message.contains("test")) {
+
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message.contains("test") && logMessage.kind == LogFilterKind.ERROR) {
                     exceptionUploading = true
                 }
             }
@@ -416,9 +421,10 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var interrupted = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.INFO && message == "No events to upload") {
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "No events to upload" && logMessage.kind == LogFilterKind.DEBUG) {
                     interrupted = true
                 }
             }
@@ -428,6 +434,7 @@ class SegmentDestinationTests {
         destSpy.track(trackEvent)
         analytics.storage.read(Storage.Constants.Events)?.let { analytics.storage.removeFile(it) }
 
+        SegmentLog.loggingEnabled = true
         destSpy.flush()
         assertTrue(interrupted)
     }

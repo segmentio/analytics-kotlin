@@ -40,7 +40,13 @@ class Analytics internal constructor(
 
     internal val timeline: Timeline
     val storage: Storage
-    companion object { }
+    companion object {
+        var debugLogsEnabled: Boolean = false
+            set(value: Boolean) {
+                debugLogsEnabled = value
+                SegmentLog.loggingEnabled = debugLogsEnabled
+            }
+    }
 
     init {
         require(configuration.isValid()) { "invalid configuration" }

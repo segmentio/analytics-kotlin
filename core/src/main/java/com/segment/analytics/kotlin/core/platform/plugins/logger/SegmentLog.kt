@@ -11,7 +11,7 @@ import java.lang.Exception
 import java.util.*
 
 // Analytics Utility plugin for logging purposes
-internal class SegmentLog : EventPlugin {
+internal open class SegmentLog : EventPlugin {
 
     override val type: Plugin.Type = Plugin.Type.Utility
     override lateinit var analytics: Analytics
@@ -40,7 +40,7 @@ internal class SegmentLog : EventPlugin {
         loggingEnabled = enabled
     }
 
-    internal fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+    internal open fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
 
         loggingMediator.forEach { (loggingType, logTarget) ->
             if (loggingType.contains(destination)) {
@@ -49,7 +49,7 @@ internal class SegmentLog : EventPlugin {
         }
     }
 
-    internal fun add(target: LogTarget, loggingType: LoggingType) {
+    internal open fun add(target: LogTarget, loggingType: LoggingType) {
 
         // Verify the target does not exist, if it does bail out
         val filtered = loggingMediator.filter { (_, existingTarget) -> Boolean
@@ -63,7 +63,7 @@ internal class SegmentLog : EventPlugin {
         loggingMediator[loggingType] = target
     }
 
-    internal fun flush() {
+    internal open fun flush() {
         loggingMediator.forEach { (_, target) ->
             target.flush()
         }

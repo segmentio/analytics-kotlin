@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 
 import org.junit.jupiter.api.Test
 
-internal class LoggerTest {
+internal class LogTargetTest {
 
     private lateinit var analytics: Analytics
 
@@ -34,19 +34,40 @@ internal class LoggerTest {
     }
 
     @Test
-    fun log() {
+    fun `test metric normal`() {
         val logger = spyk(SegmentLog())
         analytics.add(logger)
-        analytics.log("test")
-        verify { logger.log(LogType.INFO, "test", null) }
+        analytics.metric("Counter", "Cool", 2.0, null)
+
+        val message = LogFactory.buildLog(LoggingType.Filter.METRIC, "Counter", "Cool", value = 2.0, tags = null)
+
+        verify { logger.log(message, LoggingType.Filter.METRIC) }
     }
 
-    @Test
-    fun flush() {
-        val logger = spyk(Logger())
-        analytics.add(logger)
-        analytics.log("test", TrackEvent(emptyJsonObject, "test"), LogType.INFO)
-        analytics.logFlush()
-        verify { logger.flush() }
-    }
+//    @Test
+//    fun log() {
+//        val logger = spyk(SegmentLog())
+//        analytics.add(logger)
+//        analytics.log("test")
+//        verify { logger.log(LogType.INFO, "test", null) }
+//    }
+//
+//    @Test
+//    fun flush() {
+//        val logger = spyk(Logger())
+//        analytics.add(logger)
+//        analytics.log("test", TrackEvent(emptyJsonObject, "test"), LogType.INFO)
+//        analytics.logFlush()
+//        verify { logger.flush() }
+//    }
+
+//    internal class LoggerMockPlugin: SegmentLog() {
+//
+//
+//
+//        override fun flush() {
+//            super.flush()
+//
+//        }
+//    }
 }
