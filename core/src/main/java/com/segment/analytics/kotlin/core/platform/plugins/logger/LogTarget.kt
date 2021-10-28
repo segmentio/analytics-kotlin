@@ -49,9 +49,9 @@ enum class LogFilterKind {
  * responds to logs, it is possible to adhere to 1 to many. In other words, a LoggingType can be .log &
  * .history. This is used to tell which targets logs are directed to.
  */
-class LoggingType(types: List<LogDestination>) {
+class LoggingType(types: List<Filter>) {
 
-    enum class LogDestination {
+    enum class Filter {
         LOG,
         METRIC,
         HISTORY;
@@ -59,22 +59,22 @@ class LoggingType(types: List<LogDestination>) {
 
     companion object {
         /// Convenience .log logging type
-        val log = LoggingType(listOf(LogDestination.LOG))
+        val log = LoggingType(listOf(Filter.LOG))
         /// Convenience .metric logging type
-        val metric = LoggingType(listOf(LogDestination.METRIC))
+        val metric = LoggingType(listOf(Filter.METRIC))
         /// Convenience .history logging type
-        val history = LoggingType(listOf(LogDestination.HISTORY))
+        val history = LoggingType(listOf(Filter.HISTORY))
     }
 
     // - Private Properties and Methods
-    private val allTypes: List<LogDestination> = types
+    private val allTypes: List<Filter> = types
 
     /**
      * Convenience method to find if the LoggingType supports a particular destination.
      *
      * @property destination The particular destination being tested for conformance.
      */
-    internal fun contains(destination: LogDestination): Boolean {
+    internal fun contains(destination: Filter): Boolean {
         return this.allTypes.contains(destination)
     }
 }
@@ -89,7 +89,7 @@ interface LogMessage {
     val event: BaseEvent?
     val function: String?
     val line: Int?
-    val logType: LoggingType.LogDestination
+    val logType: LoggingType.Filter
     val dateTime: Date
 }
 
@@ -126,6 +126,7 @@ enum class MetricType(val type: Int) {
  * @property function The name of the function the log came from. This will be captured automatically.
  * @property line The line number in the function the log came from. This will be captured automatically.
  */
+@JvmOverloads
 fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = -1) {
     applyClosureToPlugins { plugin: Plugin ->
         // Check if we should send the event
@@ -139,8 +140,8 @@ fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String
                 filterKind = kind
             }
 
-            val log = LogFactory.buildLog(LoggingType.LogDestination.LOG, "", message, filterKind, function, line)
-            plugin.log(log, LoggingType.LogDestination.LOG)
+            val log = LogFactory.buildLog(LoggingType.Filter.LOG, "", message, filterKind, function, line)
+            plugin.log(log, LoggingType.Filter.LOG)
         }
     }
 }
@@ -154,6 +155,7 @@ fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String
  * or pressure gauge.
  * @property tags Any tags that should be associated with the metric. Any extra metadata that may help.
  */
+@JvmOverloads
 fun Analytics.metric(type: String, name: String, value: Double, tags: List<String>? = null) {
     applyClosureToPlugins { plugin: Plugin ->
         // Check if we should send the event
@@ -162,8 +164,8 @@ fun Analytics.metric(type: String, name: String, value: Double, tags: List<Strin
         }
 
         if (plugin is SegmentLog) {
-            val log = LogFactory.buildLog(LoggingType.LogDestination.METRIC, type, name, value = value, tags = tags)
-            plugin.log(log, LoggingType.LogDestination.METRIC)
+            val log = LogFactory.buildLog(LoggingType.Filter.METRIC, type, name, value = value, tags = tags)
+            plugin.log(log, LoggingType.Filter.METRIC)
         }
     }
 }
@@ -178,6 +180,7 @@ fun Analytics.metric(type: String, name: String, value: Double, tags: List<Strin
  * @property function The name of the function the log came from. This will be captured automatically.
  * @property line The line number in the function the log came from. This will be captured automatically.
  */
+@JvmOverloads
 fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line: Int = -1) {
     applyClosureToPlugins { plugin: Plugin ->
         // Check if we should send the event
@@ -186,14 +189,14 @@ fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line
         }
 
         if (plugin is SegmentLog) {
-            val log = LogFactory.buildLog(LoggingType.LogDestination.METRIC,
+            val log = LogFactory.buildLog(LoggingType.Filter.METRIC,
                 title = event.toString(),
                 message = "",
                 function = function,
                 line = line,
                 event = event,
                 sender = sender)
-            plugin.log(log, LoggingType.LogDestination.HISTORY)
+            plugin.log(log, LoggingType.Filter.HISTORY)
         }
     }
 }

@@ -66,6 +66,7 @@ class Analytics internal constructor(
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
         // because startup queue doesn't depend on a state, we can add it first
+        add(SegmentLog())
         add(StartupQueue())
         add(ContextPlugin())
         

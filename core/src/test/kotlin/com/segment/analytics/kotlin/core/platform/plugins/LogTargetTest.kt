@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.TestCoroutineDispatcher
@@ -34,9 +35,9 @@ internal class LoggerTest {
 
     @Test
     fun log() {
-        val logger = spyk(Logger())
+        val logger = spyk(SegmentLog())
         analytics.add(logger)
-        analytics.log("test", null, LogType.INFO)
+        analytics.log("test")
         verify { logger.log(LogType.INFO, "test", null) }
     }
 

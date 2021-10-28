@@ -11,12 +11,12 @@ import java.lang.Exception
 import java.util.*
 
 // Analytics Utility plugin for logging purposes
-open class SegmentLog : EventPlugin {
+internal class SegmentLog : EventPlugin {
 
     override val type: Plugin.Type = Plugin.Type.Utility
     override lateinit var analytics: Analytics
 
-    open var filterKind: LogFilterKind = LogFilterKind.DEBUG
+    internal var filterKind: LogFilterKind = LogFilterKind.DEBUG
 
     private var loggingMediator = mutableMapOf<LoggingType, LogTarget>()
 
@@ -40,7 +40,7 @@ open class SegmentLog : EventPlugin {
         loggingEnabled = enabled
     }
 
-    open fun log(logMessage: LogMessage, destination: LoggingType.LogDestination) {
+    internal fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
 
         loggingMediator.forEach { (loggingType, logTarget) ->
             if (loggingType.contains(destination)) {
@@ -49,7 +49,7 @@ open class SegmentLog : EventPlugin {
         }
     }
 
-    open fun add(target: LogTarget, loggingType: LoggingType) {
+    internal fun add(target: LogTarget, loggingType: LoggingType) {
 
         // Verify the target does not exist, if it does bail out
         val filtered = loggingMediator.filter { (_, existingTarget) -> Boolean
@@ -63,7 +63,7 @@ open class SegmentLog : EventPlugin {
         loggingMediator[loggingType] = target
     }
 
-    open fun flush() {
+    internal fun flush() {
         loggingMediator.forEach { (_, target) ->
             target.flush()
         }
@@ -74,7 +74,7 @@ open class SegmentLog : EventPlugin {
 
 class LogFactory {
     companion object {
-        fun buildLog(destination: LoggingType.LogDestination,
+        fun buildLog(destination: LoggingType.Filter,
                      title: String,
                      message: String,
                      kind: LogFilterKind = LogFilterKind.DEBUG,
@@ -85,11 +85,11 @@ class LogFactory {
                      value: Double? = null,
                      tags: List<String>? = null): LogMessage {
             return when (destination) {
-                LoggingType.LogDestination.LOG ->
+                LoggingType.Filter.LOG ->
                     GenericLog(kind = kind, message = message, function = function, line = line)
-                LoggingType.LogDestination.METRIC ->
+                LoggingType.Filter.METRIC ->
                     MetricLog(title = title, message = message, value = ((value ?: 1) as Double), event = event, function = function, line = line)
-                LoggingType.LogDestination.HISTORY ->
+                LoggingType.Filter.HISTORY ->
                     HistoryLog(message = message, event = event, function = function, line = line, sender = sender)
             }
         }
@@ -101,7 +101,7 @@ class LogFactory {
                              override val function: String?,
                              override val line: Int?,
                              override val event: BaseEvent? = null,
-                             override val logType: LoggingType.LogDestination = LoggingType.LogDestination.LOG,
+                             override val logType: LoggingType.Filter = LoggingType.Filter.LOG,
                              override val dateTime: Date = Date()
     ): LogMessage
 
@@ -112,7 +112,7 @@ class LogFactory {
                             override val event: BaseEvent?,
                             override val function: String?,
                             override val line: Int?,
-                            override val logType: LoggingType.LogDestination = LoggingType.LogDestination.METRIC,
+                            override val logType: LoggingType.Filter = LoggingType.Filter.METRIC,
                             override val dateTime: Date = Date()
     ): LogMessage
 
@@ -123,7 +123,7 @@ class LogFactory {
                              override val function: String?,
                              override val line: Int?,
                              val sender: Any?,
-                             override val logType: LoggingType.LogDestination = LoggingType.LogDestination.HISTORY,
+                             override val logType: LoggingType.Filter = LoggingType.Filter.HISTORY,
                              override val dateTime: Date = Date()
     ): LogMessage
 }
@@ -145,8 +145,8 @@ public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? 
                 filterKind = kind
             }
 
-            val log = LogFactory.buildLog(LoggingType.LogDestination.LOG, "", message, filterKind, methodInfo.first, methodInfo.second)
-            plugin.log(log, LoggingType.LogDestination.LOG)
+            val log = LogFactory.buildLog(LoggingType.Filter.LOG, "", message, filterKind, methodInfo.first, methodInfo.second)
+            plugin.log(log, LoggingType.Filter.LOG)
         }
     }
 }
@@ -154,7 +154,7 @@ public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? 
 public fun Analytics.Companion.segmentMetric(type: String, name: String, value: Double, tags: List<String>?) {
     SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
-            val log = LogFactory.buildLog(LoggingType.LogDestination.METRIC,
+            val log = LogFactory.buildLog(LoggingType.Filter.METRIC,
                 type,
                 name,
                 LogFilterKind.DEBUG,
@@ -164,7 +164,7 @@ public fun Analytics.Companion.segmentMetric(type: String, name: String, value: 
                 null,
                 value,
                 tags)
-            plugin.log(log, LoggingType.LogDestination.METRIC)
+            plugin.log(log, LoggingType.Filter.METRIC)
             // TODO: Capture function and line
         }
     }

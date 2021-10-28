@@ -53,7 +53,6 @@ public fun Analytics(
 
 // Android specific startup
 private fun Analytics.startup() {
-    add(SegmentLog())
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
 }
