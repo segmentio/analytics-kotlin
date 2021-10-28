@@ -12,14 +12,8 @@ import java.net.MalformedURLException
 import java.net.URL
 import java.util.zip.GZIPOutputStream
 
-class HTTPClient(writeKey: String) {
-    internal var authHeader = authorizationHeader(writeKey)
-
-    internal var writeKey: String = writeKey
-        set(value) {
-            field = value
-            authHeader = authorizationHeader(field)
-        }
+class HTTPClient(var writeKey: String) {
+    internal val authHeader = authorizationHeader(writeKey)
 
     fun settings(cdnHost: String): Connection {
         val connection: HttpURLConnection =

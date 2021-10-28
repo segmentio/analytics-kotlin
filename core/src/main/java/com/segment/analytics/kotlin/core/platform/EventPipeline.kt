@@ -12,7 +12,7 @@ import java.io.FileInputStream
 import java.lang.Exception
 import java.util.concurrent.atomic.AtomicInteger
 
-class EventPipeline(
+internal class EventPipeline(
     private val analytics: Analytics,
     private val logTag: String,
     apiKey: String,
@@ -40,12 +40,6 @@ class EventPipeline(
 
         private const val UPLOAD_SIG = "#!upload"
     }
-
-    var apiKey: String = apiKey
-        set(value) {
-            field = value
-            httpClient.writeKey = field
-        }
 
     init {
         running = false
@@ -97,7 +91,10 @@ class EventPipeline(
         uploadChannel.consumeEach {
             analytics.log("$logTag performing flush")
 
-            storage.rollover()
+            withContext(analytics.fileIODispatcher) {
+                storage.rollover()
+            }
+
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
                 // upload event file

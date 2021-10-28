@@ -90,7 +90,6 @@ class SegmentDestination : DestinationPlugin() {
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         if (settings.isDestinationEnabled(key)) {
             settings.destinationSettings<SegmentSettings>(key)?.let {
-                pipeline.apiKey = it.apiKey
                 pipeline.apiHost = it.apiHost
             }
         }
