@@ -119,7 +119,7 @@ internal class StorageImplTest {
     inner class EventsStorage() {
 
         @Test
-        fun `writing events writes to eventsFile`() {
+        fun `writing events writes to eventsFile`() = runBlocking {
             val event = TrackEvent(
                 event = "clicked",
                 properties = buildJsonObject { put("behaviour", "good") })
@@ -132,6 +132,7 @@ internal class StorageImplTest {
                 }
             val stringified: String = Json.encodeToString(event)
             storage.write(Storage.Constants.Events, stringified)
+            storage.rollover()
             val storagePath = storage.eventsFile.read()[0]
             val storageContents = File(storagePath).readText()
             val jsonFormat = Json.decodeFromString(JsonObject.serializer(), storageContents)
@@ -139,19 +140,24 @@ internal class StorageImplTest {
         }
 
         @Test
-        fun `cannot write more than 32kb as event`() {
+        fun `cannot write more than 32kb as event`() = runBlocking {
             val stringified: String = "A".repeat(32002)
-            assertThrows(Exception::class.java) {
+            val exception = try {
                 storage.write(
                     Storage.Constants.Events,
                     stringified
                 )
+                null
             }
+            catch (e : Exception) {
+                e
+            }
+            assertNotNull(exception)
             assertTrue(storage.eventsFile.read().isEmpty())
         }
 
         @Test
-        fun `reading events returns a non-null file handle with correct events`() {
+        fun `reading events returns a non-null file handle with correct events`() = runBlocking {
             val event = TrackEvent(
                 event = "clicked",
                 properties = buildJsonObject { put("behaviour", "good") })
@@ -165,6 +171,7 @@ internal class StorageImplTest {
             val stringified: String = Json.encodeToString(event)
             storage.write(Storage.Constants.Events, stringified)
 
+            storage.rollover()
             val fileUrl = storage.read(Storage.Constants.Events)
             assertNotNull(fileUrl)
             fileUrl!!.let {
@@ -190,7 +197,7 @@ internal class StorageImplTest {
         }
 
         @Test
-        fun `can write and read multiple events`() {
+        fun `can write and read multiple events`() = runBlocking {
             val event1 = TrackEvent(
                 event = "clicked",
                 properties = buildJsonObject { put("behaviour", "good") })
@@ -216,6 +223,7 @@ internal class StorageImplTest {
             storage.write(Storage.Constants.Events, stringified1)
             storage.write(Storage.Constants.Events, stringified2)
 
+            storage.rollover()
             val fileUrl = storage.read(Storage.Constants.Events)
             assertNotNull(fileUrl)
             fileUrl!!.let {

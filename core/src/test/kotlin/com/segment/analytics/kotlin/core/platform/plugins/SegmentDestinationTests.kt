@@ -25,6 +25,7 @@ import java.lang.Exception
 import java.net.HttpURLConnection
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SegmentDestinationTests {
@@ -51,12 +52,14 @@ class SegmentDestinationTests {
     @BeforeEach
     fun setup() {
         clearPersistentStorage()
-        segmentDestination = SegmentDestination("123", 2, 0)
+        segmentDestination = SegmentDestination()
 
         val config = Configuration(
             writeKey = "123",
             application = "Test",
-            storageProvider = ConcreteStorageProvider
+            storageProvider = ConcreteStorageProvider,
+            flushAt = 2,
+            flushInterval = 0
         )
         val store = spyStore(testScope, testDispatcher)
         analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
@@ -64,7 +67,7 @@ class SegmentDestinationTests {
     }
 
     @Test
-    fun `enqueue adds event to storage`() {
+    fun `enqueue adds event to storage`() = runBlocking {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -83,9 +86,9 @@ class SegmentDestinationTests {
             (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
         }
 
-        (analytics.storage as StorageImpl).let {
-            assertEquals(1, segmentDestination.eventCount.get())
-            val storagePath = it.eventsFile.read()[0]
+        (analytics.storage as StorageImpl).run {
+            eventsFile.rollover()
+            val storagePath = eventsFile.read()[0]
             val storageContents = File(storagePath).readText()
             assertTrue(
                 storageContents.contains(
@@ -93,27 +96,6 @@ class SegmentDestinationTests {
                 )
             )
         }
-    }
-
-    @Test
-    fun `enqueuing more than flushCount causes flush`() {
-        val trackEvent = TrackEvent(
-            event = "clicked",
-            properties = buildJsonObject { put("behaviour", "good") })
-            .apply {
-                messageId = "qwerty-1234"
-                anonymousId = "anonId"
-                integrations = emptyJsonObject
-                context = emptyJsonObject
-                timestamp = epochTimestamp
-            }
-
-        val destSpy = spyk(segmentDestination)
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-
-        assertEquals(0, segmentDestination.eventCount.get())
-        verify { destSpy.flush() }
     }
 
     @Test
@@ -128,75 +110,18 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        var errorAddingPayload = false
+        val errorAddingPayload = spyk(AtomicBoolean(false))
         val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error adding payload") {
-                    errorAddingPayload = true
+                if (type == LogType.ERROR && message.contains("Error adding payload")) {
+                    errorAddingPayload.set(true)
                 }
             }
         }
         analytics.add(testLogger)
         val destSpy = spyk(segmentDestination)
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertTrue(errorAddingPayload)
-    }
-
-    @Test
-    fun `enqueuing properly handles exception`() {
-        val trackEvent = TrackEvent(
-            event = "clicked",
-            properties = buildJsonObject { put("behaviour", "good") })
-            .apply {
-                messageId = "qwerty-1234"
-                anonymousId = "anonId"
-                integrations = emptyJsonObject
-                context = emptyJsonObject
-                timestamp = epochTimestamp
-            }
-        var errorAddingPayload = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error adding payload") {
-                    errorAddingPayload = true
-                }
-            }
-        }
-        analytics.add(testLogger)
-
-        val destSpy = spyk(segmentDestination)
-        every { destSpy.flush() } throws Exception("test")
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-
-        assertTrue(errorAddingPayload)
-    }
-
-    @Test
-    fun `flushInterval causes regular flushing of events`() = runBlocking {
-        //restart flushScheduler
-        val destination = SegmentDestination(
-            apiKey = "123",
-            flushCount = 10,
-            flushIntervalInMillis = 1_000
-        )
-        val destSpy = spyk(destination)
-        destSpy.setup(analytics)
-
-        val trackEvent = TrackEvent(
-            event = "clicked",
-            properties = buildJsonObject { put("behaviour", "good") })
-            .apply {
-                messageId = "qwerty-1234"
-                anonymousId = "anonId"
-                integrations = emptyJsonObject
-                context = emptyJsonObject
-                timestamp = epochTimestamp
-            }
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-        delay(2_000)
-        delay(2_000)
-        verify(atLeast = 2, atMost = 5) { destSpy.flush() }
+        verify(timeout = 2000) { errorAddingPayload.set(true) }
     }
 
     @Test
@@ -220,17 +145,17 @@ class SegmentDestinationTests {
 
         val httpConnection: HttpURLConnection = mockk()
         var outputBytes: ByteArray = byteArrayOf()
-        val connection = object : Connection(httpConnection, null, ByteArrayOutputStream()) {
+        val connection = spyk(object : Connection(httpConnection, null, ByteArrayOutputStream()) {
             override fun close() {
                 outputBytes = (outputStream as ByteArrayOutputStream).toByteArray()
             }
-        }
+        })
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
 
+        verify(timeout = 2000) { connection.close() }
         with(String(outputBytes)) {
             val contentsJson: JsonObject = Json.decodeFromString(this)
             assertEquals(2, contentsJson.size)
@@ -243,7 +168,6 @@ class SegmentDestinationTests {
             assertEquals(trackEvent, eventInFile2)
         }
 
-        assertEquals(0, segmentDestination.eventCount.get())
     }
 
     @Test
@@ -258,11 +182,11 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        var payloadsRejected = false
+        val payloadsRejected = spyk(AtomicBoolean(false))
         val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message == "Payloads were rejected by server. Marked for removal.") {
-                    payloadsRejected = true
+                    payloadsRejected.set(true)
                 }
             }
         }
@@ -278,14 +202,12 @@ class SegmentDestinationTests {
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
-        assertTrue(payloadsRejected)
-        assertEquals(0, segmentDestination.eventCount.get())
+        verify(timeout = 2000) { payloadsRejected.set(true) }
     }
 
     @Test
-    fun `flush reads events but does not delete on fail code_429`() {
+    fun `flush reads events but does not delete on fail code_429`() = runBlocking {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -296,11 +218,11 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        var errorUploading = false
+        val errorUploading = spyk(AtomicBoolean(false))
         val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message == "Error while uploading payloads") {
-                    errorUploading = true
+                    errorUploading.set(true)
                 }
             }
         }
@@ -316,20 +238,17 @@ class SegmentDestinationTests {
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
-        assertTrue(errorUploading)
-        (analytics.storage as StorageImpl).let {
-            // queued event count gets cleared
-            assertEquals(0, segmentDestination.eventCount.get())
-
+        verify(timeout = 2000) { errorUploading.set(true) }
+        (analytics.storage as StorageImpl).run {
             // batch file doesnt get deleted
-            assertEquals(1, it.eventsFile.read().size)
+            eventsFile.rollover()
+            assertEquals(1, eventsFile.read().size)
         }
     }
 
     @Test
-    fun `flush reads events but does not delete on fail code_500`() {
+    fun `flush reads events but does not delete on fail code_500`() = runBlocking {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -340,11 +259,11 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        var errorUploading = false
+        val errorUploading = spyk(AtomicBoolean(false))
         val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message == "Error while uploading payloads") {
-                    errorUploading = true
+                    errorUploading.set(true)
                 }
             }
         }
@@ -360,15 +279,12 @@ class SegmentDestinationTests {
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
-        assertTrue(errorUploading)
-        (analytics.storage as StorageImpl).let {
-            // queued event count gets cleared
-            assertEquals(0, segmentDestination.eventCount.get())
-
+        verify(timeout = 2000) { errorUploading.set(true) }
+        (analytics.storage as StorageImpl).run {
             // batch file doesnt get deleted
-            assertEquals(1, it.eventsFile.read().size)
+            eventsFile.rollover()
+            assertEquals(1, eventsFile.read().size)
         }
     }
 
@@ -384,11 +300,11 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        var exceptionUploading = false
+        val exceptionUploading = spyk(AtomicBoolean(false))
         val testLogger = object : Logger() {
             override fun log(type: LogType, message: String, event: BaseEvent?) {
                 if (type == LogType.ERROR && message.contains("test")) {
-                    exceptionUploading = true
+                    exceptionUploading.set(true)
                 }
             }
         }
@@ -398,37 +314,8 @@ class SegmentDestinationTests {
         every { anyConstructed<HTTPClient>().upload(any()) } throws Exception("test")
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        assertEquals(1, segmentDestination.eventCount.get())
         destSpy.flush()
-        assertTrue(exceptionUploading)
-    }
 
-    @Test
-    fun `flush interrupted when no event file exist`() {
-        val trackEvent = TrackEvent(
-            event = "clicked",
-            properties = buildJsonObject { put("behaviour", "good") })
-            .apply {
-                messageId = "qwerty-1234"
-                anonymousId = "anonId"
-                integrations = emptyJsonObject
-                context = emptyJsonObject
-                timestamp = epochTimestamp
-            }
-        var interrupted = false
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.INFO && message == "No events to upload") {
-                    interrupted = true
-                }
-            }
-        }
-        analytics.add(testLogger)
-        val destSpy = spyk(segmentDestination)
-        destSpy.track(trackEvent)
-        analytics.storage.read(Storage.Constants.Events)?.let { analytics.storage.removeFile(it) }
-
-        destSpy.flush()
-        assertTrue(interrupted)
+        verify(timeout = 2000) { exceptionUploading.set(true) }
     }
 }

@@ -75,8 +75,11 @@ internal class EventPipeline(
         for (event in writeChannel) {
             // write to storage
             val isPoison = (event == FLUSH_POISON)
-            if (!isPoison) {
+            if (!isPoison) try {
                 storage.write(Storage.Constants.Events, event)
+            }
+            catch (e : Exception) {
+                analytics.log("Error adding payload: $event", type = LogType.ERROR)
             }
 
             // if flush condition met, generate paths
