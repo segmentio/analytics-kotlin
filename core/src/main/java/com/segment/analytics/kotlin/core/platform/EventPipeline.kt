@@ -33,12 +33,13 @@ internal class EventPipeline(
 
     private val scope get() = analytics.analyticsScope
 
-    private var running: Boolean
+    var running: Boolean
+        private set
 
     companion object {
-        private const val FLUSH_POISON = "#!flush"
+        internal const val FLUSH_POISON = "#!flush"
 
-        private const val UPLOAD_SIG = "#!upload"
+        internal const val UPLOAD_SIG = "#!upload"
     }
 
     init {
@@ -124,7 +125,7 @@ internal class EventPipeline(
                 }
 
                 if (shouldCleanup) {
-                    file.delete()
+                    storage.removeFile(file.path)
                 }
             }
         }
