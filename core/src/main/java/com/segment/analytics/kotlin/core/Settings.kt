@@ -53,6 +53,12 @@ suspend fun Analytics.checkSettings() {
     val writeKey = configuration.writeKey
     val cdnHost = configuration.cdnHost
 
+    // check current system state to determine whether it's initial or refresh
+    val systemState = store.currentState(System::class)
+    val hasSettings = systemState?.settings?.integrations != null &&
+            systemState.settings?.plan != null
+    val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial
+
     // stop things; queue in case our settings have changed.
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
 
@@ -68,23 +74,15 @@ suspend fun Analytics.checkSettings() {
             log(message = "${ex.message}: failed to fetch settings", type = LogType.ERROR)
             null
         }
-        settingsObj?.let {
-            log("Dispatching update settings on ${Thread.currentThread().name}")
 
-            // check current system state to determine whether it's initial or refresh
-            val systemState = store.currentState(System::class)
-            val hasSettings = systemState?.settings?.integrations != null &&
-                                systemState.settings?.plan != null
-            val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial
-
-            withContext(analyticsDispatcher) {
-                store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
-            }
-            update(settingsObj, updateType)
-        }
-
-        // we're good to go back to a running state.
         withContext(analyticsDispatcher) {
+            settingsObj?.let {
+                log("Dispatching update settings on ${Thread.currentThread().name}")
+                store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
+                update(settingsObj, updateType)
+            }
+
+            // we're good to go back to a running state.
             store.dispatch(System.ToggleRunningAction(running = true), System::class)
         }
     }

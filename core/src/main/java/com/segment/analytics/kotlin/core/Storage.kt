@@ -40,12 +40,20 @@ interface Storage {
     }
 
     suspend fun subscribeToStore()
-    fun write(key: Constants, value: String)
+    suspend fun write(key: Constants, value: String)
     fun read(key: Constants): String?
     fun remove(key: Constants): Boolean
     fun removeFile(filePath: String): Boolean
 
-    fun userInfoUpdate(userInfo: UserInfo) {
+    /**
+     * Direct writes to a new file, and close the current file.
+     * This function is useful in cases such as `flush`, that
+     * we want to finish writing the current file, and have it
+     * flushed to server.
+     */
+    suspend fun rollover()
+
+    suspend fun userInfoUpdate(userInfo: UserInfo) {
         write(Constants.AnonymousId, userInfo.anonymousId)
         userInfo.userId?.let { write(Constants.UserId, it) }
         userInfo.traits?.let {
@@ -56,7 +64,7 @@ interface Storage {
         }
     }
 
-    fun systemUpdate(system: System) {
+    suspend fun systemUpdate(system: System) {
         system.settings?.let {
             write(
                 Constants.Settings,

@@ -46,7 +46,7 @@ android {
 dependencies {
     // MAIN DEPS
     api project(':core')
-    api 'com.github.segmentio:sovran-kotlin:1.1.0'
+    api 'com.github.segmentio:sovran-kotlin:1.2.0'
     api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'

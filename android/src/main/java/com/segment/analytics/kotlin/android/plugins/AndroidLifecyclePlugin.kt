@@ -72,7 +72,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         }
     }
 
-    private fun runOnAnalyticsThread(block: () -> Unit) = with(analytics) {
+    private fun runOnAnalyticsThread(block: suspend () -> Unit) = with(analytics) {
         analyticsScope.launch(analyticsDispatcher) {
             block()
         }
@@ -264,8 +264,10 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         }
 
         // Update the recorded version.
-        storage.write(Storage.Constants.AppVersion, currentVersion)
-        storage.write(Storage.Constants.AppBuild, currentBuild)
+        runOnAnalyticsThread {
+            storage.write(Storage.Constants.AppVersion, currentVersion)
+            storage.write(Storage.Constants.AppBuild, currentBuild)
+        }
     }
 
     fun unregisterListeners() {

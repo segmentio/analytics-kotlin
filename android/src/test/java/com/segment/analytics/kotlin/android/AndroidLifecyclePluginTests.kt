@@ -206,7 +206,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application updated is tracked`() {
+    fun `application updated is tracked`() = runBlocking {
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false

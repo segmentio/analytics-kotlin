@@ -8,6 +8,7 @@ import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import io.mockk.every
 import io.mockk.spyk
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -95,7 +96,7 @@ class AndroidContextCollectorTests {
     }
 
     @Test
-    fun `getDeviceId returns anonId when disabled`() {
+    fun `getDeviceId returns anonId when disabled`() = runBlocking {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
