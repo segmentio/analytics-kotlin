@@ -44,6 +44,13 @@ interface Storage {
     fun read(key: Constants): String?
     fun remove(key: Constants): Boolean
     fun removeFile(filePath: String): Boolean
+
+    /**
+     * Direct writes to a new file, and close the current file.
+     * This function is useful in cases such as `flush`, that
+     * we want to finish writing the current file, and have it
+     * flushed to server.
+     */
     suspend fun rollover()
 
     suspend fun userInfoUpdate(userInfo: UserInfo) {
