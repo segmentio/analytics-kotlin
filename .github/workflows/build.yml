@@ -8,17 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  cancel_previous:
-  
-    runs-on: ubuntu-latest
-    steps:
-    - uses: styfle/cancel-workflow-action@0.9.1
-      with:
-        workflow_id: ${{ github.event.workflow.id }}
-        
   core-test:
 
-    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -31,15 +22,14 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        key: ${{ runner.os }}-gradle-core-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
-          ${{ runner.os }}-gradle-
+          ${{ runner.os }}-gradle-core-
     - name: Run Tests
       run: ./gradlew core:test
 
   android-test:
 
-    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -52,15 +42,14 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-android-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ runner.os }}-gradle-android-
       - name: Run Tests
         run: ./gradlew android:test
 
   destination-test:
 
-    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -73,15 +62,14 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-dest-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ runner.os }}-gradle-dest-
       - name: Run Tests
         run: ./gradlew samples:kotlin-android-app-destinations:test
 
   security:
 
-    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
