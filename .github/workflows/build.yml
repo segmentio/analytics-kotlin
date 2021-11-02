@@ -8,8 +8,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  cancel_previous:
+  
+    runs-on: ubuntu-latest
+    steps:
+    - uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        workflow_id: ${{ github.event.workflow.id }}
+        
   core-test:
 
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -30,6 +39,7 @@ jobs:
 
   android-test:
 
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -50,6 +60,7 @@ jobs:
 
   destination-test:
 
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -70,6 +81,7 @@ jobs:
 
   security:
 
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
