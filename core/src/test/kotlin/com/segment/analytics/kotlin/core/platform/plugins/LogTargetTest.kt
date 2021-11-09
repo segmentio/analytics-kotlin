@@ -6,10 +6,11 @@ import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utils.spyStore
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
-import io.mockk.spyk
-import io.mockk.verify
+import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 
 import org.junit.jupiter.api.Test
@@ -24,6 +25,7 @@ internal class LogTargetTest {
 
     @BeforeEach
     internal fun setUp() {
+        clearPersistentStorage()
         val config = Configuration(
             writeKey = "123",
             application = "Tetst",
@@ -35,39 +37,111 @@ internal class LogTargetTest {
 
     @Test
     fun `test metric normal`() {
-        val logger = spyk(SegmentLog())
-        analytics.add(logger)
-        analytics.metric("Counter", "Cool", 2.0, null)
+        var metricPassed = false
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage is LogFactory.MetricLog) {
+                    assertEquals(logMessage.message, "Metric of 5")
+                    assertEquals(logMessage.kind, LogFilterKind.DEBUG)
+                    assertEquals(logMessage.title, "Counter")
+                    assertEquals(logMessage.value, 5.0)
 
-        val message = LogFactory.buildLog(LoggingType.Filter.METRIC, "Counter", "Cool", value = 2.0, tags = null)
+                    metricPassed = true
+                }
+            }
+        }
+        analytics.add(testLogger)
+        SegmentLog.loggingEnabled = true
+        analytics.metric("Counter", "Metric of 5", 5.0, null)
 
-        verify { logger.log(message, LoggingType.Filter.METRIC) }
+        assertTrue(metricPassed)
     }
 
-//    @Test
-//    fun log() {
-//        val logger = spyk(SegmentLog())
-//        analytics.add(logger)
-//        analytics.log("test")
-//        verify { logger.log(LogType.INFO, "test", null) }
-//    }
-//
-//    @Test
-//    fun flush() {
-//        val logger = spyk(Logger())
-//        analytics.add(logger)
-//        analytics.log("test", TrackEvent(emptyJsonObject, "test"), LogType.INFO)
-//        analytics.logFlush()
-//        verify { logger.flush() }
-//    }
+    @Test
+    fun `test history normal`() {
+        var historyPassed = false
 
-//    internal class LoggerMockPlugin: SegmentLog() {
-//
-//
-//
-//        override fun flush() {
-//            super.flush()
-//
-//        }
-//    }
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage is LogFactory.HistoryLog) {
+                    assertEquals(logMessage.function, "test history normal")
+                    assertEquals(logMessage.logType, LoggingType.Filter.HISTORY)
+
+                    historyPassed = true
+                }
+            }
+        }
+        analytics.add(testLogger)
+        SegmentLog.loggingEnabled = true
+        analytics.history(event = TrackEvent(event = "Tester", properties = emptyJsonObject), sender = this)
+
+        assertTrue(historyPassed)
+    }
+
+    @Test
+    fun `test logging disabled`() {
+        var loggingPassed = false
+
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                fail<String>("Should not hit this point")
+                loggingPassed = true
+            }
+        }
+        analytics.add(testLogger)
+        SegmentLog.loggingEnabled = false
+        analytics.log("Should NOT hit our proper target")
+
+        assertFalse(loggingPassed)
+    }
+
+    @Test
+    fun `test metric disabled`() {
+        var metricPassed = false
+
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                fail<String>("Should not hit this point")
+                metricPassed = true
+            }
+        }
+        analytics.add(testLogger)
+        SegmentLog.loggingEnabled = false
+        analytics.metric("Counter", "Metric of 5", 5.0, null)
+
+        assertFalse(metricPassed)
+    }
+
+    @Test
+    fun `test history disabled`() {
+        var historyPassed = false
+
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                fail<String>("Should not hit this point")
+                historyPassed = true
+            }
+        }
+        analytics.add(testLogger)
+        SegmentLog.loggingEnabled = false
+        analytics.history(event = TrackEvent(event = "Tester", properties = emptyJsonObject), sender = this)
+
+        assertFalse(historyPassed)
+    }
+
+    @Test
+    fun `test logging disabled by default`() {
+        SegmentLog.loggingEnabled = false
+
+        Analytics.debugLogsEnabled = true
+        assertTrue(SegmentLog.loggingEnabled, "Logging should change to enabled")
+
+        Analytics.debugLogsEnabled = false
+        assertFalse(SegmentLog.loggingEnabled, "Logging should reset to disabled")
+    }
 }

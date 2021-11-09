@@ -21,7 +21,7 @@ internal open class SegmentLog : EventPlugin {
     private var loggingMediator = mutableMapOf<LoggingType, LogTarget>()
 
     companion object {
-        var loggingEnabled = true
+        var loggingEnabled = false
 
         // For internal use only. Note: This will contain the last created instance
         // of analytics when used in a multi-analytics environment.
@@ -95,7 +95,7 @@ class LogFactory {
         }
     }
 
-    private class GenericLog(override val kind: LogFilterKind,
+    internal class GenericLog(override val kind: LogFilterKind,
                              override val title: String? = null,
                              override val message: String,
                              override val function: String?,
@@ -105,7 +105,7 @@ class LogFactory {
                              override val dateTime: Date = Date()
     ): LogMessage
 
-    private class MetricLog(override val title: String,
+    internal class MetricLog(override val title: String,
                             override val kind: LogFilterKind = LogFilterKind.DEBUG,
                             override val message: String,
                             val value: Double,
@@ -116,7 +116,7 @@ class LogFactory {
                             override val dateTime: Date = Date()
     ): LogMessage
 
-    private class HistoryLog(override val kind: LogFilterKind = LogFilterKind.DEBUG,
+    internal class HistoryLog(override val kind: LogFilterKind = LogFilterKind.DEBUG,
                              override val title: String? = null,
                              override val message: String,
                              override val event: BaseEvent?,
@@ -170,15 +170,15 @@ public fun Analytics.Companion.segmentMetric(type: String, name: String, value: 
     }
 }
 
-private fun Analytics.Companion.callingMethodDetails(function: String?, lineNumber: Int?): Pair<String, Int> {
+internal fun Analytics.Companion.callingMethodDetails(function: String?, lineNumber: Int?): Pair<String, Int> {
 
     var fromFunction = function ?: ""
     var fromLineNumber = lineNumber ?: 0
-    if (function == null) {
-        Exception().stackTrace[1].methodName.let {
+    if (function == null || function.isEmpty()) {
+        Exception().stackTrace[3].methodName.let {
             fromFunction = it
         }
-        Exception().stackTrace[1].lineNumber.let {
+        Exception().stackTrace[3].lineNumber.let {
             fromLineNumber = it
         }
     }

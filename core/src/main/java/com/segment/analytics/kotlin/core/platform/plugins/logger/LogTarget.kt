@@ -182,6 +182,14 @@ fun Analytics.metric(type: String, name: String, value: Double, tags: List<Strin
  */
 @JvmOverloads
 fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line: Int = -1) {
+
+    val methodInfo = Analytics.callingMethodDetails(function, line)
+    var updatedFunction = function
+    var updatedLine = line
+    if (function.isEmpty() && line == -1) {
+        updatedFunction = methodInfo.first
+        updatedLine = methodInfo.second
+    }
     applyClosureToPlugins { plugin: Plugin ->
         // Check if we should send the event
         if (!SegmentLog.loggingEnabled) {
@@ -189,11 +197,11 @@ fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line
         }
 
         if (plugin is SegmentLog) {
-            val log = LogFactory.buildLog(LoggingType.Filter.METRIC,
+            val log = LogFactory.buildLog(LoggingType.Filter.HISTORY,
                 title = event.toString(),
                 message = "",
-                function = function,
-                line = line,
+                function = updatedFunction,
+                line = updatedLine,
                 event = event,
                 sender = sender)
             plugin.log(log, LoggingType.Filter.HISTORY)

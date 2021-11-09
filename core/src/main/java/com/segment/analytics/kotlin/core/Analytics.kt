@@ -43,8 +43,7 @@ class Analytics internal constructor(
     companion object {
         var debugLogsEnabled: Boolean = false
             set(value: Boolean) {
-                debugLogsEnabled = value
-                SegmentLog.loggingEnabled = debugLogsEnabled
+                SegmentLog.loggingEnabled = value
             }
     }
 
