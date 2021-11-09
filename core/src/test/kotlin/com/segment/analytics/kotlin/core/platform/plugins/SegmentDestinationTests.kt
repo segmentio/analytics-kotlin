@@ -111,12 +111,12 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
 
-        var errorAddingPayload = spyk(AtomicBoolean(false))
+        val errorAddingPayload = spyk(AtomicBoolean(false))
         val testLogger = object : SegmentLog() {
             override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
                 super.log(logMessage, destination)
-                if (logMessage.message == "Error adding payload" && logMessage.kind == LogFilterKind.ERROR) {
-                    errorAddingPayload = AtomicBoolean(true)
+                if (logMessage.message.contains("Error adding payload") && logMessage.kind == LogFilterKind.ERROR) {
+                    errorAddingPayload.set(true)
                 }
             }
         }
@@ -185,7 +185,7 @@ class SegmentDestinationTests {
             override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
                 super.log(logMessage, destination)
                 if (logMessage.message == "Payloads were rejected by server. Marked for removal." && logMessage.kind == LogFilterKind.ERROR) {
-                    payloadsRejected = AtomicBoolean(true)
+                    payloadsRejected.set(true)
                 }
             }
         }
@@ -222,7 +222,7 @@ class SegmentDestinationTests {
             override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
                 super.log(logMessage, destination)
                 if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
-                    errorUploading = AtomicBoolean(true)
+                    errorUploading.set(true)
                 }
             }
         }
@@ -265,7 +265,7 @@ class SegmentDestinationTests {
             override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
                 super.log(logMessage, destination)
                 if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
-                    errorUploading = AtomicBoolean(true)
+                    errorUploading.set(true)
                 }
             }
         }
@@ -303,12 +303,12 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
 
-        var exceptionUploading = spyk(AtomicBoolean(false))
+        val exceptionUploading = spyk(AtomicBoolean(false))
         val testLogger = object : SegmentLog() {
             override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
                 super.log(logMessage, destination)
                 if (logMessage.message.contains("test") && logMessage.kind == LogFilterKind.ERROR) {
-                    exceptionUploading = AtomicBoolean(true)
+                    exceptionUploading.set(true)
                 }
             }
         }

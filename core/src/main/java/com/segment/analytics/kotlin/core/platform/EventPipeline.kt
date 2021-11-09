@@ -163,7 +163,7 @@ internal class EventPipeline(
             }
         }
         else {
-            analytics.log(
+            Analytics.segmentLog(
                 """
                     | Error uploading events from batch file
                     | fileUrl="${file.path}"
