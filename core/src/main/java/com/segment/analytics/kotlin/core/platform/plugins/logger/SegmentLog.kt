@@ -63,7 +63,7 @@ internal open class SegmentLog : EventPlugin {
         loggingMediator[loggingType] = target
     }
 
-    internal open fun flush() {
+    override fun flush() {
         loggingMediator.forEach { (_, target) ->
             target.flush()
         }

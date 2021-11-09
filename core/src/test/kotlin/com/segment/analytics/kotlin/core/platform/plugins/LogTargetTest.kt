@@ -59,6 +59,29 @@ internal class LogTargetTest {
     }
 
     @Test
+    fun `test metric gauge normal`() {
+        var metricPassed = false
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage is LogFactory.MetricLog) {
+                    assertEquals(logMessage.message, "Metric of 5")
+                    assertEquals(logMessage.kind, LogFilterKind.DEBUG)
+                    assertEquals(logMessage.title, "Gauge")
+                    assertEquals(logMessage.value, 345.0)
+
+                    metricPassed = true
+                }
+            }
+        }
+        analytics.add(testLogger)
+        SegmentLog.loggingEnabled = true
+        analytics.metric("Gauge", "Metric of 5", 345.0, null)
+
+        assertTrue(metricPassed)
+    }
+
+    @Test
     fun `test history normal`() {
         var historyPassed = false
 

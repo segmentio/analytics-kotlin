@@ -64,6 +64,10 @@ interface EventPlugin : Plugin {
     fun alias(payload: AliasEvent): BaseEvent? {
         return payload
     }
+
+    open fun flush() {}
+
+    open fun reset() {}
 }
 
 // Basic interface for device-mode destinations. Allows overriding track, identify, screen, group, alias, flush and reset
@@ -132,8 +136,4 @@ abstract class DestinationPlugin : EventPlugin {
     final override fun execute(event: BaseEvent): BaseEvent? {
         return null
     }
-
-    open fun flush() {}
-
-    open fun reset() {}
 }

@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
@@ -416,7 +417,7 @@ class Analytics internal constructor(
 
     fun flush() {
         this.timeline.applyClosure {
-            (it as? DestinationPlugin)?.flush()
+            (it as? EventPlugin)?.flush()
         }
     }
 
