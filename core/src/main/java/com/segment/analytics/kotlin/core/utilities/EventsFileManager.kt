@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core.utilities
 
+import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
@@ -39,9 +40,16 @@ class EventsFileManager(
 
     init {
         createDirectory(directory)
+        registerShutdownHook()
     }
 
     private val fileIndexKey = "segment.events.file.index.$writeKey"
+
+    private var os: FileOutputStream? = null
+
+    private var curFile: File? = null
+
+    private val semaphore = Semaphore(1)
 
     companion object {
         const val MAX_FILE_SIZE = 475_000 // 475KB
@@ -52,23 +60,23 @@ class EventsFileManager(
      * opens a new file, if current file is full or uncreated
      * stores the event
      */
-    fun storeEvent(event: String) {
+    suspend fun storeEvent(event: String) = withLock {
         var newFile = false
-        var curFile = currentFile()
-        if (!curFile.exists()) {
+        var file = currentFile()
+        if (!file.exists()) {
             // create it
-            curFile.createNewFile()
-            start(curFile)
+            file.createNewFile()
+            start(file)
             newFile = true
         }
 
         // check if file is at capacity
-        if (curFile.length() > MAX_FILE_SIZE) {
-            finish(curFile)
+        if (file.length() > MAX_FILE_SIZE) {
+            finish()
             // update index
-            curFile = currentFile()
-            curFile.createNewFile()
-            start(curFile)
+            file = currentFile()
+            file.createNewFile()
+            start(file)
             newFile = true
         }
 
@@ -77,7 +85,7 @@ class EventsFileManager(
             contents += ","
         }
         contents += event
-        writeToFile(contents.toByteArray(), curFile)
+        writeToFile(contents.toByteArray(), file)
     }
 
     private fun incrementFileIndex(): Boolean {
@@ -86,10 +94,10 @@ class EventsFileManager(
     }
 
     /**
-     * closes the current file, and returns a comma-separated list of file paths that are not yet uploaded
+     * Returns a comma-separated list of file paths that are not yet uploaded
      */
     fun read(): List<String> {
-        finish(currentFile())
+        // we need to filter out .temp file, since its operating on the writing thread
         val fileList = directory.listFiles { _, name ->
             name.contains(writeKey) && !name.endsWith(".tmp")
         } ?: emptyArray()
@@ -111,7 +119,16 @@ class EventsFileManager(
         writeToFile(contents.toByteArray(), file)
     }
 
-    private fun finish(file: File) {
+    /**
+     * closes current file, and increase the index
+     * so next write go to a new file
+     */
+    suspend fun rollover() = withLock {
+        finish()
+    }
+
+    private fun finish() {
+        val file = currentFile()
         if (!file.exists()) {
             // if tmp file doesnt exist then we dont need to do anything
             return
@@ -120,22 +137,49 @@ class EventsFileManager(
         val contents = """],"sentAt":"${Instant.now()}"}"""
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
+        os?.close()
         incrementFileIndex()
+        reset()
     }
 
     // return the current tmp file
     private fun currentFile(): File {
-        val index = kvs.getInt(fileIndexKey, 0)
-        return File(directory, "$writeKey-$index.tmp")
+        curFile = curFile ?: run {
+            val index = kvs.getInt(fileIndexKey, 0)
+            File(directory, "$writeKey-$index.tmp")
+        }
+
+        return curFile!!
     }
 
     // Atomic write to underlying file
     // TODO make atomic
     private fun writeToFile(content: ByteArray, file: File) {
-        val os = FileOutputStream(file, true)
-        os.write(content)
-        os.flush()
-        os.close()
+        os = os ?: FileOutputStream(file, true)
+        os?.run {
+            write(content)
+            flush()
+        }
+    }
+
+    private fun reset() {
+        os = null
+        curFile = null
+    }
+
+    private fun registerShutdownHook() {
+        // close the stream if the app shuts down
+        Runtime.getRuntime().addShutdownHook(object : Thread() {
+            override fun run() {
+                os?.close()
+            }
+        })
+    }
+
+    private suspend fun withLock(block: () -> Unit) {
+        semaphore.acquire()
+        block()
+        semaphore.release()
     }
 }
 

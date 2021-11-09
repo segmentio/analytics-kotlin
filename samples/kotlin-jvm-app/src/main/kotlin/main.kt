@@ -24,6 +24,5 @@ fun main(args: Array<String>) {
         analytics.flush()
         // Waiting 30s to ensure auto-flush on Segment.io destination goes through
         delay(30L * 1000)
-        analytics.find(SegmentDestination::class)?.flushScheduler?.shutdown()
     }
 }

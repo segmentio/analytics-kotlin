@@ -46,7 +46,7 @@ class AndroidStorage(
         )
     }
 
-    override fun write(key: Storage.Constants, value: String) {
+    override suspend fun write(key: Storage.Constants, value: String) {
         when (key) {
             Storage.Constants.Events -> {
                 if (value.length < MAX_PAYLOAD_SIZE) {
@@ -91,6 +91,10 @@ class AndroidStorage(
 
     override fun removeFile(filePath: String): Boolean {
         return eventsFile.remove(filePath)
+    }
+
+    override suspend fun rollover() {
+        eventsFile.rollover()
     }
 }
 

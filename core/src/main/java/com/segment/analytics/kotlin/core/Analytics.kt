@@ -89,14 +89,7 @@ class Analytics internal constructor(
             checkSettings()
 
             if (configuration.autoAddSegmentDestination) {
-                add(
-                    SegmentDestination(
-                        configuration.writeKey,
-                        configuration.flushAt,
-                        configuration.flushInterval * 1000L,
-                        configuration.apiHost
-                    )
-                )
+                add(SegmentDestination())
             }
         }
     }

@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import io.mockk.every
 import io.mockk.mockkStatic
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -31,7 +32,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `check if event is stored correctly and creates new file`() {
+    fun `check if event is stored correctly and creates new file`() = runBlocking {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -54,7 +55,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `storeEvent stores in existing file if available`() {
+    fun `storeEvent stores in existing file if available`() = runBlocking {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -78,7 +79,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `storeEvent creates new file when at capacity and closes other file`() {
+    fun `storeEvent creates new file when at capacity and closes other file`() = runBlocking {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -115,7 +116,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `read finishes open file and lists it`() {
+    fun `read finishes open file and lists it`() = runBlocking {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -130,6 +131,7 @@ internal class EventsFileManagerTest{
         val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
 
+        file.rollover()
         val fileUrls = file.read()
         assertEquals(1, fileUrls.size)
         val expectedContents = """ {"batch":[${eventString}],"sentAt":"$epochTimestamp"} """.trim()
@@ -140,7 +142,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `multiple reads doesnt create extra files`() {
+    fun `multiple reads doesnt create extra files`() = runBlocking {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -155,6 +157,7 @@ internal class EventsFileManagerTest{
         val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
 
+        file.rollover()
         file.read().let {
             assertEquals(1, it.size)
             val expectedContents =
@@ -172,7 +175,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `read lists all available files for writekey`() {
+    fun `read lists all available files for writekey`() = runBlocking {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -191,12 +194,15 @@ internal class EventsFileManagerTest{
         file1.storeEvent(eventString)
         file2.storeEvent(eventString)
 
+        file1.rollover()
+        file2.rollover()
+
         assertEquals(listOf("/tmp/analytics-android-test/events/123-0"), file1.read())
         assertEquals(listOf("/tmp/analytics-android-test/events/qwerty-0"), file2.read())
     }
 
     @Test
-    fun `remove deletes file`() {
+    fun `remove deletes file`() = runBlocking {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -211,6 +217,7 @@ internal class EventsFileManagerTest{
         val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
         file.storeEvent(eventString)
 
+        file.rollover()
         val list = file.read()
         file.remove(list[0])
 
