@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.Plugin
 import java.util.*
+import kotlin.reflect.KClass
 
 /**
  * The foundation for building out a special logger. If logs need to be directed to a certain area, this is the
@@ -24,7 +25,7 @@ interface LogTarget {
      * Perhaps responding to backgrounding or networking events, this gives a chance to empty a queue
      * or pump a firehose of logs.
      */
-    fun flush()
+    fun flush() {}
 }
 
 /**
@@ -222,6 +223,20 @@ fun Analytics.add(target: LogTarget, type: LoggingType) {
     applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
             plugin.add(target, type)
+        }
+    }
+}
+
+/**
+ * Removes a logging target based on the class type. Since only one type can be added, we don't need to worry about
+ * removing duplicates.
+ *
+ * @property targetType A `LogTarget` class type that should be removed from the system.
+ */
+fun <T: LogTarget> Analytics.remove(targetType: KClass<T>) {
+    applyClosureToPlugins { plugin: Plugin ->
+        if (plugin is SegmentLog) {
+            plugin.remove(targetType)
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.android
 
 import android.content.Context
+import android.util.Log
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.core.Analytics
@@ -55,4 +56,36 @@ public fun Analytics(
 private fun Analytics.startup() {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
+    add(AndroidLogTarget(), LoggingType.log)
+    remove(targetType = ConsoleTarget::class)
+}
+
+class AndroidLogTarget: LogTarget {
+    override fun parseLog(log: LogMessage) {
+        var metadata = ""
+        val function = log.function
+        val line = log.line
+        if (function != null && line != null) {
+            metadata = " - $function:$line"
+        }
+
+        var eventString = ""
+        log.event.let {
+            eventString = ", event=$it"
+        }
+
+        when (log.kind) {
+            LogFilterKind.ERROR -> {
+                Log.e("AndroidLog", "message=${log.message}$eventString")
+            }
+            LogFilterKind.WARNING -> {
+                Log.w("AndroidLog", "message=${log.message}$eventString")
+            }
+            LogFilterKind.DEBUG -> {
+                Log.i("AndroidLog", "message=${log.message}$eventString")
+            }
+        }
+    }
+
+    override fun flush() { }
 }

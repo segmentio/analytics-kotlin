@@ -9,6 +9,7 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonPrimitive
 import java.lang.Exception
 import java.util.*
+import kotlin.reflect.KClass
 
 // Analytics Utility plugin for logging purposes
 internal open class SegmentLog : EventPlugin {
@@ -18,7 +19,7 @@ internal open class SegmentLog : EventPlugin {
 
     internal var filterKind: LogFilterKind = LogFilterKind.DEBUG
 
-    private var loggingMediator = mutableMapOf<LoggingType, LogTarget>()
+    private var loggingMediator = mutableMapOf<LoggingType, MutableList<LogTarget>>()
 
     companion object {
         var loggingEnabled = false
@@ -42,9 +43,11 @@ internal open class SegmentLog : EventPlugin {
 
     internal open fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
 
-        loggingMediator.forEach { (loggingType, logTarget) ->
-            if (loggingType.contains(destination)) {
-                logTarget.parseLog(logMessage)
+        loggingMediator.forEach { (loggingType, logTargets) ->
+            logTargets.forEach {
+                if (loggingType.contains(destination)) {
+                    it.parseLog(logMessage)
+                }
             }
         }
     }
@@ -60,12 +63,36 @@ internal open class SegmentLog : EventPlugin {
         }
 
         // Finally add the target
-        loggingMediator[loggingType] = target
+        if (loggingMediator[loggingType] == null) {
+            loggingMediator[loggingType] = mutableListOf(target)
+        } else {
+            loggingMediator[loggingType]?.add(target)
+        }
+    }
+
+    internal open fun <T: LogTarget> remove(targetType: KClass<T>) {
+
+        var updatedLoggingMediator = mutableMapOf<LoggingType, MutableList<LogTarget>>() // Used so we don't manipulate in a loop
+        loggingMediator.forEach { (type, targets) ->
+            targets.forEach {
+                println("### $it::class.toString()")
+                println("### $targetType::class.toString()")
+                if (it::class != targetType) {
+                    if (updatedLoggingMediator[type] == null) {
+                        updatedLoggingMediator[type] = mutableListOf()
+                    }
+                    updatedLoggingMediator[type]?.add(it)
+                }
+            }
+        }
+        loggingMediator = updatedLoggingMediator
     }
 
     override fun flush() {
-        loggingMediator.forEach { (_, target) ->
-            target.flush()
+        loggingMediator.forEach { (_, targets) ->
+            targets.forEach {
+                it.flush()
+            }
         }
 
         // TODO: Clean up history container here
@@ -126,11 +153,6 @@ class LogFactory {
                              override val logType: LoggingType.Filter = LoggingType.Filter.HISTORY,
                              override val dateTime: Date = Date()
     ): LogMessage
-}
-
-// Default implementation
-fun LogTarget.flush() {
-    // Empty implementation. Used for implementors to override.
 }
 
 // Internal log usage
