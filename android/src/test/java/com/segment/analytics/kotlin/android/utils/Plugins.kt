@@ -8,7 +8,7 @@ class TestRunPlugin(var closure: (BaseEvent?) -> Unit): EventPlugin {
     override lateinit var analytics: Analytics
     var ran = false
 
-    fun reset() {
+    override fun reset() {
         ran = false
     }
 

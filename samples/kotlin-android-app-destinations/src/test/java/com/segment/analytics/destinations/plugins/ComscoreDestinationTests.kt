@@ -83,6 +83,9 @@ class ComscoreDestinationTests {
         every { mockedComscoreAnalytics.createStreamingAnalytics() } returns mockedStreamingAnalytics
         every { mockedStreamingAnalytics.configuration } returns mockedStreamingConfiguration
 
+        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.logger.LogTargetKt").kotlin)
+        every { mockedAnalytics.log(any(), any(), any(), any()) } just Runs
+
         val comscoreOptionsPlugin = ComscoreOptionsPlugin()
         comscoreDestination.comscoreOptionsPlugin = comscoreOptionsPlugin
         comscoreDestination.add(comscoreOptionsPlugin)
