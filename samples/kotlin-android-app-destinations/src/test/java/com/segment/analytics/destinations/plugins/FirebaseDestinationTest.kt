@@ -10,7 +10,7 @@ import androidx.core.os.bundleOf
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import kotlinx.serialization.decodeFromString
@@ -46,8 +46,6 @@ class FirebaseDestinationTests {
 
         // Need to mock log since its used in the destination
 //        mockkStatic("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt")
-        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt").kotlin)
-        every { mockedAnalytics.log(any(), any(), any()) } just Runs
 
 
         firebaseDestination = FirebaseDestination(context)

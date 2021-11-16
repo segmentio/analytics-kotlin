@@ -13,7 +13,7 @@ import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.mockk.Called
 import io.mockk.Matcher
 import io.mockk.MockKAnnotations
@@ -57,9 +57,6 @@ class MixpanelDestinationTests {
         every { MixpanelAPI.getInstance(mockContext, any()) } returns mockMixpanel
         every { mockMixpanel.people } returns mockMixpanelPeople
         every { mockMixpanel.getGroup(any(), any()) } returns mockMixpanelGroup
-
-        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt").kotlin)
-        every { mockedAnalytics.log(any(), any(), any()) } just Runs
 
         mixpanelDestination.analytics = mockedAnalytics
     }

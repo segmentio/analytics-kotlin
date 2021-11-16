@@ -91,7 +91,7 @@ interface LogMessage {
     val dateTime: Date
 }
 
-enum class MetricType() {
+enum class MetricType {
     Counter, // Not Verbose
     Gauge;   // Semi-verbose
 

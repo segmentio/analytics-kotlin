@@ -72,11 +72,9 @@ internal open class SegmentLog : EventPlugin {
 
     internal open fun <T: LogTarget> remove(targetType: KClass<T>) {
 
-        var updatedLoggingMediator = mutableMapOf<LoggingType, MutableList<LogTarget>>() // Used so we don't manipulate in a loop
+        val updatedLoggingMediator = mutableMapOf<LoggingType, MutableList<LogTarget>>() // Used so we don't manipulate in a loop
         loggingMediator.forEach { (type, targets) ->
             targets.forEach {
-                println("### $it::class.toString()")
-                println("### $targetType::class.toString()")
                 if (it::class != targetType) {
                     if (updatedLoggingMediator[type] == null) {
                         updatedLoggingMediator[type] = mutableListOf()
@@ -156,7 +154,7 @@ class LogFactory {
 }
 
 // Internal log usage
-public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? = LogFilterKind.ERROR, function: String? = null, line: Int? = null) {
+fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? = LogFilterKind.ERROR, function: String? = null, line: Int? = null) {
 
     val methodInfo = Analytics.callingMethodDetails(function, line)
 
@@ -173,7 +171,7 @@ public fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? 
     }
 }
 
-public fun Analytics.Companion.segmentMetric(type: String, name: String, value: Double, tags: List<String>?) {
+fun Analytics.Companion.segmentMetric(type: String, name: String, value: Double, tags: List<String>?) {
     SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
             val log = LogFactory.buildLog(LoggingType.Filter.METRIC,
