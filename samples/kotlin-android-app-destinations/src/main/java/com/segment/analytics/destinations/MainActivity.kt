@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity() {
             loadFragment(groupFragment)
         }
         findViewById<Button>(R.id.flushBtn).setOnClickListener {
-            analytics.log("Got to an interesting place")
             analytics.flush()
         }
     }

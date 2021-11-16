@@ -82,7 +82,7 @@ class AndroidLogTarget: LogTarget {
                 Log.w("AndroidLog", "message=${log.message}$eventString")
             }
             LogFilterKind.DEBUG -> {
-                Log.i("AndroidLog", "message=${log.message}$eventString")
+                Log.d("AndroidLog", "message=${log.message}$eventString")
             }
         }
     }
