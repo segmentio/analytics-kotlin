@@ -50,7 +50,7 @@ enum class LogFilterKind {
  * responds to logs, it is possible to adhere to 1 to many. In other words, a LoggingType can be .log &
  * .history. This is used to tell which targets logs are directed to.
  */
-class LoggingType(types: List<Filter>) {
+class LoggingType(private val types: Set<Filter>) {
 
     enum class Filter {
         LOG,
@@ -60,15 +60,12 @@ class LoggingType(types: List<Filter>) {
 
     companion object {
         /// Convenience .log logging type
-        val log = LoggingType(listOf(Filter.LOG))
+        val log = LoggingType(setOf(Filter.LOG))
         /// Convenience .metric logging type
-        val metric = LoggingType(listOf(Filter.METRIC))
+        val metric = LoggingType(setOf(Filter.METRIC))
         /// Convenience .history logging type
-        val history = LoggingType(listOf(Filter.HISTORY))
+        val history = LoggingType(setOf(Filter.HISTORY))
     }
-
-    // - Private Properties and Methods
-    private val allTypes: List<Filter> = types
 
     /**
      * Convenience method to find if the LoggingType supports a particular destination.
@@ -76,7 +73,7 @@ class LoggingType(types: List<Filter>) {
      * @property destination The particular destination being tested for conformance.
      */
     internal fun contains(destination: Filter): Boolean {
-        return this.allTypes.contains(destination)
+        return this.types.contains(destination)
     }
 }
 
@@ -94,17 +91,11 @@ interface LogMessage {
     val dateTime: Date
 }
 
-enum class MetricType(val type: Int) {
-    Counter(0), // Not Verbose
-    Gauge(1);   // Semi-verbose
+enum class MetricType() {
+    Counter, // Not Verbose
+    Gauge;   // Semi-verbose
 
-    override fun toString(): String {
-        var typeString = "Gauge"
-        if (this == Counter) {
-            typeString = "Counter"
-        }
-        return typeString
-    }
+    override fun toString() = this.name
 
     companion object {
         fun from(string: String): MetricType {
@@ -129,12 +120,13 @@ enum class MetricType(val type: Int) {
  */
 @JvmOverloads
 fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = -1) {
-    applyClosureToPlugins { plugin: Plugin ->
-        // Check if we should send the event
-        if (!SegmentLog.loggingEnabled) {
-            return@applyClosureToPlugins
-        }
 
+    // Check if we should send the event
+    if (!SegmentLog.loggingEnabled) {
+        return
+    }
+
+    applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
             var filterKind = plugin.filterKind
             if (kind != null) {
@@ -158,12 +150,13 @@ fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String
  */
 @JvmOverloads
 fun Analytics.metric(type: String, name: String, value: Double, tags: List<String>? = null) {
-    applyClosureToPlugins { plugin: Plugin ->
-        // Check if we should send the event
-        if (!SegmentLog.loggingEnabled) {
-            return@applyClosureToPlugins
-        }
 
+    // Check if we should send the event
+    if (!SegmentLog.loggingEnabled) {
+        return
+    }
+
+    applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
             val log = LogFactory.buildLog(LoggingType.Filter.METRIC, type, name, value = value, tags = tags)
             plugin.log(log, LoggingType.Filter.METRIC)
@@ -184,6 +177,11 @@ fun Analytics.metric(type: String, name: String, value: Double, tags: List<Strin
 @JvmOverloads
 fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line: Int = -1) {
 
+    // Check if we should send the event
+    if (!SegmentLog.loggingEnabled) {
+        return
+    }
+
     val methodInfo = Analytics.callingMethodDetails(function, line)
     var updatedFunction = function
     var updatedLine = line
@@ -191,12 +189,8 @@ fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line
         updatedFunction = methodInfo.first
         updatedLine = methodInfo.second
     }
-    applyClosureToPlugins { plugin: Plugin ->
-        // Check if we should send the event
-        if (!SegmentLog.loggingEnabled) {
-            return@applyClosureToPlugins
-        }
 
+    applyClosureToPlugins { plugin: Plugin ->
         if (plugin is SegmentLog) {
             val log = LogFactory.buildLog(LoggingType.Filter.HISTORY,
                 title = event.toString(),
