@@ -392,14 +392,14 @@ internal class JavaAnalyticsTest {
 
     @Test
     fun process() {
-        val testPlugin1 = TestRunPlugin {}
-        val testPlugin2 = TestRunPlugin {}
+        val testPlugin1 = spyk(TestRunPlugin {})
+        val testPlugin2 = spyk(TestRunPlugin {})
         analytics
             .add(testPlugin1)
             .add(testPlugin2)
             .process(TrackEvent(event = "track", properties = emptyJsonObject))
-        assertTrue(testPlugin1.ran)
-        assertTrue(testPlugin2.ran)
+        verify(timeout = 2000) { testPlugin1.updateState(true) }
+        verify(timeout = 2000) { testPlugin2.updateState(true) }
     }
 
     @Test
