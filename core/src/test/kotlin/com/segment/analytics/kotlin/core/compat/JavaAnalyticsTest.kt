@@ -6,10 +6,7 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.spyStore
-import io.mockk.CapturingSlot
-import io.mockk.slot
-import io.mockk.spyk
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -368,6 +365,25 @@ internal class JavaAnalyticsTest {
             analytics.applyClosureToPlugins(closure)
 
             verify { closure.accept(middleware) }
+        }
+    }
+
+    @Nested
+    inner class Reset {
+        @Test
+        fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking  {
+            val plugin = spyk(StubPlugin())
+            analytics.add(plugin)
+
+            analytics.identify("oldUserId",
+                buildJsonObject { put("behaviour", "bad") })
+            assertEquals(analytics.userId(), "oldUserId")
+            assertEquals(analytics.traits(), buildJsonObject { put("behaviour", "bad") })
+
+            analytics.reset()
+            assertEquals(analytics.userId(), null)
+            assertEquals(analytics.traits(), null)
+            verify { plugin.reset() }
         }
     }
 

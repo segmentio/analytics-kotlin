@@ -1,7 +1,6 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
-import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*
@@ -346,6 +345,25 @@ class AnalyticsTests {
                         anonymousId = "qwerty-qwerty-123"
                     ), newUserInfo
                 )
+            }
+        }
+
+        @Nested
+        inner class Reset {
+            @Test
+            fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking  {
+                val plugin = spyk(StubPlugin())
+                analytics.add(plugin)
+
+                analytics.identify("oldUserId",
+                        buildJsonObject { put("behaviour", "bad") })
+                assertEquals(analytics.userIdAsync(), "oldUserId")
+                assertEquals(analytics.traitsAsync(), buildJsonObject { put("behaviour", "bad") })
+
+                analytics.reset()
+                assertEquals(analytics.userIdAsync(), null)
+                assertEquals(analytics.traitsAsync(), null)
+                verify { plugin.reset() }
             }
         }
     }
