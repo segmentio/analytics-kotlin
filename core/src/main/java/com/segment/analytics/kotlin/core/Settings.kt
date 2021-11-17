@@ -2,8 +2,7 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.withContext
@@ -68,10 +67,10 @@ suspend fun Analytics.checkSettings() {
             val connection = HTTPClient(writeKey).settings(cdnHost)
             val settingsString =
                 connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-            log("Fetched Settings: $settingsString")
+            log( "Fetched Settings: $settingsString")
             LenientJson.decodeFromString(settingsString)
         } catch (ex: Exception) {
-            log(message = "${ex.message}: failed to fetch settings", type = LogType.ERROR)
+            Analytics.segmentLog("${ex.message}: failed to fetch settings", kind = LogFilterKind.ERROR)
             null
         }
 

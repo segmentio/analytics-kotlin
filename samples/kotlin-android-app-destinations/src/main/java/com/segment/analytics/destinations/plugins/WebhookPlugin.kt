@@ -4,8 +4,7 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -32,7 +31,7 @@ class WebhookPlugin(
      */
     private inline fun <reified T: BaseEvent?> sendPayloadToWebhook(payload: T?) = networkExecutor.submit {
         payload?.let {
-            analytics.log(message = "Running ${payload.type} payload through $name", event = payload, type = LogType.INFO)
+            analytics.log(message = "Running ${payload.type} payload through $name")
             val requestedURL: URL = try {
                 URL(webhookUrl)
             } catch (e: MalformedURLException) {
@@ -71,8 +70,8 @@ class WebhookPlugin(
                         inputStream?.close()
                     }
                     analytics.log(
-                        type = LogType.ERROR,
-                        message = "Failed to send payload, statusCode=$responseCode, body=$responseBody"
+                        message = "Failed to send payload, statusCode=$responseCode, body=$responseBody",
+                        kind = LogFilterKind.ERROR
                     )
                 }
             }

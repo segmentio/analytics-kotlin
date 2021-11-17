@@ -1,13 +1,14 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
-import com.segment.analytics.kotlin.core.platform.plugins.log
 import kotlinx.coroutines.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
@@ -40,6 +41,12 @@ class Analytics internal constructor(
 
     internal val timeline: Timeline
     val storage: Storage
+    companion object {
+        var debugLogsEnabled: Boolean = false
+            set(value: Boolean) {
+                SegmentLog.loggingEnabled = value
+            }
+    }
 
     init {
         require(configuration.isValid()) { "invalid configuration" }
@@ -65,6 +72,7 @@ class Analytics internal constructor(
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
         // because startup queue doesn't depend on a state, we can add it first
+        add(SegmentLog())
         add(StartupQueue())
         add(ContextPlugin())
         
@@ -402,7 +410,7 @@ class Analytics internal constructor(
 
     fun flush() {
         this.timeline.applyClosure {
-            (it as? DestinationPlugin)?.flush()
+            (it as? EventPlugin)?.flush()
         }
     }
 

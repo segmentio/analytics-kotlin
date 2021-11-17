@@ -1,13 +1,13 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -110,10 +110,12 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
+
         val errorAddingPayload = spyk(AtomicBoolean(false))
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message.contains("Error adding payload")) {
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message.contains("Error adding payload") && logMessage.kind == LogFilterKind.ERROR) {
                     errorAddingPayload.set(true)
                 }
             }
@@ -136,11 +138,6 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-            }
-        }
-        analytics.add(testLogger)
         val destSpy = spyk(segmentDestination)
 
         val httpConnection: HttpURLConnection = mockk()
@@ -182,10 +179,12 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val payloadsRejected = spyk(AtomicBoolean(false))
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Payloads were rejected by server. Marked for removal.") {
+
+        var payloadsRejected = spyk(AtomicBoolean(false))
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Payloads were rejected by server. Marked for removal." && logMessage.kind == LogFilterKind.ERROR) {
                     payloadsRejected.set(true)
                 }
             }
@@ -218,10 +217,11 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val errorUploading = spyk(AtomicBoolean(false))
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error while uploading payloads") {
+        var errorUploading = spyk(AtomicBoolean(false))
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
                     errorUploading.set(true)
                 }
             }
@@ -241,7 +241,7 @@ class SegmentDestinationTests {
         destSpy.flush()
         verify(timeout = 2000) { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
-            // batch file doesnt get deleted
+            // batch file doesn't get deleted
             eventsFile.rollover()
             assertEquals(1, eventsFile.read().size)
         }
@@ -259,10 +259,12 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
-        val errorUploading = spyk(AtomicBoolean(false))
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message == "Error while uploading payloads") {
+
+        var errorUploading = spyk(AtomicBoolean(false))
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
                     errorUploading.set(true)
                 }
             }
@@ -282,7 +284,7 @@ class SegmentDestinationTests {
         destSpy.flush()
         verify(timeout = 2000) { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
-            // batch file doesnt get deleted
+            // batch file doesn't get deleted
             eventsFile.rollover()
             assertEquals(1, eventsFile.read().size)
         }
@@ -300,10 +302,12 @@ class SegmentDestinationTests {
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
+
         val exceptionUploading = spyk(AtomicBoolean(false))
-        val testLogger = object : Logger() {
-            override fun log(type: LogType, message: String, event: BaseEvent?) {
-                if (type == LogType.ERROR && message.contains("test")) {
+        val testLogger = object : SegmentLog() {
+            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
+                super.log(logMessage, destination)
+                if (logMessage.message.contains("test") && logMessage.kind == LogFilterKind.ERROR) {
                     exceptionUploading.set(true)
                 }
             }

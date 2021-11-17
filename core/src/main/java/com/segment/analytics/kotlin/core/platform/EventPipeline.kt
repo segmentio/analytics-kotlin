@@ -1,8 +1,7 @@
 package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -80,7 +79,7 @@ internal class EventPipeline(
                 storage.write(Storage.Constants.Events, event)
             }
             catch (e : Exception) {
-                analytics.log("Error adding payload: $event", type = LogType.ERROR)
+                Analytics.segmentLog("Error adding payload: $event", kind = LogFilterKind.ERROR)
             }
 
             // if flush condition met, generate paths
@@ -151,25 +150,25 @@ internal class EventPipeline(
             analytics.log("$logTag exception while uploading, ${e.message}")
             if (e.is4xx() && e.responseCode != 429) {
                 // Simply log and proceed to remove the rejected payloads from the queue.
-                analytics.log(
+                Analytics.segmentLog(
                     message = "Payloads were rejected by server. Marked for removal.",
-                    type = LogType.ERROR
+                    kind = LogFilterKind.ERROR
                 )
                 shouldCleanup = true
             } else {
-                analytics.log(
+                Analytics.segmentLog(
                     message = "Error while uploading payloads",
-                    type = LogType.ERROR
+                    kind = LogFilterKind.ERROR
                 )
             }
         }
         else {
-            analytics.log(
+            Analytics.segmentLog(
                 """
                     | Error uploading events from batch file
                     | fileUrl="${file.path}"
                     | msg=${e.message}
-                """.trimMargin(), type = LogType.ERROR
+                """.trimMargin(), kind = LogFilterKind.ERROR
             )
             e.printStackTrace()
         }

@@ -11,7 +11,7 @@ import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.getString
 import io.mockk.*
@@ -83,8 +83,8 @@ class ComscoreDestinationTests {
         every { mockedComscoreAnalytics.createStreamingAnalytics() } returns mockedStreamingAnalytics
         every { mockedStreamingAnalytics.configuration } returns mockedStreamingConfiguration
 
-        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt").kotlin)
-        every { mockedAnalytics.log(any(), any(), any()) } just Runs
+        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.logger.LogTargetKt").kotlin)
+        every { mockedAnalytics.log(any(), any(), any(), any()) } just Runs
 
         val comscoreOptionsPlugin = ComscoreOptionsPlugin()
         comscoreDestination.comscoreOptionsPlugin = comscoreOptionsPlugin

@@ -5,8 +5,7 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.putAll
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +48,7 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
         if (isLimitAdTrackingEnabled) {
             analytics.log(
                 "Not collecting advertising ID because isLimitAdTrackingEnabled (Google Play Services) is true.",
-                type = LogType.WARNING
+                kind = LogFilterKind.WARNING
             )
             return Result.Err(Exception("LimitAdTrackingEnabled (Google Play Services) is true"))
         }
@@ -66,7 +65,7 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
         if (limitAdTracking) {
             analytics.log(
                 "Not collecting advertising ID because limit_ad_tracking (Amazon Fire OS) is true.",
-                type = LogType.WARNING
+                kind = LogFilterKind.WARNING
             )
             return Result.Err(Exception("limit_ad_tracking (Amazon Fire OS) is true."))
         }
@@ -87,12 +86,12 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
                     throw result.error
                 }
             }
-            analytics.log("Collected advertising Id from Google Play Services", type = LogType.INFO)
+            analytics.log("Collected advertising Id from Google Play Services")
             return
         } catch (e: Exception) {
-            analytics.log(
-                "${e.message}: Unable to collect advertising ID from Google Play Services.",
-                type = LogType.ERROR
+            Analytics.segmentLog(
+                message = "${e.message}: Unable to collect advertising ID from Google Play Services.",
+                kind = LogFilterKind.ERROR
             )
         }
         try {
@@ -107,17 +106,17 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
                     throw result.error
                 }
             }
-            analytics.log("Collected advertising Id from Amazon Fire OS", type = LogType.INFO)
+            analytics.log("Collected advertising Id from Amazon Fire OS")
             return
         } catch (e: Exception) {
-            analytics.log(
+            Analytics.segmentLog(
                 "${e.message}: Unable to collect advertising ID from Amazon Fire OS.",
-                type = LogType.ERROR
+                kind = LogFilterKind.WARNING
             )
         }
         analytics.log(
             "Unable to collect advertising ID from Amazon Fire OS and Google Play Services.",
-            type = LogType.WARNING
+            kind = LogFilterKind.WARNING
         )
     }
 

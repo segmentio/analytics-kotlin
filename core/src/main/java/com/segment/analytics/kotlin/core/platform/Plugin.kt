@@ -27,7 +27,7 @@ interface Plugin {
     val type: Type
     var analytics: Analytics // ideally will be auto-assigned by setup(), and can be declared as lateinit
 
-    // A simple setup function thats executed when plugin is attached to analytics
+    // A simple setup function that's executed when plugin is attached to analytics
     // If overridden, ensure that super.setup() is invoked
     fun setup(analytics: Analytics) {
         this.analytics = analytics
@@ -64,6 +64,10 @@ interface EventPlugin : Plugin {
     fun alias(payload: AliasEvent): BaseEvent? {
         return payload
     }
+
+    open fun flush() {}
+
+    open fun reset() {}
 }
 
 // Basic interface for device-mode destinations. Allows overriding track, identify, screen, group, alias, flush and reset
@@ -132,8 +136,4 @@ abstract class DestinationPlugin : EventPlugin {
     final override fun execute(event: BaseEvent): BaseEvent? {
         return null
     }
-
-    open fun flush() {}
-
-    open fun reset() {}
 }

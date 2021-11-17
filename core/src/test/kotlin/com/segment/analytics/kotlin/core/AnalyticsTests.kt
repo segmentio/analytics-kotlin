@@ -4,8 +4,6 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
-import com.segment.analytics.kotlin.core.platform.plugins.MetricType
-import com.segment.analytics.kotlin.core.platform.plugins.addMetric
 import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
@@ -68,7 +66,7 @@ class AnalyticsTests {
             analytics.add(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
                 assertEquals(
-                    1,
+                    2, // SegmentLog is the other added at startup
                     it.size
                 )
             } ?: Assertions.fail()
@@ -84,7 +82,7 @@ class AnalyticsTests {
             analytics.remove(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
                 assertEquals(
-                    0,
+                    1, // SegmentLog is the other added at startup
                     it.size
                 )
             } ?: Assertions.fail()
@@ -185,32 +183,6 @@ class AnalyticsTests {
                 assertTrue(it.timestamp == epochTimestamp)
                 assertEquals(it.context, context)
                 assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
-            }
-        }
-
-        @Test
-        fun `event metrics get populated`() {
-            val mockPlugin = spyk(object : EventPlugin {
-                override val type: Plugin.Type = Plugin.Type.Before
-                override lateinit var analytics: Analytics
-                override fun track(payload: TrackEvent): BaseEvent? {
-                    payload.addMetric(MetricType.Counter, "test", 1.0)
-                    trackResult(payload)
-                    return super.track(payload)
-                }
-
-                fun trackResult(payload: TrackEvent) {}
-            })
-            analytics.add(mockPlugin)
-            analytics.track("track", buildJsonObject { put("foo", "bar") })
-            val track = slot<TrackEvent>()
-            verify  { mockPlugin.trackResult(capture(track)) }
-            track.captured.let {
-                assertTrue(it.anonymousId.isNotBlank())
-                assertTrue(it.messageId.isNotBlank())
-                assertEquals(epochTimestamp, it.timestamp)
-                assertTrue(it.context.containsKey("metrics"))
-                assertEquals(emptyJsonObject, it.integrations)
             }
         }
 

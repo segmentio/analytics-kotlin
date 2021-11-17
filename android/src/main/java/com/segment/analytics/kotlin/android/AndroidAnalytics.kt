@@ -5,10 +5,8 @@ import android.util.Log
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Configuration
-import com.segment.analytics.kotlin.core.platform.plugins.LogType
-import com.segment.analytics.kotlin.core.platform.plugins.Logger
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 
 // A set of functions tailored to the Android implementation of analytics
 
@@ -54,28 +52,40 @@ public fun Analytics(
     }
 }
 
-// Logger instance that uses the android `Log` class
-object AndroidLogger : Logger() {
-    override fun log(type: LogType, message: String, event: BaseEvent?) {
-        when (type) {
-            LogType.ERROR -> {
-                Log.e("AndroidAnalyticsLogger", "message=$message, event=$event")
+// Android specific startup
+private fun Analytics.startup() {
+    add(AndroidContextPlugin())
+    add(AndroidLifecyclePlugin())
+    add(AndroidLogTarget(), LoggingType.log)
+    remove(targetType = ConsoleTarget::class)
+}
+
+class AndroidLogTarget: LogTarget {
+    override fun parseLog(log: LogMessage) {
+        var metadata = ""
+        val function = log.function
+        val line = log.line
+        if (function != null && line != null) {
+            metadata = " - $function:$line"
+        }
+
+        var eventString = ""
+        log.event.let {
+            eventString = ", event=$it"
+        }
+
+        when (log.kind) {
+            LogFilterKind.ERROR -> {
+                Log.e("AndroidLog", "message=${log.message}$eventString")
             }
-            LogType.WARNING -> {
-                Log.w("AndroidAnalyticsLogger", "message=$message, event=$event")
+            LogFilterKind.WARNING -> {
+                Log.w("AndroidLog", "message=${log.message}$eventString")
             }
-            LogType.INFO -> {
-                Log.i("AndroidAnalyticsLogger", "message=$message, event=$event")
+            LogFilterKind.DEBUG -> {
+                Log.d("AndroidLog", "message=${log.message}$eventString")
             }
         }
     }
 
-    override fun flush() {}
-}
-
-// Android specific startup
-private fun Analytics.startup() {
-    add(AndroidLogger)
-    add(AndroidContextPlugin())
-    add(AndroidLifecyclePlugin())
+    override fun flush() { }
 }

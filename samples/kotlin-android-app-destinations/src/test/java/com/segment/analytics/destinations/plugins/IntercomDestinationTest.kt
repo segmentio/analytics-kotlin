@@ -4,7 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.intercom.android.sdk.Company
 import io.intercom.android.sdk.Intercom
 import io.intercom.android.sdk.UserAttributes
@@ -47,10 +47,6 @@ internal class IntercomDestinationTest {
         every { Log.d(any(), any()) } returns 0
         every { Log.i(any(), any()) } returns 0
         every { Log.e(any(), any()) } returns 0
-
-        // mock analytics log
-        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt").kotlin)
-        every { analytics.log(any(), any(), any()) } just Runs
 
         settings = Json.decodeFromString(
             """

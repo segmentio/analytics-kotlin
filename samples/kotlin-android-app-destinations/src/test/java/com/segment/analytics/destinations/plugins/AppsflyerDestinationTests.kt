@@ -7,7 +7,7 @@ import androidx.core.os.bundleOf
 import com.appsflyer.AppsFlyerLib
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.mockk.Called
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
@@ -47,9 +47,6 @@ class AppsflyerDestinationTests {
         mockkStatic(AppsFlyerLib::class)
         every { AppsFlyerLib.getInstance() } returns mockAppsflyer
         every { mockAppsflyer.init(any(), any(), any()) } returns mockAppsflyer
-
-        mockkStatic(Class.forName("com.segment.analytics.kotlin.core.platform.plugins.LoggerKt").kotlin)
-        every { mockedAnalytics.log(any(), any(), any()) } just Runs
 
         appsflyerDestination.analytics = mockedAnalytics
     }
