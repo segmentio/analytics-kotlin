@@ -154,6 +154,9 @@ class Analytics internal constructor(
      * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
      *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user.
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
@@ -176,6 +179,9 @@ class Analytics internal constructor(
      * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
      *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @param serializationStrategy strategy to serialize [traits]
@@ -197,6 +203,9 @@ class Analytics internal constructor(
      * <p>Traits and userId will be automatically cached and available on future sessions for the
      * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
@@ -411,6 +420,19 @@ class Analytics internal constructor(
     fun flush() {
         this.timeline.applyClosure {
             (it as? EventPlugin)?.flush()
+        }
+    }
+
+    /**
+     * Reset the user identity info and all the event plugins. Should be invoked when
+     * user logs out
+     */
+    fun reset() {
+        analyticsScope.launch(analyticsDispatcher) {
+            store.dispatch(UserInfo.ResetAction(), UserInfo::class)
+            timeline.applyClosure {
+                (it as? EventPlugin)?.reset()
+            }
         }
     }
 
