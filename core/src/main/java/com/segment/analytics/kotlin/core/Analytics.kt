@@ -151,7 +151,7 @@ class Analytics internal constructor(
      * etc.
      *
      * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
@@ -173,7 +173,7 @@ class Analytics internal constructor(
      * etc.
      *
      * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
@@ -195,7 +195,7 @@ class Analytics internal constructor(
      * etc.
      *
      * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
