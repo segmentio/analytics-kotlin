@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.spyStore
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
@@ -28,6 +29,8 @@ internal class JavaAnalyticsTest {
 
     @BeforeEach
     fun setup() {
+        mockHTTPClient()
+
         val config = ConfigurationBuilder("123")
             .setApplication("Test")
             .setAutoAddSegmentDestination(false)
