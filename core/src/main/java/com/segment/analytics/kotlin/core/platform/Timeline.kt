@@ -90,4 +90,13 @@ internal class Timeline {
         }
         return null
     }
+
+    fun <T: Plugin> findAll(pluginClass: KClass<T>): List<T> {
+        val result = mutableListOf<T>()
+        plugins.forEach { (_, list) ->
+            val found = list.findAll(pluginClass)
+            result.addAll(found)
+        }
+        return result
+    }
 }

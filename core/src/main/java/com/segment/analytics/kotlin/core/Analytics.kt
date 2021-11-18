@@ -390,10 +390,16 @@ class Analytics internal constructor(
     }
 
     /**
-     * Retrieve a registered plugin by reference
+     * Retrieve the first registered plugin of a certain type
      * @param plugin [Plugin]
      */
     fun <T: Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
+
+    /**
+     * Retrieve all registered plugins of a certain type
+     * @param plugin [Plugin]
+     */
+    fun <T: Plugin> findAll(plugin: KClass<T>): List<T> = this.timeline.findAll(plugin)
 
     /**
      * Remove a plugin from the analytics timeline using its name

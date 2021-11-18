@@ -126,16 +126,10 @@ fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String
         return
     }
 
-    applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            var filterKind = plugin.filterKind
-            if (kind != null) {
-                filterKind = kind
-            }
-
-            val log = LogFactory.buildLog(LoggingType.Filter.LOG, "", message, filterKind, function, line)
-            plugin.log(log, LoggingType.Filter.LOG)
-        }
+    val plugins = findAll(SegmentLog::class)
+    plugins.forEach {
+        val log = LogFactory.buildLog(LoggingType.Filter.LOG, "", message, kind ?: it.filterKind, function, line)
+        it.log(log, LoggingType.Filter.LOG)
     }
 }
 
@@ -156,11 +150,10 @@ fun Analytics.metric(type: String, name: String, value: Double, tags: List<Strin
         return
     }
 
-    applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            val log = LogFactory.buildLog(LoggingType.Filter.METRIC, type, name, value = value, tags = tags)
-            plugin.log(log, LoggingType.Filter.METRIC)
-        }
+    val log = LogFactory.buildLog(LoggingType.Filter.METRIC, type, name, value = value, tags = tags)
+    val plugins = findAll(SegmentLog::class)
+    plugins.forEach {
+        it.log(log, LoggingType.Filter.METRIC)
     }
 }
 
@@ -190,17 +183,16 @@ fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line
         updatedLine = methodInfo.second
     }
 
-    applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            val log = LogFactory.buildLog(LoggingType.Filter.HISTORY,
-                title = event.toString(),
-                message = "",
-                function = updatedFunction,
-                line = updatedLine,
-                event = event,
-                sender = sender)
-            plugin.log(log, LoggingType.Filter.HISTORY)
-        }
+    val log = LogFactory.buildLog(LoggingType.Filter.HISTORY,
+        title = event.toString(),
+        message = "",
+        function = updatedFunction,
+        line = updatedLine,
+        event = event,
+        sender = sender)
+    val plugins = findAll(SegmentLog::class)
+    plugins.forEach {
+        it.log(log, LoggingType.Filter.HISTORY)
     }
 }
 
@@ -214,10 +206,9 @@ fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line
  * public API on Analytics.
  */
 fun Analytics.add(target: LogTarget, type: LoggingType) {
-    applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            plugin.add(target, type)
-        }
+    val plugins = findAll(SegmentLog::class)
+    plugins.forEach {
+        it.add(target, type)
     }
 }
 
@@ -228,10 +219,9 @@ fun Analytics.add(target: LogTarget, type: LoggingType) {
  * @property targetType A `LogTarget` class type that should be removed from the system.
  */
 fun <T: LogTarget> Analytics.remove(targetType: KClass<T>) {
-    applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            plugin.remove(targetType)
-        }
+    val plugins = findAll(SegmentLog::class)
+    plugins.forEach {
+        it.remove(targetType)
     }
 }
 
@@ -239,9 +229,8 @@ fun <T: LogTarget> Analytics.remove(targetType: KClass<T>) {
  * Expunge all cached logs that have been captured.
  */
 fun Analytics.logFlush() {
-    this.timeline.applyClosure { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            plugin.flush()
-        }
+    val plugins = findAll(SegmentLog::class)
+    plugins.forEach {
+        it.flush()
     }
 }

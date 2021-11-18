@@ -158,35 +158,36 @@ fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind? = LogFi
 
     val methodInfo = Analytics.callingMethodDetails(function, line)
 
-    SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            var filterKind = plugin.filterKind
-            if (kind != null) {
-                filterKind = kind
-            }
+    val plugins = SegmentLog.sharedAnalytics?.findAll(SegmentLog::class)
 
-            val log = LogFactory.buildLog(LoggingType.Filter.LOG, "", message, filterKind, methodInfo.first, methodInfo.second)
-            plugin.log(log, LoggingType.Filter.LOG)
-        }
+    plugins?.forEach {
+        val log = LogFactory.buildLog(
+            LoggingType.Filter.LOG,
+            "",
+            message,
+            kind ?: it.filterKind,
+            methodInfo.first,
+            methodInfo.second
+        )
+        it.log(log, LoggingType.Filter.LOG)
     }
 }
 
 fun Analytics.Companion.segmentMetric(type: String, name: String, value: Double, tags: List<String>?) {
-    SegmentLog.sharedAnalytics?.applyClosureToPlugins { plugin: Plugin ->
-        if (plugin is SegmentLog) {
-            val log = LogFactory.buildLog(LoggingType.Filter.METRIC,
-                type,
-                name,
-                LogFilterKind.DEBUG,
-                null,
-                null,
-                null,
-                null,
-                value,
-                tags)
-            plugin.log(log, LoggingType.Filter.METRIC)
-            // TODO: Capture function and line
-        }
+    val log = LogFactory.buildLog(LoggingType.Filter.METRIC,
+        type,
+        name,
+        LogFilterKind.DEBUG,
+        null,
+        null,
+        null,
+        null,
+        value,
+        tags)
+
+    val plugins = SegmentLog.sharedAnalytics?.findAll(SegmentLog::class)
+    plugins?.forEach {
+        it.log(log, LoggingType.Filter.METRIC)
     }
 }
 
