@@ -8,8 +8,6 @@ import android.media.AudioAttributes
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.serialization.json.buildJsonObject
@@ -19,19 +17,8 @@ class MyFirebaseService : FirebaseMessagingService() {
 
     val TAG = "MyFirebaseService"
 
-    override fun onNewToken(s: String) {
-        Log.e(TAG, s)
-        FirebaseInstanceId.getInstance().instanceId
-            .addOnCompleteListener(OnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    Log.w(TAG, "getInstanceId failed", task.exception)
-                    return@OnCompleteListener
-                }
-
-                // Get new Instance ID token
-                val token = task.result.token
-                Log.e(TAG, token)
-            })
+    override fun onNewToken(token: String) {
+        Log.e(TAG, token)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
