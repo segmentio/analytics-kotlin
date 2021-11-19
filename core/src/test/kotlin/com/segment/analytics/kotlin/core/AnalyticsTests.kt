@@ -366,5 +366,42 @@ class AnalyticsTests {
                 verify { plugin.reset() }
             }
         }
+
+        @Nested
+        inner class Find {
+            @Test
+            fun `find() finds the exact plugin`() {
+                val expected = StubPlugin()
+                analytics.add(expected)
+
+                val actual = analytics.find(StubPlugin::class)
+
+                assertEquals(expected, actual)
+            }
+
+            @Test
+            fun `find() finds plugin through parent type`() {
+                val expected = object: StubPlugin() {}
+                analytics.add(expected)
+
+                val actual = analytics.find(StubPlugin::class)
+
+                assertEquals(expected, actual)
+            }
+
+            @Test
+            fun `findAll() finds exact and sub plugin`() {
+                val parent = StubPlugin()
+                val child = object: StubPlugin() {}
+                analytics.add(parent)
+                analytics.add(child)
+
+                val plugins = analytics.findAll(StubPlugin::class)
+
+                assertEquals(plugins.size, 2)
+                assertTrue(plugins.contains(parent))
+                assertTrue(plugins.contains(child))
+            }
+        }
     }
 }

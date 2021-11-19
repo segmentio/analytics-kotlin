@@ -64,7 +64,7 @@ class TestRunPlugin(var closure: (BaseEvent?) -> Unit): EventPlugin {
  * An analytics plugin that is a simple pass-through plugin. Ideally to be used to verify
  * if particular hooks are run via mockk's `verify`
  */
-class StubPlugin : EventPlugin {
+open class StubPlugin : EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
 }

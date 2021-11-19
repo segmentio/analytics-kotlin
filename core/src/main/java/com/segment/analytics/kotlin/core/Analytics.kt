@@ -390,14 +390,18 @@ class Analytics internal constructor(
     }
 
     /**
-     * Retrieve the first registered plugin of a certain type
-     * @param plugin [Plugin]
+     * Retrieve the first match of registered plugin. It finds
+     *      1. the first instance of the given class/interface
+     *      2. or the first instance of subclass of the given class/interface
+     * @param plugin [KClass]
      */
     fun <T: Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
 
     /**
-     * Retrieve all registered plugins of a certain type
-     * @param plugin [Plugin]
+     * Retrieve the first match of registered plugin. It finds
+     *      1. all instances of the given class/interface
+     *      2. and all instances of subclass of the given class/interface
+     * @param plugin [KClass]
      */
     fun <T: Plugin> findAll(plugin: KClass<T>): List<T> = this.timeline.findAll(plugin)
 
