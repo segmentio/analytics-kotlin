@@ -38,7 +38,7 @@ internal class JavaAnalyticsTest {
 
         val store = spyStore(testScope, testDispatcher)
         analytics = JavaAnalytics(
-            Analytics(config, store, testScope, testDispatcher, testDispatcher)
+            Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
         )
         mockPlugin = spyk(StubPlugin())
     }

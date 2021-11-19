@@ -32,7 +32,7 @@ internal class LogTargetTest {
             autoAddSegmentDestination = false
         )
         val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
     }
 
     @Test

@@ -8,12 +8,13 @@ import java.io.File
 
 internal class PropertiesFileTest {
 
-    private val directory = File("/tmp/analytics-android-test/events")
-    private val kvStore = PropertiesFile(directory.parentFile, "123")
+    private val directory = File("/tmp/analytics-test/123")
+    private val kvStore = PropertiesFile(directory, "123")
 
     @BeforeEach
     internal fun setUp() {
         directory.deleteRecursively()
+        kvStore.load()
     }
 
     @Test

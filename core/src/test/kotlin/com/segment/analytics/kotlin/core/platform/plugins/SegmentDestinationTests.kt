@@ -62,7 +62,7 @@ class SegmentDestinationTests {
             flushInterval = 0
         )
         val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
         segmentDestination.setup(analytics)
     }
 
