@@ -65,10 +65,14 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
 
     fun <T: Plugin> find(pluginClass: KClass<T>): T? = synchronized(plugins) {
         plugins.forEach {
-            if (it::class == pluginClass) {
+            if (pluginClass.isInstance(it)) {
                 return it as T
             }
         }
         return null
+    }
+
+    fun <T: Plugin> findAll(pluginClass: KClass<T>): List<T> = synchronized(plugins) {
+        return plugins.filter { pluginClass.isInstance(it) } as List<T>
     }
 }

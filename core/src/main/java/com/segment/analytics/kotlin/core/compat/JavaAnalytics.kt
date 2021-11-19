@@ -79,6 +79,9 @@ class JavaAnalytics private constructor() {
      * same user. To update a trait on the server, call identify with the same user id (or null).
      * You can also use {@link #identify(Traits)} for this purpose.
      *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user in JsonObject form. can be built by
      *          {@link Builder com.segment.analytics.kotlin.core.compat.Builder}
@@ -95,6 +98,9 @@ class JavaAnalytics private constructor() {
      * <p>Traits and userId will be automatically cached and available on future sessions for the
      * same user. To update a trait on the server, call identify with the same user id (or null).
      * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param serializable an object that implements {@link JsonSerializable com.segment.analytics.kotlin.core.compat.JsonSerializable}
@@ -211,6 +217,12 @@ class JavaAnalytics private constructor() {
     fun applyClosureToPlugins(closure: Consumer<in Plugin>) = analytics.applyClosureToPlugins(closure::accept)
 
     fun flush() = analytics.flush()
+
+    /**
+     * Reset the user identity info and all the event plugins. Should be invoked when
+     * user logs out
+     */
+    fun reset() = analytics.reset()
 
     /**
      * Retrieve the userId registered by a previous `identify` call

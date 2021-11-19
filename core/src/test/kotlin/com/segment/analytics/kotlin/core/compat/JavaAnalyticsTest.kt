@@ -5,11 +5,9 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.spyStore
-import io.mockk.CapturingSlot
-import io.mockk.slot
-import io.mockk.spyk
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -31,6 +29,8 @@ internal class JavaAnalyticsTest {
 
     @BeforeEach
     fun setup() {
+        mockHTTPClient()
+
         val config = ConfigurationBuilder("123")
             .setApplication("Test")
             .setAutoAddSegmentDestination(false)
@@ -38,7 +38,7 @@ internal class JavaAnalyticsTest {
 
         val store = spyStore(testScope, testDispatcher)
         analytics = JavaAnalytics(
-            Analytics(config, store, testScope, testDispatcher, testDispatcher)
+            Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
         )
         mockPlugin = spyk(StubPlugin())
     }
@@ -371,16 +371,35 @@ internal class JavaAnalyticsTest {
         }
     }
 
+    @Nested
+    inner class Reset {
+        @Test
+        fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking  {
+            val plugin = spyk(StubPlugin())
+            analytics.add(plugin)
+
+            analytics.identify("oldUserId",
+                buildJsonObject { put("behaviour", "bad") })
+            assertEquals(analytics.userId(), "oldUserId")
+            assertEquals(analytics.traits(), buildJsonObject { put("behaviour", "bad") })
+
+            analytics.reset()
+            assertEquals(analytics.userId(), null)
+            assertEquals(analytics.traits(), null)
+            verify { plugin.reset() }
+        }
+    }
+
     @Test
     fun process() {
-        val testPlugin1 = TestRunPlugin {}
-        val testPlugin2 = TestRunPlugin {}
+        val testPlugin1 = spyk(TestRunPlugin {})
+        val testPlugin2 = spyk(TestRunPlugin {})
         analytics
             .add(testPlugin1)
             .add(testPlugin2)
             .process(TrackEvent(event = "track", properties = emptyJsonObject))
-        assertTrue(testPlugin1.ran)
-        assertTrue(testPlugin2.ran)
+        verify(timeout = 2000) { testPlugin1.updateState(true) }
+        verify(timeout = 2000) { testPlugin2.updateState(true) }
     }
 
     @Test

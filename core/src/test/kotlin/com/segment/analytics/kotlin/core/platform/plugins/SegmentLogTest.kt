@@ -51,7 +51,7 @@ internal class SegmentLogTest {
             autoAddSegmentDestination = false
         )
         val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
         analytics.add(mockLogger)
         SegmentLog.loggingEnabled = true
     }

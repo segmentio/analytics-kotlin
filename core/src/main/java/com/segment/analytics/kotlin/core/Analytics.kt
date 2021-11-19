@@ -43,8 +43,9 @@ class Analytics internal constructor(
     val storage: Storage
     companion object {
         var debugLogsEnabled: Boolean = false
-            set(value: Boolean) {
+            set(value) {
                 SegmentLog.loggingEnabled = value
+                field = value
             }
     }
 
@@ -151,8 +152,11 @@ class Analytics internal constructor(
      * etc.
      *
      * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user.
@@ -173,8 +177,11 @@ class Analytics internal constructor(
      * etc.
      *
      * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
@@ -195,8 +202,11 @@ class Analytics internal constructor(
      * etc.
      *
      * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * same user. To update a trait on the server, call identify with the same user id.
      * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
@@ -381,10 +391,20 @@ class Analytics internal constructor(
     }
 
     /**
-     * Retrieve a registered plugin by reference
-     * @param plugin [Plugin]
+     * Retrieve the first match of registered plugin. It finds
+     *      1. the first instance of the given class/interface
+     *      2. or the first instance of subclass of the given class/interface
+     * @param plugin [KClass]
      */
     fun <T: Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
+
+    /**
+     * Retrieve the first match of registered plugin. It finds
+     *      1. all instances of the given class/interface
+     *      2. and all instances of subclass of the given class/interface
+     * @param plugin [KClass]
+     */
+    fun <T: Plugin> findAll(plugin: KClass<T>): List<T> = this.timeline.findAll(plugin)
 
     /**
      * Remove a plugin from the analytics timeline using its name
@@ -411,6 +431,19 @@ class Analytics internal constructor(
     fun flush() {
         this.timeline.applyClosure {
             (it as? EventPlugin)?.flush()
+        }
+    }
+
+    /**
+     * Reset the user identity info and all the event plugins. Should be invoked when
+     * user logs out
+     */
+    fun reset() {
+        analyticsScope.launch(analyticsDispatcher) {
+            store.dispatch(UserInfo.ResetAction(), UserInfo::class)
+            timeline.applyClosure {
+                (it as? EventPlugin)?.reset()
+            }
         }
     }
 

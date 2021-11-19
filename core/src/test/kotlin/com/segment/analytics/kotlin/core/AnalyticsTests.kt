@@ -1,7 +1,6 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
-import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*
@@ -50,7 +49,7 @@ class AnalyticsTests {
         )
 
         val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher)
+        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
     }
 
@@ -285,7 +284,7 @@ class AnalyticsTests {
                 analytics.add(mockPlugin)
                 analytics.group("high school", buildJsonObject { put("foo", "bar") })
                 val group = slot<GroupEvent>()
-                verify { mockPlugin.group(capture(group)) }
+                verify (timeout = 2000) { mockPlugin.group(capture(group)) }
                 assertEquals(
                     GroupEvent(
                         traits = buildJsonObject { put("foo", "bar") },
@@ -346,6 +345,62 @@ class AnalyticsTests {
                         anonymousId = "qwerty-qwerty-123"
                     ), newUserInfo
                 )
+            }
+        }
+
+        @Nested
+        inner class Reset {
+            @Test
+            fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking  {
+                val plugin = spyk(StubPlugin())
+                analytics.add(plugin)
+
+                analytics.identify("oldUserId",
+                        buildJsonObject { put("behaviour", "bad") })
+                assertEquals(analytics.userIdAsync(), "oldUserId")
+                assertEquals(analytics.traitsAsync(), buildJsonObject { put("behaviour", "bad") })
+
+                analytics.reset()
+                assertEquals(analytics.userIdAsync(), null)
+                assertEquals(analytics.traitsAsync(), null)
+                verify { plugin.reset() }
+            }
+        }
+
+        @Nested
+        inner class Find {
+            @Test
+            fun `find() finds the exact plugin`() {
+                val expected = StubPlugin()
+                analytics.add(expected)
+
+                val actual = analytics.find(StubPlugin::class)
+
+                assertEquals(expected, actual)
+            }
+
+            @Test
+            fun `find() finds plugin through parent type`() {
+                val expected = object: StubPlugin() {}
+                analytics.add(expected)
+
+                val actual = analytics.find(StubPlugin::class)
+
+                assertEquals(expected, actual)
+            }
+
+            @Test
+            fun `findAll() finds exact and sub plugin`() {
+                val parent = StubPlugin()
+                val child = object: StubPlugin() {}
+                analytics.add(parent)
+                analytics.add(child)
+
+                val plugins = analytics.findAll(StubPlugin::class)
+
+                assertEquals(plugins.size, 2)
+                assertTrue(plugins.contains(parent))
+                assertTrue(plugins.contains(child))
             }
         }
     }

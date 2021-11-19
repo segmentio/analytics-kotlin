@@ -22,6 +22,10 @@ class PropertiesFile(private val directory: File, writeKey: String) : KVS {
         if (propertiesFile.exists()) {
             underlyingProperties.load(FileInputStream(propertiesFile))
         }
+        else {
+            propertiesFile.parentFile.mkdirs()
+            propertiesFile.createNewFile()
+        }
     }
 
     fun save() {
