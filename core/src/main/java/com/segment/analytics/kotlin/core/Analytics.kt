@@ -43,8 +43,9 @@ class Analytics internal constructor(
     val storage: Storage
     companion object {
         var debugLogsEnabled: Boolean = false
-            set(value: Boolean) {
+            set(value) {
                 SegmentLog.loggingEnabled = value
+                field = value
             }
     }
 

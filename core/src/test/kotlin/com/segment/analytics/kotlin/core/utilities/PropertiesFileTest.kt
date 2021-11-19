@@ -2,6 +2,7 @@ package com.segment.analytics.kotlin.core.utilities
 
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -9,6 +10,11 @@ internal class PropertiesFileTest {
 
     private val directory = File("/tmp/analytics-android-test/events")
     private val kvStore = PropertiesFile(directory.parentFile, "123")
+
+    @BeforeEach
+    internal fun setUp() {
+        kvStore.load()
+    }
 
     @Test
     fun `test properties file operations`() {

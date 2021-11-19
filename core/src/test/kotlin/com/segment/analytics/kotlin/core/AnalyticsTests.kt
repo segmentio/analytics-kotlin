@@ -284,7 +284,7 @@ class AnalyticsTests {
                 analytics.add(mockPlugin)
                 analytics.group("high school", buildJsonObject { put("foo", "bar") })
                 val group = slot<GroupEvent>()
-                verify { mockPlugin.group(capture(group)) }
+                verify (timeout = 2000) { mockPlugin.group(capture(group)) }
                 assertEquals(
                     GroupEvent(
                         traits = buildJsonObject { put("foo", "bar") },
