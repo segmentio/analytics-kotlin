@@ -13,7 +13,7 @@ internal class PropertiesFileTest {
 
     @BeforeEach
     internal fun setUp() {
-        kvStore.load()
+        directory.deleteRecursively()
     }
 
     @Test
