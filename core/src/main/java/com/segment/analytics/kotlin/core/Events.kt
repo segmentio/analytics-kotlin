@@ -90,7 +90,7 @@ sealed class BaseEvent {
         val userInfo = store.currentState(UserInfo::class) ?: return
 
         this.anonymousId = userInfo.anonymousId
-        this.integrations = system.integrations ?: emptyJsonObject
+        this.integrations = emptyJsonObject
 
         if (this.userId.isBlank()) {
             // attach system userId if present

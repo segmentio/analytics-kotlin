@@ -81,7 +81,7 @@ class FirebaseDestination(
 ) : DestinationPlugin(), AndroidLifecycle {
 
     override val key: String = "Firebase"
-    internal lateinit var firebaseAnalytics: FirebaseAnalytics
+    internal var firebaseAnalytics: FirebaseAnalytics? = null
     private var activity: Activity? = null
 
     override fun setup(analytics: Analytics) {
@@ -105,13 +105,13 @@ class FirebaseDestination(
     override fun identify(payload: IdentifyEvent): BaseEvent {
         val userId: String = payload.userId
         val traits: JsonObject = payload.traits
-        firebaseAnalytics.setUserId(userId)
+        firebaseAnalytics?.setUserId(userId)
 
         traits.let {
             for ((traitKey, traitValue) in it) {
                 val normalizedKey = makeKey(traitKey)
                 val updatedTraitValue = traitValue.toContent().toString()
-                firebaseAnalytics.setUserProperty(normalizedKey, updatedTraitValue)
+                firebaseAnalytics?.setUserProperty(normalizedKey, updatedTraitValue)
                 analytics.log("firebaseAnalytics.setUserProperty($normalizedKey, $updatedTraitValue)")
             }
         }
@@ -128,7 +128,7 @@ class FirebaseDestination(
                 FirebaseAnalytics.Param.SCREEN_NAME to screenName,
                 FirebaseAnalytics.Param.SCREEN_CLASS to tempActivity::class.simpleName
             )
-            firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
+            firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
             analytics.log("firebaseAnalytics.logEvent(SCREEN_VIEW, $bundle)")
         }
 
@@ -142,7 +142,7 @@ class FirebaseDestination(
 
         val bundledProperties = formatProperties(payload.properties)
 
-        firebaseAnalytics.logEvent(eventName, bundledProperties)
+        firebaseAnalytics?.logEvent(eventName, bundledProperties)
         analytics.log("firebaseAnalytics.logEvent($eventName, $bundledProperties)")
 
         return payload
@@ -159,7 +159,7 @@ class FirebaseDestination(
                 .let {
                     it.loadLabel(packageManager).toString().let { activityName ->
                         val bundle = bundleOf(FirebaseAnalytics.Param.SCREEN_NAME to activityName)
-                        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
+                        firebaseAnalytics?.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
                         analytics.log(
                             "firebaseAnalytics.setCurrentScreen(activity, $activityName, null"
                         )

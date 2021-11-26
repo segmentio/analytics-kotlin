@@ -98,40 +98,6 @@ class AnalyticsTests {
             assertTrue(testPlugin1.ran)
             assertTrue(testPlugin2.ran)
         }
-
-        @Test
-        fun `adding destination plugin modifies integrations object`() = runBlocking  {
-            val testPlugin1 = object : DestinationPlugin() {
-                override val key: String = "TestDestination"
-            }
-            analytics
-                .add(testPlugin1)
-
-            val system = analytics.store.currentState(System::class)
-            val curIntegrations = system?.integrations
-            assertEquals(
-                buildJsonObject {
-                    put("TestDestination", false)
-                },
-                curIntegrations
-            )
-        }
-
-        @Test
-        fun `removing destination plugin modifies integrations object`() = runBlocking  {
-            val testPlugin1 = object : DestinationPlugin() {
-                override val key: String = "TestDestination"
-            }
-            analytics.add(testPlugin1)
-            analytics.remove(testPlugin1)
-
-            val system = analytics.store.currentState(System::class)
-            val curIntegrations = system?.integrations
-            assertEquals(
-                emptyJsonObject,
-                curIntegrations
-            )
-        }
     }
 
     @Nested
@@ -165,23 +131,6 @@ class AnalyticsTests {
                 assertTrue(it.timestamp == epochTimestamp)
                 assertEquals(emptyJsonObject, it.integrations)
                 assertEquals(context, it.context)
-            }
-        }
-
-        @Test
-        fun `event gets populated with correct integrations`() = runBlocking  {
-            val mockPlugin = spyk(StubPlugin())
-            analytics.add(mockPlugin)
-            analytics.store.dispatch(System.AddIntegrationAction("plugin1"), System::class)
-            analytics.track("track", buildJsonObject { put("foo", "bar") })
-            val track = slot<TrackEvent>()
-            verify { mockPlugin.track(capture(track)) }
-            track.captured.let {
-                assertTrue(it.anonymousId.isNotBlank())
-                assertTrue(it.messageId.isNotBlank())
-                assertTrue(it.timestamp == epochTimestamp)
-                assertEquals(it.context, context)
-                assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
             }
         }
 

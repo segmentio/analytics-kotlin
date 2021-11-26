@@ -8,6 +8,7 @@ import com.segment.analytics.kotlin.core.IdentifyEvent
 import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.utilities.getBoolean
 
 // Most simple interface for an plugin
 interface Plugin {
@@ -102,7 +103,7 @@ abstract class DestinationPlugin : EventPlugin {
     // Special function for DestinationPlugin that manages its own timeline execution
     fun process(event: BaseEvent?): BaseEvent? {
         // Skip this destination if it is disabled via settings
-        if (!enabled) {
+        if (!isDestinationEnabled(event)) {
             return null
         }
         val beforeResult = timeline.applyPlugins(Plugin.Type.Before, event)
@@ -135,5 +136,16 @@ abstract class DestinationPlugin : EventPlugin {
 
     final override fun execute(event: BaseEvent): BaseEvent? {
         return null
+    }
+
+    internal fun isDestinationEnabled(event: BaseEvent?): Boolean {
+        // if event payload has integration marked false then its disabled by customer
+        val customerDisabled = when (event?.integrations?.getBoolean(key)) {
+            false -> true
+            else -> false // if missing or true
+        }
+
+        // Differs from swift, bcos kotlin can store `enabled` state. ref: https://git.io/J1bhJ
+        return (enabled && !customerDisabled)
     }
 }

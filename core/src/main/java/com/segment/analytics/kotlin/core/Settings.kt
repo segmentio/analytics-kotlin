@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
@@ -29,19 +30,38 @@ data class Settings(
         return typedSettings
     }
 
-    fun isDestinationEnabled(name: String): Boolean {
-        return integrations.containsKey(name)
+    fun hasIntegrationSettings(plugin: DestinationPlugin): Boolean {
+        return hasIntegrationSettings(plugin.key)
+    }
+
+    fun hasIntegrationSettings(key: String): Boolean {
+        return integrations.containsKey(key)
     }
 }
 
 internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
     timeline.applyClosure { plugin ->
         if (plugin is DestinationPlugin) {
-            plugin.enabled = settings.isDestinationEnabled(plugin.key)
+            plugin.enabled = settings.hasIntegrationSettings(plugin)
         }
         // tell all top level plugins to update.
         // For destination plugins they auto-handle propagation to sub-plugins
         plugin.update(settings, type)
+    }
+}
+
+fun Analytics.manuallyEnableDestination(plugin: DestinationPlugin) {
+    analyticsScope.launch(analyticsDispatcher) {
+        store.dispatch(
+            System.AddDestinationToSettingsAction(destinationKey = plugin.key) { settings: Settings? ->
+                if (settings != null) {
+                    findAll(DestinationPlugin::class).forEach {
+                        plugin.enabled = settings.hasIntegrationSettings(it.key)
+                    }
+                }
+            },
+            System::class
+        )
     }
 }
 
@@ -54,6 +74,7 @@ suspend fun Analytics.checkSettings() {
 
     // check current system state to determine whether it's initial or refresh
     val systemState = store.currentState(System::class)
+    println(systemState?.settings)
     val hasSettings = systemState?.settings?.integrations != null &&
             systemState.settings?.plan != null
     val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial

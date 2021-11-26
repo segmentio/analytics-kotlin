@@ -7,12 +7,15 @@ import com.segment.analytics.kotlin.core.platform.EventPipeline
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
+import com.segment.analytics.kotlin.core.utilities.putAll
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
 @Serializable
 data class SegmentSettings(
@@ -59,8 +62,9 @@ class SegmentDestination : DestinationPlugin() {
     }
 
     private inline fun <reified T : BaseEvent> enqueue(payload: T) {
+        val finalPayload = configureCloudDestination(payload)
         // needs to be inline reified for encoding using Json
-        val jsonVal = EncodeDefaultsJson.encodeToJsonElement(payload)
+        val jsonVal = EncodeDefaultsJson.encodeToJsonElement(finalPayload)
             .jsonObject.filterNot { (k, v) ->
                 // filter out empty userId and traits values
                 (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
@@ -89,7 +93,7 @@ class SegmentDestination : DestinationPlugin() {
     }
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
-        if (settings.isDestinationEnabled(key)) {
+        if (settings.hasIntegrationSettings(this)) {
             settings.destinationSettings<SegmentSettings>(key)?.let {
                 pipeline.apiHost = it.apiHost
             }
@@ -98,5 +102,19 @@ class SegmentDestination : DestinationPlugin() {
 
     override fun flush() {
         pipeline.flush()
+    }
+
+    internal fun <T: BaseEvent> configureCloudDestination(event: T): T {
+        val enabledDestinations = analytics.findAll(DestinationPlugin::class).filter { it.enabled }
+        val merged = buildJsonObject {
+            // Mark all loaded destinations as false
+            enabledDestinations.forEach {
+                put(it.key, false)
+            }
+            // apply customer values; the customer is always right!
+            putAll(event.integrations)
+        }
+        event.integrations = merged
+        return event
     }
 }

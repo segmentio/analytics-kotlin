@@ -1,26 +1,23 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.utilities.putAll
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import sovran.kotlin.Action
 import sovran.kotlin.State
 import java.util.UUID
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 
 /**
  * Stores state related to the analytics system
  * - configuration used to initialize the client
- * - list of destinations that are enabled / disabled
  * - segment settings as a json map
  * - running state indicating the system has received settings
  */
 data class System(
     var configuration: Configuration = Configuration(""),
-    var integrations: Integrations?,
     var settings: Settings?,
     var running: Boolean
 ) : State {
@@ -37,7 +34,6 @@ data class System(
             }
             return System(
                 configuration = configuration,
-                integrations = emptyJsonObject,
                 settings = settings,
                 running = false
             )
@@ -48,46 +44,9 @@ data class System(
         override fun reduce(state: System): System {
             return System(
                 state.configuration,
-                state.integrations,
                 settings,
                 state.running
             )
-        }
-    }
-
-    class AddIntegrationAction(var pluginName: String) : Action<System> {
-        override fun reduce(state: System): System {
-            // we need to set any destination plugins to false in the
-            // integrations payload. this prevents them from being sent
-            // by segment.com once an event reaches Segment.
-            state.integrations?.let {
-                val newIntegrations =
-                    it.filter { (k, _) -> (k != pluginName) }.toMap(LinkedHashMap())
-                newIntegrations[pluginName] = JsonPrimitive(false)
-                return System(
-                    state.configuration,
-                    JsonObject(newIntegrations),
-                    state.settings,
-                    state.running
-                )
-            }
-            return state
-        }
-    }
-
-    class RemoveIntegrationAction(var pluginName: String) : Action<System> {
-        override fun reduce(state: System): System {
-            state.integrations?.let {
-                val newIntegrations =
-                    it.filter { (k, _) -> (k != pluginName) }.toMap(LinkedHashMap())
-                return System(
-                    state.configuration,
-                    JsonObject(newIntegrations),
-                    state.settings,
-                    state.running
-                )
-            }
-            return state
         }
     }
 
@@ -95,9 +54,27 @@ data class System(
         override fun reduce(state: System): System {
             return System(
                 state.configuration,
-                state.integrations,
                 state.settings,
                 running
+            )
+        }
+    }
+
+    class AddDestinationToSettingsAction(
+        var destinationKey: String,
+        val afterClosure: (Settings?) -> Unit
+    ) : Action<System> {
+        override fun reduce(state: System): System {
+            val newIntegrations = buildJsonObject {
+                state.settings?.integrations?.let { putAll(it) }
+                put(destinationKey, true)
+            }
+            val newSettings = state.settings?.copy(integrations = newIntegrations)
+            afterClosure(newSettings)
+            return System(
+                state.configuration,
+                newSettings,
+                state.running
             )
         }
     }

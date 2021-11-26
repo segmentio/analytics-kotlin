@@ -46,7 +46,6 @@ class StorageTests {
             store.provide(
                 System(
                     configuration = Configuration("123"),
-                    integrations = emptyJsonObject,
                     settings = Settings(),
                     false
                 )
@@ -89,7 +88,6 @@ class StorageTests {
                 override fun reduce(state: System): System {
                     return System(
                         configuration = state.configuration,
-                        integrations = state.integrations,
                         settings = Settings(
                             integrations = buildJsonObject {
                                 put(

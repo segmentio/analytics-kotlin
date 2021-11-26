@@ -382,11 +382,6 @@ class Analytics internal constructor(
      */
     fun add(plugin: Plugin): Analytics {
         this.timeline.add(plugin)
-        if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(analyticsDispatcher) {
-                store.dispatch(System.AddIntegrationAction(plugin.key), System::class)
-            }
-        }
         return this
     }
 
@@ -412,11 +407,6 @@ class Analytics internal constructor(
      */
     fun remove(plugin: Plugin): Analytics {
         this.timeline.remove(plugin)
-        if (plugin is DestinationPlugin && plugin !is SegmentDestination) {
-            analyticsScope.launch(analyticsDispatcher) {
-                store.dispatch(System.RemoveIntegrationAction(plugin.key), System::class)
-            }
-        }
         return this
     }
 
@@ -502,6 +492,24 @@ class Analytics internal constructor(
         return traitsAsync()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
         }
+    }
+
+    /**
+     * Retrieve the settings  in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
+     */
+    @BlockingApi
+    fun settings(): Settings? = runBlocking {
+        settingsAsync()
+    }
+
+    /**
+     * Retrieve the settings
+     */
+    suspend fun settingsAsync(): Settings? {
+        val system = store.currentState(System::class)
+        return system?.settings
     }
 }
 

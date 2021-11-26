@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.platform
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.utilities.getBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
