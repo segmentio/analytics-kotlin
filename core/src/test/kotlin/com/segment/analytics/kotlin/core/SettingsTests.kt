@@ -102,8 +102,8 @@ class SettingsTests {
             }
         )
 
-        assertTrue(settings.isDestinationEnabled("Foo"))
-        assertTrue(settings.isDestinationEnabled("Bar"))
+        assertTrue(settings.hasIntegrationSettings("Foo"))
+        assertTrue(settings.hasIntegrationSettings("Bar"))
     }
 
     @Test
@@ -116,8 +116,8 @@ class SettingsTests {
             }
         )
 
-        assertTrue(settings.isDestinationEnabled("Foo"))
-        assertFalse(settings.isDestinationEnabled("Bar"))
+        assertTrue(settings.hasIntegrationSettings("Foo"))
+        assertFalse(settings.hasIntegrationSettings("Bar"))
     }
 
     @Serializable

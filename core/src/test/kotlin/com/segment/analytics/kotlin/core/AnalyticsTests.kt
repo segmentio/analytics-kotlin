@@ -1,6 +1,5 @@
 package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*

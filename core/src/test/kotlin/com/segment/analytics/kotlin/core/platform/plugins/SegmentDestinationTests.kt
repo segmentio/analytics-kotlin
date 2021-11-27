@@ -74,7 +74,7 @@ class SegmentDestinationTests {
             .apply {
                 messageId = "qwerty-1234"
                 anonymousId = "anonId"
-                integrations = emptyJsonObject
+                integrations = buildJsonObject { put("Segment.io", false) }
                 context = emptyJsonObject
                 timestamp = epochTimestamp
             }
@@ -85,6 +85,7 @@ class SegmentDestinationTests {
             // filter out empty userId and traits values
             (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
         }
+        val expectedStringPayload = Json.encodeToString(expectedEvent)
 
         (analytics.storage as StorageImpl).run {
             eventsFile.rollover()
@@ -92,8 +93,12 @@ class SegmentDestinationTests {
             val storageContents = File(storagePath).readText()
             assertTrue(
                 storageContents.contains(
-                    Json.encodeToString(expectedEvent)
-                )
+                    expectedStringPayload
+                ),
+                """storage does not contain expected event
+                   expectedEvent = $expectedStringPayload
+                   storageContents = $storageContents
+                """.trimIndent()
             )
         }
     }

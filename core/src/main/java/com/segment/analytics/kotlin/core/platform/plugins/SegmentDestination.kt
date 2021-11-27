@@ -114,7 +114,9 @@ class SegmentDestination : DestinationPlugin() {
             // apply customer values; the customer is always right!
             putAll(event.integrations)
         }
-        event.integrations = merged
-        return event
+        val newEvent = event.copy<T>().apply {
+            integrations = merged
+        }
+        return newEvent
     }
 }
