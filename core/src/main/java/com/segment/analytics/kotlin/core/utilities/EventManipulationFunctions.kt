@@ -10,7 +10,20 @@ import kotlinx.serialization.serializer
 
 // Mark integration as enabled, for this event
 fun BaseEvent.enableIntegration(integrationName: String): BaseEvent {
-    return putIntegrations(integrationName, true)
+    // if it's a dictionary already, it's considered enabled, so don't
+    // overwrite whatever they may have put there.  If that's not the case
+    // just set it to true since that's the only other value it could have
+    // to be considered `enabled`.
+    val currentValue = integrations.getBoolean(integrationName)
+    currentValue?.let { enabled ->
+        // if it's not enabled, enable it
+        // otherwise, do nothing
+        if (!enabled) {
+            return putIntegrations(integrationName, true)
+        }
+    }
+
+    return this
 }
 
 // Mark integration as disabled, for this event
@@ -97,5 +110,34 @@ inline fun <reified T : Any> BaseEvent.putInContextUnderKey(
 
 fun BaseEvent.removeFromContext(key: String): BaseEvent {
     context = JsonObject(context.filterNot { (k, _) -> k == key })
+    return this
+}
+
+
+fun BaseEvent.disableCloudIntegrations(exceptKeys: List<String>? = null): BaseEvent {
+    integrations = buildJsonObject {
+        put(BaseEvent.ALL_INTEGRATIONS_KEY, false)
+
+        exceptKeys?.forEach { key ->
+            if (integrations.containsKey(key)) {
+                integrations.getBoolean(key)?.let {
+                    put(key, true)
+                } ?: put(key, integrations.getString(key))
+            }
+        }
+    }
+
+    return this
+}
+
+fun BaseEvent.enableCloudIntegrations(exceptKeys: List<String>? = null): BaseEvent {
+    integrations = buildJsonObject {
+        put(BaseEvent.ALL_INTEGRATIONS_KEY, true)
+
+        exceptKeys?.forEach { key ->
+            put(key, false)
+        }
+    }
+
     return this
 }

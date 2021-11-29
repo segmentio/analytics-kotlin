@@ -79,6 +79,10 @@ sealed class BaseEvent {
     // the userId tied to the event
     abstract var userId: String
 
+    companion object {
+        internal const val ALL_INTEGRATIONS_KEY = "All"
+    }
+
     internal fun applyBaseData() {
         this.timestamp = Instant.now().toString()
         this.context = emptyJsonObject
