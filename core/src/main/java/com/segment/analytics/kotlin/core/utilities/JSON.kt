@@ -181,3 +181,27 @@ fun JsonObject.transformKeys(transform: (String) -> String): JsonObject {
 fun JsonObject.transformValues(transform: (JsonElement) -> JsonElement): JsonObject {
     return JsonObject(this.mapValues { transform(it.value) })
 }
+
+// Utility function to update a JsonObject. The updated copy is returned. Original copy is not touched
+fun updateJsonObject(jsonObject: JsonObject, closure: (MutableMap<String, JsonElement>) -> Unit): JsonObject {
+    val content = jsonObject.toMutableMap()
+    closure(content)
+    return JsonObject(content)
+}
+
+operator fun MutableMap<String, JsonElement>.set(key:String, value: String?) {
+    if (value == null) {
+        remove(key)
+    }
+    else {
+        this[key] = JsonPrimitive(value)
+    }
+}
+
+operator fun MutableMap<String, JsonElement>.set(key:String, value: Number) {
+    this[key] = JsonPrimitive(value)
+}
+
+operator fun MutableMap<String, JsonElement>.set(key:String, value: Boolean) {
+    this[key] = JsonPrimitive(value)
+}
