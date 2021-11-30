@@ -1,18 +1,6 @@
 package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.kotlin.core.utilities.getBoolean
-import com.segment.analytics.kotlin.core.utilities.getDouble
-import com.segment.analytics.kotlin.core.utilities.getInt
-import com.segment.analytics.kotlin.core.utilities.getLong
-import com.segment.analytics.kotlin.core.utilities.getMapList
-import com.segment.analytics.kotlin.core.utilities.getString
-import com.segment.analytics.kotlin.core.utilities.getStringSet
-import com.segment.analytics.kotlin.core.utilities.mapTransform
-import com.segment.analytics.kotlin.core.utilities.putAll
-import com.segment.analytics.kotlin.core.utilities.putUndefinedIfNull
-import com.segment.analytics.kotlin.core.utilities.toContent
-import com.segment.analytics.kotlin.core.utilities.transformKeys
-import com.segment.analytics.kotlin.core.utilities.transformValues
+import com.segment.analytics.kotlin.core.utilities.*
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.boolean
@@ -731,6 +719,49 @@ class JSONTests {
                 putUndefinedIfNull("foo", null)
             }
             assertEquals("undefined", x.getString("foo"))
+        }
+    }
+
+    @Nested
+    inner class UpdateJsonObjectTests {
+        @Test
+        fun `updateJsonObject updates values`() {
+            var obj = emptyJsonObject
+
+            // test string
+            obj = updateJsonObject(obj) {
+                it["foo"] = "bar"
+            }
+            assertEquals(1, obj.size)
+            assertEquals("bar", obj.getString("foo"))
+
+            // test number
+            obj = updateJsonObject(obj) {
+                it["foo"] = null
+                it["number"] = 1
+            }
+            assertEquals(1, obj.size)
+            assertEquals(1, obj.getInt("number"))
+
+            obj = updateJsonObject(obj) {
+                it["number"] = 2.0
+            }
+            assertEquals(1, obj.size)
+            assertEquals(2.0, obj.getDouble("number"))
+
+            obj = updateJsonObject(obj) {
+                it["number"] = 4L
+            }
+            assertEquals(1, obj.size)
+            assertEquals(4L, obj.getLong("number"))
+
+            // test boolean
+            obj = updateJsonObject(obj) {
+                it["number"] = null
+                it["boolean"] = true
+            }
+            assertEquals(1, obj.size)
+            assertEquals(true, obj.getBoolean("boolean"))
         }
     }
 }
