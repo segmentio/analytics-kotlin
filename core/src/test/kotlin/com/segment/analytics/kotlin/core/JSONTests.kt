@@ -732,36 +732,36 @@ class JSONTests {
             obj = updateJsonObject(obj) {
                 it["foo"] = "bar"
             }
-            assertEquals(obj.size, 1)
-            assertEquals(obj.getString("foo"), "bar")
+            assertEquals(1, obj.size)
+            assertEquals("bar", obj.getString("foo"))
 
             // test number
             obj = updateJsonObject(obj) {
                 it["foo"] = null
                 it["number"] = 1
             }
-            assertEquals(obj.size, 1)
-            assertEquals(obj.getInt("number"), 1)
+            assertEquals(1, obj.size)
+            assertEquals(1, obj.getInt("number"))
 
             obj = updateJsonObject(obj) {
                 it["number"] = 2.0
             }
-            assertEquals(obj.size, 1)
-            assertEquals(obj.getDouble("number"), 2.0)
+            assertEquals(1, obj.size)
+            assertEquals(2.0, obj.getDouble("number"))
 
             obj = updateJsonObject(obj) {
                 it["number"] = 4L
             }
-            assertEquals(obj.size, 1)
-            assertEquals(obj.getLong("number"), 4L)
+            assertEquals(1, obj.size)
+            assertEquals(4L, obj.getLong("number"))
 
             // test boolean
             obj = updateJsonObject(obj) {
                 it["number"] = null
                 it["boolean"] = true
             }
-            assertEquals(obj.size, 1)
-            assertEquals(obj.getBoolean("boolean"), true)
+            assertEquals(1, obj.size)
+            assertEquals(true, obj.getBoolean("boolean"))
         }
     }
 }
