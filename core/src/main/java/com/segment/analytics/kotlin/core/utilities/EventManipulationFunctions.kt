@@ -10,12 +10,13 @@ import kotlinx.serialization.serializer
 
 // Mark integration as enabled, for this event
 fun BaseEvent.enableIntegration(integrationName: String): BaseEvent {
-    // if it's a dictionary already, it's considered enabled, so don't
-    // overwrite whatever they may have put there.  If that's not the case
-    // just set it to true since that's the only other value it could have
-    // to be considered `enabled`.
-    val currentValue = integrations.getBoolean(integrationName)
-    currentValue?.let { enabled ->
+    // if not exist yet, enable it
+    if (!integrations.containsKey(integrationName)) {
+        return putIntegrations(integrationName, true)
+    }
+
+    // if it's a boolean value
+    integrations.getBoolean(integrationName)?.let { enabled ->
         // if it's not enabled, enable it
         // otherwise, do nothing
         if (!enabled) {
@@ -23,6 +24,8 @@ fun BaseEvent.enableIntegration(integrationName: String): BaseEvent {
         }
     }
 
+    // otherwise it's a dictionary already, it's considered enabled, so don't
+    // overwrite whatever they may have put there.
     return this
 }
 
@@ -120,9 +123,12 @@ fun BaseEvent.disableCloudIntegrations(exceptKeys: List<String>? = null): BaseEv
 
         exceptKeys?.forEach { key ->
             if (integrations.containsKey(key)) {
-                integrations.getBoolean(key)?.let {
+                if(integrations.getBoolean(key) != null) {
                     put(key, true)
-                } ?: put(key, integrations.getString(key))
+                }
+                else {
+                    put(key, integrations[key]!!)
+                }
             }
         }
     }

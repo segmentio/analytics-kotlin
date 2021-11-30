@@ -209,9 +209,14 @@ class IntercomDestination(
 
     private fun setCompany(company: JsonObject): Company {
         val builder = Company.Builder()
-        company.getString("id")?.let {
-            builder.withCompanyId(it)
-        } ?: return builder.build()
+
+        val id = company.getString("id")
+        if (id == null) {
+            return builder.build()
+        }
+        else {
+            builder.withCompanyId(id)
+        }
 
         company.getString(NAME)?.let { builder.withName(it) }
         company.getLong(CREATED_AT)?.let { builder.withCreatedAt(it) }
