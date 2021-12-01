@@ -23,7 +23,7 @@ class AnalyticsTests {
     private val testScope = TestCoroutineScope(testDispatcher)
 
     private val epochTimestamp = Date(0).toInstant().toString()
-    private val context = buildJsonObject {
+    private val baseContext = buildJsonObject {
         val lib = buildJsonObject {
             put(ContextPlugin.LIBRARY_NAME_KEY, "analytics-kotlin")
             put(ContextPlugin.LIBRARY_VERSION_KEY, Constants.LIBRARY_VERSION)
@@ -112,7 +112,7 @@ class AnalyticsTests {
                 assertTrue(it.anonymousId.isNotBlank())
                 assertTrue(it.messageId.isNotBlank())
                 assertEquals(epochTimestamp, it.timestamp)
-                assertEquals(context, it.context)
+                assertEquals(baseContext, it.context)
                 assertEquals(emptyJsonObject, it.integrations)
             }
         }
@@ -129,7 +129,7 @@ class AnalyticsTests {
                 assertTrue(it.messageId.isNotBlank())
                 assertTrue(it.timestamp == epochTimestamp)
                 assertEquals(emptyJsonObject, it.integrations)
-                assertEquals(context, it.context)
+                assertEquals(baseContext, it.context)
             }
         }
 
@@ -146,7 +146,7 @@ class AnalyticsTests {
                     TrackEvent(
                         properties = buildJsonObject { put("foo", "bar") },
                         event = "track"
-                    ),
+                    ).populate(),
                     track.captured
                 )
             }
@@ -166,7 +166,7 @@ class AnalyticsTests {
                     IdentifyEvent(
                         traits = buildJsonObject { put("name", "bar") },
                         userId = "foobar"
-                    ),
+                    ).populate(),
                     identify.captured
                 )
             }
@@ -218,7 +218,7 @@ class AnalyticsTests {
                         properties = buildJsonObject { put("foo", "bar") },
                         name = "main",
                         category = "mobile"
-                    ),
+                    ).populate(),
                     screen.captured
                 )
             }
@@ -237,7 +237,7 @@ class AnalyticsTests {
                     GroupEvent(
                         traits = buildJsonObject { put("foo", "bar") },
                         groupId = "high school"
-                    ),
+                    ).populate(),
                     group.captured
                 )
             }
@@ -257,7 +257,7 @@ class AnalyticsTests {
                     AliasEvent(
                         userId = "newId",
                         previousId = "qwerty-qwerty-123"
-                    ),
+                    ).populate(),
                     alias.captured
                 )
             }
@@ -274,7 +274,7 @@ class AnalyticsTests {
                     AliasEvent(
                         userId = "newId",
                         previousId = "oldId"
-                    ),
+                    ).populate(),
                     alias.captured
                 )
             }
@@ -351,5 +351,13 @@ class AnalyticsTests {
                 assertTrue(plugins.contains(child))
             }
         }
+    }
+
+    private fun BaseEvent.populate() = apply {
+        anonymousId = "qwerty-qwerty-123"
+        messageId = "qwerty-qwerty-123"
+        timestamp = epochTimestamp
+        context = baseContext
+        integrations = emptyJsonObject
     }
 }

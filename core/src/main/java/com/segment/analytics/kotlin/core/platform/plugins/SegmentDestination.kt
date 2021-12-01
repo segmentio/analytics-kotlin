@@ -105,7 +105,7 @@ class SegmentDestination : DestinationPlugin() {
     }
 
     internal fun <T: BaseEvent> configureCloudDestination(event: T): T {
-        val enabledDestinations = analytics.findAll(DestinationPlugin::class).filter { it.enabled }
+        val enabledDestinations = analytics.findAll(DestinationPlugin::class).filter { it.enabled && it !is SegmentDestination }
         val merged = buildJsonObject {
             // Mark all loaded destinations as false
             enabledDestinations.forEach {
