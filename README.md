@@ -7,8 +7,6 @@ NOTE: This project is currently in the Beta phase and is covered by Segment's [F
 to try out this new library. Please provide feedback via Github issues/PRs, and feel free to submit pull requests.  This library will eventually 
 supplant our `analytics-android` library.
 
-NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
-
 ## How to get started
 1. **Collect analytics data** from your app(s).
   - The top 200 Segment companies collect data from 5+ source types (web, mobile, server, CRM, etc.).
@@ -50,6 +48,14 @@ NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_C
 You can find usage documentation at [https://segment.com/docs/sources/mobile/kotlin-android/](https://segment.com/docs/sources/mobile/kotlin-android/).
 
 Explore more via the [example projects](samples) which showcase analytics instrumentation on different platforms/languages and usage of plugins. These projects contain sample [plugins](samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins) and [destination plugins](samples/kotlin-android-app-destinations/src/main/java/com/segment/analytics/destinations/plugins) 
+
+## Compatibility
+
+* If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
+* The SDK internally uses a number of Java 8 language API through desugaring (see [Java 8+ API desugaring support](https://developer.android.com/studio/write/java8-support#library-desugaring)). Please make sure your project:
+  * either using Android Gradle plugin 4.0.0 or higher
+  * or requiring a minimum API level of 26.
+
 
 ## Contributing
 
