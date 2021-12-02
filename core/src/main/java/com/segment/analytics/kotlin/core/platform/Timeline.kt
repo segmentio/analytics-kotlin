@@ -3,8 +3,6 @@ package com.segment.analytics.kotlin.core.platform
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
-import com.segment.analytics.kotlin.core.utilities.getBoolean
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
@@ -65,7 +63,8 @@ internal class Timeline {
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {
-                store.currentState(System::class)?.settings?.let {
+                val systemSettings = store.currentState(System::class)?.settings
+                systemSettings?.let {
                     // if we have settings then update plugin with it
                     plugin.update(it, Plugin.UpdateType.Initial)
                 }

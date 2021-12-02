@@ -53,17 +53,18 @@ internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
 fun Analytics.manuallyEnableDestination(plugin: DestinationPlugin) {
     analyticsScope.launch(analyticsDispatcher) {
         store.dispatch(
-            System.AddDestinationToSettingsAction(destinationKey = plugin.key) { settings: Settings? ->
-                if (settings != null) {
-                    findAll(DestinationPlugin::class).forEach {
-                        plugin.enabled = settings.hasIntegrationSettings(it.key)
-                    }
-                }
-            },
+            System.AddDestinationToSettingsAction(destinationKey = plugin.key),
             System::class
         )
+        val system = store.currentState(System::class)
+        system?.settings?.let { settings ->
+            findAll(DestinationPlugin::class).forEach {
+                plugin.enabled = settings.hasIntegrationSettings(it.key)
+            }
+        }
     }
 }
+
 
 /**
  * Make analytics client call into Segment's settings API, to refresh certain configurations.
@@ -73,13 +74,13 @@ suspend fun Analytics.checkSettings() {
     val cdnHost = configuration.cdnHost
 
     // check current system state to determine whether it's initial or refresh
-    val systemState = store.currentState(System::class)
-    println(systemState?.settings)
-    val hasSettings = systemState?.settings?.integrations != null &&
-            systemState.settings?.plan != null
-    val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial
+    val systemState = store.currentState(System::class) ?: return
+    val updateType = if (systemState.initialSettingsDispatched) {
+        Plugin.UpdateType.Refresh
+    } else {
+        Plugin.UpdateType.Initial
+    }
 
-    // stop things; queue in case our settings have changed.
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
 
     withContext(networkIODispatcher) {
@@ -88,10 +89,13 @@ suspend fun Analytics.checkSettings() {
             val connection = HTTPClient(writeKey).settings(cdnHost)
             val settingsString =
                 connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-            log( "Fetched Settings: $settingsString")
+            log("Fetched Settings: $settingsString")
             LenientJson.decodeFromString(settingsString)
         } catch (ex: Exception) {
-            Analytics.segmentLog("${ex.message}: failed to fetch settings", kind = LogFilterKind.ERROR)
+            Analytics.segmentLog(
+                "${ex.message}: failed to fetch settings",
+                kind = LogFilterKind.ERROR
+            )
             null
         }
 
@@ -100,6 +104,7 @@ suspend fun Analytics.checkSettings() {
                 log("Dispatching update settings on ${Thread.currentThread().name}")
                 store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
                 update(settingsObj, updateType)
+                store.dispatch(System.ToggleSettingsDispatch(dispatched = true), System::class)
             }
 
             // we're good to go back to a running state.

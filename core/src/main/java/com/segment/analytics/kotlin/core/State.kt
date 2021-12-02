@@ -19,7 +19,8 @@ import java.util.UUID
 data class System(
     var configuration: Configuration = Configuration(""),
     var settings: Settings?,
-    var running: Boolean
+    var running: Boolean,
+    var initialSettingsDispatched: Boolean
 ) : State {
 
     companion object {
@@ -35,7 +36,8 @@ data class System(
             return System(
                 configuration = configuration,
                 settings = settings,
-                running = false
+                running = false,
+                initialSettingsDispatched = false
             )
         }
     }
@@ -45,7 +47,8 @@ data class System(
             return System(
                 state.configuration,
                 settings,
-                state.running
+                state.running,
+                state.initialSettingsDispatched
             )
         }
     }
@@ -55,14 +58,14 @@ data class System(
             return System(
                 state.configuration,
                 state.settings,
-                running
+                running,
+                state.initialSettingsDispatched
             )
         }
     }
 
     class AddDestinationToSettingsAction(
         var destinationKey: String,
-        val afterClosure: (Settings?) -> Unit
     ) : Action<System> {
         override fun reduce(state: System): System {
             val newIntegrations = buildJsonObject {
@@ -70,11 +73,24 @@ data class System(
                 put(destinationKey, true)
             }
             val newSettings = state.settings?.copy(integrations = newIntegrations)
-            afterClosure(newSettings)
             return System(
                 state.configuration,
                 newSettings,
-                state.running
+                state.running,
+                state.initialSettingsDispatched
+            )
+        }
+    }
+
+    class ToggleSettingsDispatch(
+        var dispatched: Boolean,
+    ) : Action<System> {
+        override fun reduce(state: System): System {
+            return System(
+                state.configuration,
+                state.settings,
+                state.running,
+                dispatched
             )
         }
     }
