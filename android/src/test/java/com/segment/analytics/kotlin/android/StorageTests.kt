@@ -47,7 +47,8 @@ class StorageTests {
                 System(
                     configuration = Configuration("123"),
                     settings = Settings(),
-                    false
+                    running = false,
+                    initialSettingsDispatched = false
                 )
             )
 
@@ -102,7 +103,8 @@ class StorageTests {
                             plan = emptyJsonObject,
                             edgeFunction = emptyJsonObject
                         ),
-                        false
+                        running = false,
+                        initialSettingsDispatched = false
                     )
                 }
             }

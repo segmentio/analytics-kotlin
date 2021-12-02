@@ -39,7 +39,8 @@ internal class StorageImplTest {
             System(
                 configuration = Configuration("123"),
                 settings = Settings(),
-                false
+                running = false,
+                initialSettingsDispatched = false
             )
         )
 
@@ -93,7 +94,8 @@ internal class StorageImplTest {
                         plan = emptyJsonObject,
                         edgeFunction = emptyJsonObject
                     ),
-                    false
+                    running = false,
+                    initialSettingsDispatched = false
                 )
             }
         }
