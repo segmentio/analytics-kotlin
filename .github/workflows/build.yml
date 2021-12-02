@@ -1,4 +1,4 @@
-name: Android CI
+name: CI
 
 on:
   push:
@@ -27,6 +27,8 @@ jobs:
           ${{ runner.os }}-gradle-core-
     - name: Run Tests
       run: ./gradlew core:test
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
 
   android-test:
 
@@ -47,6 +49,8 @@ jobs:
             ${{ runner.os }}-gradle-android-
       - name: Run Tests
         run: ./gradlew android:test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
 
   destination-test:
 
@@ -67,6 +71,8 @@ jobs:
             ${{ runner.os }}-gradle-dest-
       - name: Run Tests
         run: ./gradlew samples:kotlin-android-app-destinations:test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
 
   security:
 
