@@ -29,6 +29,8 @@ jobs:
       run: ./gradlew core:test
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
+      with:
+        files: ~/**/build/reports/jacoco/report.xml
 
   android-test:
 
@@ -51,6 +53,8 @@ jobs:
         run: ./gradlew android:test
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
+        with:
+          files: ~/**/build/reports/jacoco/report.xml
 
   destination-test:
 
@@ -73,6 +77,8 @@ jobs:
         run: ./gradlew samples:kotlin-android-app-destinations:test
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
+        with:
+          files: ~/**/build/reports/jacoco/report.xml
 
   security:
 
