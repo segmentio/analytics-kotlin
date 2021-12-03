@@ -140,12 +140,9 @@ abstract class DestinationPlugin : EventPlugin {
 
     internal fun isDestinationEnabled(event: BaseEvent?): Boolean {
         // if event payload has integration marked false then its disabled by customer
-        val customerDisabled = when (event?.integrations?.getBoolean(key)) {
-            false -> true
-            else -> false // if missing or true
-        }
+        val customerEnabled = event?.integrations?.getBoolean(key) ?: true // default to true when missing
 
         // Differs from swift, bcos kotlin can store `enabled` state. ref: https://git.io/J1bhJ
-        return (enabled && !customerDisabled)
+        return (enabled && customerEnabled)
     }
 }
