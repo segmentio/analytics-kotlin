@@ -5,7 +5,7 @@ jacoco {
 }
 
 task codeCoverageReport(type: JacocoReport) {
-    def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
+    def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*', "**/**/*serializer*.*", "**/**/*Companion*.*" ]
     def mainSrc = []
     def debugTrees = []
     def execData = []
