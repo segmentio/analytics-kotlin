@@ -2,8 +2,8 @@
 [![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
 [![](https://github.com/segmentio/analytics-kotlin/actions/workflows/build.yml/badge.svg)](https://github.com/segmentio/analytics-kotlin/actions)
 [![codecov](https://codecov.io/gh/segmentio/analytics-kotlin/branch/master/graph/badge.svg)](https://codecov.io/gh/segmentio/analytics-kotlin)
-![](https://img.shields.io/snyk/vulnerabilities/github/segmentio/analytics-kotlin)
-![](https://img.shields.io/github/license/segmentio/analytics-kotlin)
+[![Known Vulnerabilities](https://snyk.io/test/github/segmentio/analytics-kotlin/badge.svg)](https://snyk.io/test/github/segmentio/analytics-kotlin)
+[![](https://img.shields.io/github/license/segmentio/analytics-kotlin)](https://github.com/segmentio/analytics-kotlin/blob/main/LICENSE)
 
 
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM). Analytics helps you measure your users, product, and business. It unlocks insights into your app's funnel, core business metrics, and whether you have product-market fit.
