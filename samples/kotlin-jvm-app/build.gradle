@@ -3,9 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
 }
 
-group = "com.segment.analytics.sample.kotlin"
-version = "1.0-SNAPSHOT"
-
 repositories {
     mavenCentral()
     maven {

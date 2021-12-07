@@ -19,6 +19,9 @@ buildscript {
 
         // For jitpack publishing of android library
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+
+        // For sonatype publishing of android library
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.22.0"
     }
 }
 
@@ -47,3 +50,5 @@ snyk {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+apply from: rootProject.file('gradle/promote.gradle')
