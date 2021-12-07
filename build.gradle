@@ -52,3 +52,4 @@ task clean(type: Delete) {
 }
 
 apply from: rootProject.file('gradle/promote.gradle')
+apply from: rootProject.file('gradle/codecov.gradle')

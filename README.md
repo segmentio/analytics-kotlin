@@ -1,13 +1,16 @@
 # Analytics-Kotlin
 [![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
+[![](https://github.com/segmentio/analytics-kotlin/actions/workflows/build.yml/badge.svg)](https://github.com/segmentio/analytics-kotlin/actions)
+[![codecov](https://codecov.io/gh/segmentio/analytics-kotlin/branch/master/graph/badge.svg)](https://codecov.io/gh/segmentio/analytics-kotlin)
+[![Known Vulnerabilities](https://snyk.io/test/github/segmentio/analytics-kotlin/badge.svg)](https://snyk.io/test/github/segmentio/analytics-kotlin)
+[![](https://img.shields.io/github/license/segmentio/analytics-kotlin)](https://github.com/segmentio/analytics-kotlin/blob/main/LICENSE)
+
 
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM). Analytics helps you measure your users, product, and business. It unlocks insights into your app's funnel, core business metrics, and whether you have product-market fit.
 
 NOTE: This project is currently in the Beta phase and is covered by Segment's [First Access & Beta Preview Terms](https://segment.com/legal/first-access-beta-preview/).  We encourage you
 to try out this new library. Please provide feedback via Github issues/PRs, and feel free to submit pull requests.  This library will eventually 
 supplant our `analytics-android` library.
-
-NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
 
 ## How to get started
 1. **Collect analytics data** from your app(s).
@@ -50,6 +53,14 @@ NOTE: If you use pure Java codebase, please refer to [Java Compatibility](JAVA_C
 You can find usage documentation at [https://segment.com/docs/sources/mobile/kotlin-android/](https://segment.com/docs/sources/mobile/kotlin-android/).
 
 Explore more via the [example projects](samples) which showcase analytics instrumentation on different platforms/languages and usage of plugins. These projects contain sample [plugins](samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins) and [destination plugins](samples/kotlin-android-app-destinations/src/main/java/com/segment/analytics/destinations/plugins) 
+
+## Compatibility
+
+* If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
+* The SDK internally uses a number of Java 8 language API through desugaring (see [Java 8+ API desugaring support](https://developer.android.com/studio/write/java8-support#library-desugaring)). Please make sure your project:
+  * either using Android Gradle plugin 4.0.0 or higher
+  * or requiring a minimum API level of 26.
+
 
 ## Contributing
 
