@@ -30,3 +30,4 @@ dependencies {
 }
 
 apply from: rootProject.file('gradle/jitpack-core.gradle')
+apply from: rootProject.file('gradle/codecov.gradle')

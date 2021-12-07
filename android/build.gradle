@@ -78,3 +78,4 @@ dependencies {
 }
 
 apply from: rootProject.file('gradle/jitpack-android.gradle')
+apply from: rootProject.file('gradle/codecov.gradle')

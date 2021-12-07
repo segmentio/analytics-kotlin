@@ -1,0 +1,37 @@
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = "0.8.7"
+}
+
+task codeCoverageReport(type: JacocoReport) {
+    def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', "**/**/*serializer*.*", "**/**/*Companion*.*" ]
+    def mainSrc = []
+    def debugTrees = []
+    def execData = []
+    if(project.name == rootProject.name) {
+        subprojects.each {
+            mainSrc.add("${it.projectDir}/src/main/java")
+            debugTrees.add(fileTree(dir: "${it.buildDir}/classes", excludes: fileFilter))
+            debugTrees.add(fileTree(dir: "${it.buildDir}/tmp/kotlin-classes/debugUnitTest", excludes: fileFilter))
+            execData.add(fileTree(dir: "${it.buildDir}/jacoco", includes: ["*.exec"]))
+        }
+    }
+    else {
+        mainSrc.add("${project.projectDir}/src/main/java")
+        debugTrees.add(fileTree(dir: "${project.buildDir}/classes", excludes: fileFilter))
+        debugTrees.add(fileTree(dir: "${project.buildDir}/tmp/kotlin-classes/debugUnitTest", excludes: fileFilter))
+        execData.add(fileTree(dir: "${project.buildDir}/jacoco", includes: ["*.exec"]))
+    }
+
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTrees))
+    executionData.setFrom(execData)
+
+    reports {
+        xml.enabled true
+        xml.destination file("${buildDir}/reports/jacoco/report.xml")
+        html.enabled true
+        csv.enabled false
+    }
+}
