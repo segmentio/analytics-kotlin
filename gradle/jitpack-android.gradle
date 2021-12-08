@@ -1,16 +1,15 @@
-// Needed for Jitpack (ref: https://github.com/jitpack/gradle-modular/blob/6816f11/build.gradle)
-apply plugin: 'com.github.dcendents.android-maven'
-
 task sourcesJar(type: Jar) {
     classifier = 'sources'
     from android.sourceSets.main.java.srcDirs
 }
 
 task javadoc(type: Javadoc) {
+    configurations.implementation.setCanBeResolved(true)
+
     failOnError false
     source = android.sourceSets.main.java.sourceFiles
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
+    classpath += configurations.implementation
 }
 
 // build a jar with javadoc

@@ -6,15 +6,15 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.3"
+    compileSdkVersion 31
+    buildToolsVersion "31.0.0"
 
     defaultConfig {
         // Required when setting minSdkVersion to 20 or lower
         multiDexEnabled true
 
         minSdkVersion 16
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode VERSION_CODE.toInteger()
         versionName VERSION_NAME
 
@@ -41,6 +41,12 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
 }
 
 dependencies {
@@ -50,8 +56,8 @@ dependencies {
     api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
-    implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
-    implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-process:2.4.0'
+    implementation 'androidx.lifecycle:lifecycle-common-java8:2.4.0'
 
     // STD LIBS
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -73,7 +79,7 @@ dependencies {
     testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.7.2'
 
     // Add Roboelectric dependencies.
-    testImplementation 'org.robolectric:robolectric:4.5'
+    testImplementation 'org.robolectric:robolectric:4.7.3'
     testImplementation 'androidx.test:core:1.4.0'
 }
 
