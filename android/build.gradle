@@ -59,8 +59,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-process:2.4.0'
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.4.0'
 
-    // STD LIBS
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
     // TESTING
