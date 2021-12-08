@@ -275,6 +275,7 @@ class AndroidLifecyclePluginTests {
         every { mockIntent.data } returns Uri.parse("app://track.com/open?utm_id=12345&gclid=abcd&nope=")
         val mockActivity = mockk<Activity>()
         every { mockActivity.intent } returns mockIntent
+        every { mockActivity.referrer } returns null
         val mockBundle = mockk<Bundle>()
 
         // Simulate activity startup
