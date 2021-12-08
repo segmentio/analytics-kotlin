@@ -81,6 +81,6 @@ dependencies {
     testImplementation 'androidx.test:core:1.4.0'
 }
 
-apply from: rootProject.file('gradle/jitpack-android.gradle')
+apply from: rootProject.file('gradle/artifacts-android.gradle')
 apply from: rootProject.file('gradle/mvn-publish.gradle')
 apply from: rootProject.file('gradle/codecov.gradle')

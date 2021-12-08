@@ -28,6 +28,6 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter"
 }
 
-apply from: rootProject.file('gradle/jitpack-core.gradle')
+apply from: rootProject.file('gradle/artifacts-core.gradle')
 apply from: rootProject.file('gradle/mvn-publish.gradle')
 apply from: rootProject.file('gradle/codecov.gradle')
