@@ -15,14 +15,12 @@ buildscript {
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
         classpath 'com.google.gms:google-services:4.3.10'
-
-        // For sonatype publishing of android library
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.22.0"
     }
 }
 
 plugins {
     id "io.snyk.gradle.plugin.snykplugin" version "0.4"
+    id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
 }
 
 allprojects {
