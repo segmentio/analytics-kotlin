@@ -1,8 +1,6 @@
 name: Snapshot
 
-on:
-  push:
-    branches: [ main ]
+on: push
 
 jobs:
   snapshot:
