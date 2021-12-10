@@ -3,9 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
 }
 
-group = "com.segment.analytics.sample.kotlin"
-version = "1.0-SNAPSHOT"
-
 repositories {
     mavenCentral()
     maven {
@@ -16,4 +13,9 @@ repositories {
 dependencies {
     implementation project(':core')
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }

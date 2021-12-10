@@ -1,7 +1,7 @@
 # Analytics-Kotlin
 [![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
 [![](https://github.com/segmentio/analytics-kotlin/actions/workflows/build.yml/badge.svg)](https://github.com/segmentio/analytics-kotlin/actions)
-[![codecov](https://codecov.io/gh/segmentio/analytics-kotlin/branch/master/graph/badge.svg)](https://codecov.io/gh/segmentio/analytics-kotlin)
+[![codecov](https://codecov.io/gh/segmentio/analytics-kotlin/branch/main/graph/badge.svg?token=U5FDRBZOXO)](https://codecov.io/gh/segmentio/analytics-kotlin)
 [![Known Vulnerabilities](https://snyk.io/test/github/segmentio/analytics-kotlin/badge.svg)](https://snyk.io/test/github/segmentio/analytics-kotlin)
 [![](https://img.shields.io/github/license/segmentio/analytics-kotlin)](https://github.com/segmentio/analytics-kotlin/blob/main/LICENSE)
 

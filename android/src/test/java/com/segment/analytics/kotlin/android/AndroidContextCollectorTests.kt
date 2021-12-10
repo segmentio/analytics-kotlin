@@ -58,15 +58,15 @@ class AndroidContextCollectorTests {
         with(event.context) {
             assertTrue(this.containsKey("app"))
             this["app"]?.jsonObject?.let {
-                assertEquals("org.robolectric.default", it["name"].asString())
+                assertEquals("com.segment.analytics.test", it["name"].asString())
                 assertEquals("undefined", it["version"].asString())
-                assertEquals("org.robolectric.default", it["namespace"].asString())
+                assertEquals("com.segment.analytics.test", it["namespace"].asString())
                 assertEquals("0", it["build"].asString())
             }
             assertTrue(this.containsKey("device"))
             this["device"]?.jsonObject?.let {
                 assertEquals("unknown", it["id"].asString())
-                assertEquals("unknown", it["manufacturer"].asString())
+                assertEquals("robolectric", it["manufacturer"].asString())
                 assertEquals("robolectric", it["model"].asString())
                 assertEquals("robolectric", it["name"].asString())
                 assertEquals("android", it["type"].asString())
@@ -74,7 +74,7 @@ class AndroidContextCollectorTests {
             assertTrue(this.containsKey("os"))
             this["os"]?.jsonObject?.let {
                 assertEquals("Android", it["name"].asString())
-                assertEquals("4.1.2", it["version"].asString())
+                assertEquals("12", it["version"].asString())
             }
             assertTrue(this.containsKey("screen"))
             this["screen"]?.jsonObject?.let {
