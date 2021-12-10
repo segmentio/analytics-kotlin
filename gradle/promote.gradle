@@ -3,11 +3,33 @@ apply from: rootProject.file('gradle/versioning.gradle')
 group GROUP
 version getVersionName()
 
+if (!hasProperty("signing.keyId")) {
+    ext["signing.keyId"] = System.getenv('SIGNING_KEY_ID')
+    ext["signing.password"] = System.getenv('SIGNING_KEY_PASSWORD')
+
+    def pgpKeyContent = System.getenv('SIGNING_PRIVATE_KEY_BASE64')
+    if (pgpKeyContent != null) {
+        def tmpDir = new File("$rootProject.rootDir/tmp")
+        mkdir tmpDir
+        def keyFile = new File("$tmpDir/key.pgp")
+        keyFile.createNewFile()
+        def os = keyFile.newDataOutputStream()
+        os.write(pgpKeyContent.decodeBase64())
+        os.close()
+
+        ext['signing.secretKeyRingFile'] = keyFile.absolutePath
+    }
+}
+
 nexusPublishing {
     repositories {
-        sonatype {
-            username = NEXUS_USERNAME
-            password = NEXUS_PASSWORD
-        }
+        /*
+            nexus publish plugin by default looking for the following as credential:
+                * sonatypeUsername and sonatypePassword in global gradle property or
+                * ORG_GRADLE_PROJECT_sonatypeUsername and ORG_GRADLE_PROJECT_sonatypePassword
+                  in system environments
+            be sure to set the variable names exactly as above.
+         */
+        sonatype()
     }
 }
