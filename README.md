@@ -1,5 +1,5 @@
 # Analytics-Kotlin
-[![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
+[![maven](https://img.shields.io/maven-central/v/com.segment.analytics.kotlin/android)](https://repo1.maven.org/maven2/com/segment/analytics/kotlin/)
 [![](https://github.com/segmentio/analytics-kotlin/actions/workflows/build.yml/badge.svg)](https://github.com/segmentio/analytics-kotlin/actions)
 [![codecov](https://codecov.io/gh/segmentio/analytics-kotlin/branch/main/graph/badge.svg?token=U5FDRBZOXO)](https://codecov.io/gh/segmentio/analytics-kotlin)
 [![Known Vulnerabilities](https://snyk.io/test/github/segmentio/analytics-kotlin/badge.svg)](https://snyk.io/test/github/segmentio/analytics-kotlin)

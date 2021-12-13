@@ -3,7 +3,7 @@ Releasing
 
 1. Create a new branch called `release/X.Y.Z`
 2. `git checkout -b release/X.Y.Z`
-3. Change the version in `gradle.properties` to your desired release version
+3. Change the version in `gradle.properties` and `core/Consants.kt` to your desired release version
 4. `git commit -am "Create release X.Y.Z."` (where X.Y.Z is the new version)
 5. `git tag -a X.Y.Z -m "Version X.Y.Z"` (where X.Y.Z is the new version)
 6. Upgrade to next version by changing version in `gradle.properties`
@@ -14,7 +14,7 @@ Releasing
 
 Example (stable release)
 ========
-1. Current VERSION_NAME in `gradle.properties` = 1.3.0
+1. Current VERSION_NAME in `gradle.properties` and LIBRARY_VERSION in `core/Consants.kt` is 1.3.0
 2. `git checkout -b release/1.3.1`
 3. Change VERSION_NAME = 1.3.1 (next higher version)
 4. `git commit -am "Create release 1.3.1"`
