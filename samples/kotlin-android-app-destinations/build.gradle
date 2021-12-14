@@ -58,6 +58,8 @@ dependencies {
     implementation 'com.segment.analytics.kotlin.destinations:appsflyer:1.5.1'
     implementation 'com.segment.analytics.kotlin.destinations:firebase:1.5.2'
     implementation 'com.segment.analytics.kotlin.destinations:mixpanel:1.5.2'
+
+    implementation 'com.eclipsesource.j2v8:j2v8:6.2.0@aar'
 }
 
 // Partner Dependencies
