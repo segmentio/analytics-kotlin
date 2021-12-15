@@ -35,6 +35,20 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            useJUnitPlatform()
+        }
+    }
+    sourceSets {
+        androidTest {
+            resources {
+                srcDirs 'src\\androidTest\\assets'
+            }
+        }
+    }
 }
 
 dependencies {
