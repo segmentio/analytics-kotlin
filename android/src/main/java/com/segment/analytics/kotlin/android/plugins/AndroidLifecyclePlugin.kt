@@ -47,16 +47,15 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
-        application = analytics.configuration.application as? Application
-            ?: error("no android application context registered")
-        storage = analytics.storage
+        analytics.configuration.let {
+            application = it.application as? Application
+                ?: error("no android application context registered")
 
-        // setup lifecycle listeners
-        application.registerActivityLifecycleCallbacks(this)
-        if (useLifecycleObserver) {
-            lifecycle = ProcessLifecycleOwner.get().lifecycle
-            lifecycle.addObserver(this)
+            shouldTrackApplicationLifecycleEvents = it.trackApplicationLifecycleEvents
+            trackDeepLinks = it.trackDeepLinks
+            useLifecycleObserver = it.useLifecycleObserver
         }
+        storage = analytics.storage
 
         val packageManager: PackageManager = application.packageManager
         packageInfo = try {
@@ -65,10 +64,11 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
             throw AssertionError("Package not found: " + application.packageName)
         }
 
-        analytics.configuration.let {
-            shouldTrackApplicationLifecycleEvents = it.trackApplicationLifecycleEvents
-            trackDeepLinks = it.trackDeepLinks
-            useLifecycleObserver = it.useLifecycleObserver
+        // setup lifecycle listeners
+        application.registerActivityLifecycleCallbacks(this)
+        if (useLifecycleObserver) {
+            lifecycle = ProcessLifecycleOwner.get().lifecycle
+            lifecycle.addObserver(this)
         }
     }
 
