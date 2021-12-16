@@ -505,16 +505,23 @@ class Analytics internal constructor(
     }
 }
 
-// constructor function to build analytics in dsl format with config options
-// Usage: Analytics("123") {
-//            this.application = "n/a"
-//            this.analyticsScope = MainScope()
-//            this.collectDeviceId = false
-//            this.flushAt = 10
-//        }
+
+/**
+ * constructor function to build analytics in dsl format with config options
+ * Usage: Analytics("123") {
+ *            this.application = "n/a"
+ *            this.collectDeviceId = false
+ *            this.flushAt = 10
+ *        }
+ *
+ * NOTE: this method should only be used for JVM application. for Android, there is
+ * another set of extension functions that requires a context as the second parameter:
+ *      * Analytics(writeKey: String, context: Context)
+ *      * Analytics(writeKey: String, context: Context, configs: Configuration.() -> Unit)
+ */
 fun Analytics(writeKey: String, configs: Configuration.() -> Unit): Analytics {
     if (isAndroid()) {
-        error("Using JVM Analytics initializer in Android platform. Context is required!")
+        error("Using JVM Analytics initializer in Android platform. Context is required in constructor!")
     }
 
     val config = Configuration(writeKey)
