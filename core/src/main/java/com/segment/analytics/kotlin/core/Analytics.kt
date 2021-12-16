@@ -513,7 +513,20 @@ class Analytics internal constructor(
 //            this.flushAt = 10
 //        }
 fun Analytics(writeKey: String, configs: Configuration.() -> Unit): Analytics {
+    if (isAndroid()) {
+        error("Using JVM Analytics initializer in Android platform. Context is required!")
+    }
+
     val config = Configuration(writeKey)
     configs.invoke(config)
     return Analytics(config)
+}
+
+internal fun isAndroid(): Boolean {
+    return try {
+        Class.forName("com.segment.analytics.kotlin.android.AndroidStorage")
+        true
+    } catch (e: ClassNotFoundException) {
+        false
+    }
 }
