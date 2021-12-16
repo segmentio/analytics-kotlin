@@ -11,8 +11,7 @@ import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import java.time.Instant
 import java.util.*
 
@@ -51,6 +50,37 @@ class AnalyticsTests {
         val store = spyStore(testScope, testDispatcher)
         analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
+    }
+
+    @Nested
+    inner class Init {
+        @Test
+        fun `jvm initializer in jvm platform should succeed`() {
+            try {
+                Analytics("123") {
+                    application = "Test"
+                }
+            }
+            catch(e: Exception){
+                fail()
+            }
+        }
+
+        @Test
+        fun `jvm initializer in android platform should failed`() {
+            mockkStatic("com.segment.analytics.kotlin.core.AnalyticsKt")
+            every { isAndroid() } returns true
+
+            try {
+                Analytics("123") {
+                    application = "Test"
+                }
+                fail()
+            }
+            catch(e: Exception){
+                assertEquals(e.message?.contains("Android"), true)
+            }
+        }
     }
 
     @Nested
