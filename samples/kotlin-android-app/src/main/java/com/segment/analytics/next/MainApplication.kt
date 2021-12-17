@@ -24,8 +24,8 @@ class MainApplication : Application() {
             this.collectDeviceId = true
             this.trackApplicationLifecycleEvents = true
             this.trackDeepLinks = true
-            this.flushAt = 1
-            this.flushInterval = 0
+            // this.flushAt = 1
+            // this.flushInterval = 0
         }
         analytics.add(AndroidRecordScreenPlugin())
         analytics.add(object : Plugin {

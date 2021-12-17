@@ -34,7 +34,7 @@ class Analytics internal constructor(
     val configuration: Configuration,
     val store: Store,
     val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob()),
-    val analyticsDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher(),
+    val analyticsDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
     val networkIODispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
     val fileIODispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 ) : Subscriber {
@@ -363,7 +363,9 @@ class Analytics internal constructor(
         }
     }
 
+    var count = 0
     fun process(event: BaseEvent) {
+        log("segment.test: count event start: ${count++}")
         event.applyBaseData()
 
         log("applying base attributes on ${Thread.currentThread().name}")

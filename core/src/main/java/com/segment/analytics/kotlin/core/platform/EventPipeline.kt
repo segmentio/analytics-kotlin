@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.consumeEach
 import java.io.File
 import java.io.FileInputStream
 import java.lang.Exception
+import java.lang.System
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class EventPipeline(
@@ -50,7 +51,17 @@ internal class EventPipeline(
         registerShutdownHook()
     }
 
+    var putCount = 0
     fun put(event: String) {
+        putCount++
+
+        if (putCount == 100000) {
+            analytics.log(
+                "segment.test events consumed when generation finished: $count",
+                type = LogType.WARNING
+            )
+        }
+
         writeChannel.trySend(event)
     }
 
@@ -71,6 +82,7 @@ internal class EventPipeline(
         running = false
     }
 
+    var count = 0
     private fun write() = scope.launch(analytics.fileIODispatcher) {
         for (event in writeChannel) {
             // write to storage
@@ -87,9 +99,23 @@ internal class EventPipeline(
                 eventCount.set(0)
                 uploadChannel.trySend(UPLOAD_SIG)
             }
+
+            count++
+
+            if (count == 100000) {
+                analytics.log(
+                    "segment.test network calls when generation finished: $uploadCount",
+                    type = LogType.WARNING
+                )
+                analytics.log(
+                    "segment.test end time ${System.currentTimeMillis()}",
+                    type = LogType.WARNING
+                )
+            }
         }
     }
 
+    var uploadCount = 0
     private fun upload() = scope.launch(analytics.networkIODispatcher) {
         uploadChannel.consumeEach {
             analytics.log("$logTag performing flush")
@@ -126,6 +152,9 @@ internal class EventPipeline(
                 if (shouldCleanup) {
                     storage.removeFile(file.path)
                 }
+
+                uploadCount++
+
             }
         }
     }
