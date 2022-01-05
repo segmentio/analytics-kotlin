@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'org.jetbrains.kotlinx.benchmark' version '0.3.1'
 }
 
 android {
@@ -46,6 +47,9 @@ android {
         androidTest {
             resources {
                 srcDirs 'src\\androidTest\\assets'
+            }
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.3.1")
             }
         }
     }
