@@ -1,11 +1,19 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.AliasEvent
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
+import com.segment.analytics.kotlin.core.GroupEvent
+import com.segment.analytics.kotlin.core.IdentifyEvent
+import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.Settings
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPipeline
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.putAll
 import kotlinx.serialization.Serializable
@@ -104,11 +112,14 @@ class SegmentDestination : DestinationPlugin() {
         pipeline.flush()
     }
 
-    internal fun <T: BaseEvent> configureCloudDestination(event: T): T {
-        val enabledDestinations = analytics.findAll(DestinationPlugin::class).filter { it.enabled && it !is SegmentDestination }
+    internal fun <T : BaseEvent> configureCloudDestination(event: T): T {
+        // Using this over `findAll` for that teensy performance benefit
+        val enabledDestinations = analytics.timeline.plugins[Plugin.Type.Destination]?.plugins
+            ?.map { it as DestinationPlugin }
+            ?.filter { it.enabled && it !is SegmentDestination }
         val merged = buildJsonObject {
             // Mark all loaded destinations as false
-            enabledDestinations.forEach {
+            enabledDestinations?.forEach {
                 put(it.key, false)
             }
             // apply customer values; the customer is always right!
