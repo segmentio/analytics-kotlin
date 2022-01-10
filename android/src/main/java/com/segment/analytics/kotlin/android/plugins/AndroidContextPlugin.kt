@@ -9,7 +9,6 @@ import android.net.NetworkCapabilities.TRANSPORT_BLUETOOTH
 import android.net.NetworkCapabilities.TRANSPORT_CELLULAR
 import android.net.NetworkCapabilities.TRANSPORT_WIFI
 import android.os.Build
-import android.provider.Settings.Secure
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Storage
@@ -26,6 +25,7 @@ import java.util.UUID
 import java.lang.System as JavaSystem
 import android.media.MediaDrm
 import java.lang.Exception
+import java.security.MessageDigest
 
 
 // Plugin that applies context related changes. Auto-added to system on build
@@ -132,32 +132,15 @@ class AndroidContextPlugin : Plugin {
         }
     }
 
-    @SuppressLint("HardwareIds", "MissingPermission")
     internal fun getDeviceId(collectDeviceId: Boolean, context: Context): String {
         if (!collectDeviceId) {
             return storage.read(Storage.Constants.AnonymousId) ?: ""
         }
-        val androidId = Secure.getString(context.contentResolver, Secure.ANDROID_ID)
-        if (!androidId.isNullOrEmpty() && "unknown" != androidId) {
-            return androidId
-        }
-
-        // Serial number, guaranteed to be on all non phones in 2.3+.
-        val buildNumber = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Build.getSerial()
-        } else {
-            @Suppress("DEPRECATION")
-            Build.SERIAL
-        }
-
-        if (!buildNumber.isNullOrEmpty()) {
-            return buildNumber
-        }
 
         // unique id generated from DRM API
-        val telephonyId = getUniqueID()
-        if (!telephonyId.isNullOrEmpty()) {
-            return telephonyId
+        val uniqueId = getUniqueID()
+        if (!uniqueId.isNullOrEmpty()) {
+            return uniqueId
         }
         // If this still fails, generate random identifier that does not persist across
         // installations
@@ -276,7 +259,9 @@ fun getUniqueID(): String? {
     try {
         wvDrm = MediaDrm(WIDEVINE_UUID)
         val wideVineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
-        return wideVineId.toString()
+        val md = MessageDigest.getInstance("SHA-256")
+        md.update(wideVineId)
+        return  md.digest().toHexString()
     } catch (e: Exception) {
         return null
     } finally {
@@ -287,3 +272,5 @@ fun getUniqueID(): String? {
         }
     }
 }
+
+fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
