@@ -154,6 +154,7 @@ class AndroidContextPlugin : Plugin {
             return buildNumber
         }
 
+        // unique id generated from DRM API
         val telephonyId = getUniqueID()
         if (!telephonyId.isNullOrEmpty()) {
             return telephonyId
@@ -260,9 +261,11 @@ fun hasFeature(context: Context, feature: String): Boolean {
     return context.packageManager.hasSystemFeature(feature)
 }
 
+
 /**
- * Workaround for not able to get device id on Android 10 or above
- * see {@link https://stackoverflow.com/questions/58103580/android-10-imei-no-longer-available-on-api-29-looking-for-alternatives}
+ * Workaround for not able to get device id on Android 10 or above using DRM API
+ * {@see https://stackoverflow.com/questions/58103580/android-10-imei-no-longer-available-on-api-29-looking-for-alternatives}
+ * {@see https://developer.android.com/training/articles/user-data-ids}
  */
 fun getUniqueID(): String? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2)
