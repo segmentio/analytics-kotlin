@@ -20,7 +20,7 @@ class AmplitudeSession : Plugin {
     private val fireTime: Long = 300000
 
     override fun update(settings: Settings, type:Plugin.UpdateType) {
-        active = settings.isDestinationEnabled(key)
+        active = settings.hasIntegrationSettings(key)
     }
 
     // Add the session_id to the Amplitude payload for cloud mode to handle.

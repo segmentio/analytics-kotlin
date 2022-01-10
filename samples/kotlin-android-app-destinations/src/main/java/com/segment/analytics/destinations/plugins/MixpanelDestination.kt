@@ -76,7 +76,7 @@ class MixpanelDestination(
 
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
-        if (settings.isDestinationEnabled(key)) {
+        if (settings.hasIntegrationSettings(this)) {
             analytics.log("Mixpanel Destination is enabled")
             this.settings = settings.destinationSettings(key)
             if (type == Plugin.UpdateType.Initial) {

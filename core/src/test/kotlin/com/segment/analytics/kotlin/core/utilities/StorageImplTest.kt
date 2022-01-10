@@ -38,9 +38,9 @@ internal class StorageImplTest {
         store.provide(
             System(
                 configuration = Configuration("123"),
-                integrations = emptyJsonObject,
                 settings = Settings(),
-                false
+                running = false,
+                initialSettingsDispatched = false
             )
         )
 
@@ -80,7 +80,6 @@ internal class StorageImplTest {
             override fun reduce(state: System): System {
                 return System(
                     configuration = state.configuration,
-                    integrations = state.integrations,
                     settings = Settings(
                         integrations = buildJsonObject {
                             put(
@@ -95,7 +94,8 @@ internal class StorageImplTest {
                         plan = emptyJsonObject,
                         edgeFunction = emptyJsonObject
                     ),
-                    false
+                    running = false,
+                    initialSettingsDispatched = false
                 )
             }
         }

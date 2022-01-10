@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.compat
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
@@ -18,6 +19,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.time.Instant
+import java.util.Date
+import java.util.UUID
 import java.util.function.Consumer
 
 internal class JavaAnalyticsTest {
@@ -27,11 +31,26 @@ internal class JavaAnalyticsTest {
     private val testDispatcher = TestCoroutineDispatcher()
     private val testScope = TestCoroutineScope(testDispatcher)
 
+    private val epochTimestamp = Date(0).toInstant().toString()
+    private val baseContext = buildJsonObject {
+        val lib = buildJsonObject {
+            put(ContextPlugin.LIBRARY_NAME_KEY, "analytics-kotlin")
+            put(ContextPlugin.LIBRARY_VERSION_KEY, Constants.LIBRARY_VERSION)
+        }
+        put(ContextPlugin.LIBRARY_KEY, lib)
+    }
+
+    init {
+        mockkStatic(Instant::class)
+        every { Instant.now() } returns Date(0).toInstant()
+        mockkStatic(UUID::class)
+        every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
+        mockHTTPClient()
+    }
+
     @BeforeEach
     fun setup() {
-        mockHTTPClient()
-
-        val config = ConfigurationBuilder("123")
+        val config = ConfigurationBuilder("java-123")
             .setApplication("Test")
             .setAutoAddSegmentDestination(false)
             .build()
@@ -77,7 +96,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.track(capture(track)) }
             assertEquals(
-                TrackEvent(emptyJsonObject, event),
+                TrackEvent(emptyJsonObject, event).populate(),
                 track.captured
             )
         }
@@ -89,7 +108,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.track(capture(track)) }
             assertEquals(
-                TrackEvent(json, event),
+                TrackEvent(json, event).populate(),
                 track.captured
             )
         }
@@ -101,66 +120,8 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.track(capture(track)) }
             assertEquals(
-                TrackEvent(json, event),
+                TrackEvent(json, event).populate(),
                 track.captured
-            )
-        }
-    }
-
-    @Nested
-    inner class Identify {
-
-        private val userId = "foobar"
-
-        private val json = buildJsonObject { put("name", "bar") }
-
-        private lateinit var identify: CapturingSlot<IdentifyEvent>
-
-        private val serializable = object : JsonSerializable {
-            override fun serialize(): JsonObject {
-                return json
-            }
-        }
-
-        @BeforeEach
-        internal fun setUp() {
-            identify = slot()
-        }
-
-        @Test
-        fun `identify with userId`() {
-            analytics.add(mockPlugin)
-            analytics.identify(userId)
-
-            verify { mockPlugin.identify(capture(identify)) }
-            assertEquals(
-                IdentifyEvent(userId, emptyJsonObject),
-                identify.captured
-            )
-        }
-
-        @Test
-        fun `identify with userId and json`() {
-            analytics.add(mockPlugin)
-            analytics.identify(userId, json)
-
-            val identify = slot<IdentifyEvent>()
-            verify { mockPlugin.identify(capture(identify)) }
-            assertEquals(
-                IdentifyEvent(userId, json),
-                identify.captured
-            )
-        }
-
-        @Test
-        fun `identify with userId and serializable`() {
-            analytics.add(mockPlugin)
-            analytics.identify(userId, serializable)
-
-            verify { mockPlugin.identify(capture(identify)) }
-            assertEquals(
-                IdentifyEvent(userId, json),
-                identify.captured
             )
         }
     }
@@ -194,7 +155,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.screen(capture(screen)) }
             assertEquals(
-                ScreenEvent(title, category, emptyJsonObject),
+                ScreenEvent(title, category, emptyJsonObject).populate(),
                 screen.captured
             )
         }
@@ -206,7 +167,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.screen(capture(screen)) }
             assertEquals(
-                ScreenEvent(title, category, json),
+                ScreenEvent(title, category, json).populate(),
                 screen.captured
             )
         }
@@ -218,7 +179,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.screen(capture(screen)) }
             assertEquals(
-                ScreenEvent(title, category, json),
+                ScreenEvent(title, category, json).populate(),
                 screen.captured
             )
         }
@@ -251,7 +212,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.group(capture(group)) }
             assertEquals(
-                GroupEvent(groupId, emptyJsonObject),
+                GroupEvent(groupId, emptyJsonObject).populate(),
                 group.captured
             )
         }
@@ -263,7 +224,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.group(capture(group)) }
             assertEquals(
-                GroupEvent(groupId, json),
+                GroupEvent(groupId, json).populate(),
                 group.captured
             )
         }
@@ -275,7 +236,7 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.group(capture(group)) }
             assertEquals(
-                GroupEvent(groupId, json),
+                GroupEvent(groupId, json).populate(),
                 group.captured
             )
         }
@@ -294,6 +255,7 @@ internal class JavaAnalyticsTest {
         internal fun setUp() {
             alias = slot()
         }
+
         @Test
         fun alias() {
             analytics.add(mockPlugin)
@@ -302,11 +264,78 @@ internal class JavaAnalyticsTest {
 
             verify { mockPlugin.alias(capture(alias)) }
             assertEquals(
-                AliasEvent(newId, previousId),
+                AliasEvent(newId, previousId).populate().apply {
+                    userId = "newId"
+                },
                 alias.captured
             )
         }
     }
+
+    @Nested
+    inner class Identify {
+
+        private val userId = "foobar"
+
+        private val json = buildJsonObject { put("name", "bar") }
+
+        private lateinit var identify: CapturingSlot<IdentifyEvent>
+
+        private val serializable = object : JsonSerializable {
+            override fun serialize(): JsonObject {
+                return json
+            }
+        }
+
+        @BeforeEach
+        internal fun setUp() {
+            identify = slot()
+        }
+
+        @Test
+        fun `identify with userId`() {
+            analytics.add(mockPlugin)
+            analytics.identify(userId)
+
+            verify { mockPlugin.identify(capture(identify)) }
+            assertEquals(
+                IdentifyEvent(userId, emptyJsonObject).populate().apply {
+                    userId = this@Identify.userId
+                },
+                identify.captured
+            )
+        }
+
+        @Test
+        fun `identify with userId and json`() {
+            analytics.add(mockPlugin)
+            analytics.identify(userId, json)
+
+            val identify = slot<IdentifyEvent>()
+            verify { mockPlugin.identify(capture(identify)) }
+            assertEquals(
+                IdentifyEvent(userId, json).populate().apply {
+                    userId = this@Identify.userId
+                },
+                identify.captured
+            )
+        }
+
+        @Test
+        fun `identify with userId and serializable`() {
+            analytics.add(mockPlugin)
+            analytics.identify(userId, serializable)
+
+            verify { mockPlugin.identify(capture(identify)) }
+            assertEquals(
+                IdentifyEvent(userId, json).populate().apply {
+                    userId = this@Identify.userId
+                },
+                identify.captured
+            )
+        }
+    }
+
 
     @Nested
     inner class PluginTests {
@@ -374,7 +403,7 @@ internal class JavaAnalyticsTest {
     @Nested
     inner class Reset {
         @Test
-        fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking  {
+        fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking {
             val plugin = spyk(StubPlugin())
             analytics.add(plugin)
 
@@ -419,9 +448,32 @@ internal class JavaAnalyticsTest {
     }
 
     @Test
-    fun traits() = runBlocking  {
+    fun traits() = runBlocking {
         val json = buildJsonObject { put("name", "bar") }
         analytics.identify("userId", json)
         assertEquals(json, analytics.traits())
+    }
+
+    @Test
+    fun settings() = runBlocking {
+        val settings = Settings(
+            integrations = buildJsonObject {
+                put("int1", true)
+                put("int2", false)
+            },
+            plan = emptyJsonObject,
+            edgeFunction = emptyJsonObject
+        )
+        analytics.store.dispatch(System.UpdateSettingsAction(settings), System::class)
+        assertEquals(settings, analytics.settings())
+    }
+
+    private fun BaseEvent.populate() = apply {
+        anonymousId = "qwerty-qwerty-123"
+        messageId = "qwerty-qwerty-123"
+        timestamp = epochTimestamp
+        context = baseContext
+        integrations = emptyJsonObject
+        userId = "userId"
     }
 }

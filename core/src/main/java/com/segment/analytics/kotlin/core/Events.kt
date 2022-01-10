@@ -90,16 +90,69 @@ sealed class BaseEvent {
     }
 
     internal suspend fun applyBaseEventData(store: Store) {
-        val system = store.currentState(System::class) ?: return
         val userInfo = store.currentState(UserInfo::class) ?: return
 
         this.anonymousId = userInfo.anonymousId
-        this.integrations = system.integrations ?: emptyJsonObject
+        this.integrations = emptyJsonObject
 
         if (this.userId.isBlank()) {
             // attach system userId if present
             this.userId = userInfo.userId ?: ""
         }
+    }
+
+    // Create a shallow copy of this event payload
+    fun <T : BaseEvent> copy(): T {
+        val original = this
+        val copy = when (this) {
+            is AliasEvent -> AliasEvent(userId = this.userId, previousId = this.previousId)
+            is GroupEvent -> GroupEvent(groupId = this.groupId, traits = this.traits)
+            is IdentifyEvent -> IdentifyEvent(userId = this.userId, traits = this.traits)
+            is ScreenEvent -> ScreenEvent(
+                name = this.name,
+                category = this.category,
+                properties = this.properties
+            )
+            is TrackEvent -> TrackEvent(event = this.event, properties = this.properties)
+        }.apply {
+//            type = original.type
+            anonymousId = original.anonymousId
+            messageId = original.messageId
+            timestamp = original.timestamp
+            context = original.context
+            integrations = original.integrations
+            userId = original.userId
+        }
+        @Suppress("UNCHECKED_CAST")
+        return copy as T // This is ok because resultant type will be same as input type
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as BaseEvent
+
+        if (type != other.type) return false
+        if (anonymousId != other.anonymousId) return false
+        if (messageId != other.messageId) return false
+        if (timestamp != other.timestamp) return false
+        if (context != other.context) return false
+        if (integrations != other.integrations) return false
+        if (userId != other.userId) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = type.hashCode()
+        result = 31 * result + anonymousId.hashCode()
+        result = 31 * result + messageId.hashCode()
+        result = 31 * result + timestamp.hashCode()
+        result = 31 * result + context.hashCode()
+        result = 31 * result + integrations.hashCode()
+        result = 31 * result + userId.hashCode()
+        return result
     }
 }
 
@@ -117,6 +170,27 @@ data class TrackEvent(
     override var userId: String = ""
 
     override lateinit var timestamp: String
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as TrackEvent
+
+        if (properties != other.properties) return false
+        if (event != other.event) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + properties.hashCode()
+        result = 31 * result + event.hashCode()
+        return result
+    }
+
 }
 
 @Serializable
@@ -132,6 +206,24 @@ data class IdentifyEvent(
     override lateinit var context: AnalyticsContext
 
     override lateinit var timestamp: String
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as IdentifyEvent
+
+        if (traits != other.traits) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + traits.hashCode()
+        return result
+    }
 }
 
 @Serializable
@@ -148,6 +240,25 @@ data class GroupEvent(
     override var userId: String = ""
 
     override lateinit var timestamp: String
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as GroupEvent
+
+        if (groupId != other.groupId) return false
+        if (traits != other.traits) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + groupId.hashCode()
+        result = 31 * result + traits.hashCode()
+        return result
+    }
 }
 
 @Serializable
@@ -163,6 +274,24 @@ data class AliasEvent(
     override lateinit var context: AnalyticsContext
 
     override lateinit var timestamp: String
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as AliasEvent
+
+        if (previousId != other.previousId) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + previousId.hashCode()
+        return result
+    }
 }
 
 @Serializable
@@ -180,4 +309,26 @@ data class ScreenEvent(
     override var userId: String = ""
 
     override lateinit var timestamp: String
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as ScreenEvent
+
+        if (name != other.name) return false
+        if (category != other.category) return false
+        if (properties != other.properties) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + category.hashCode()
+        result = 31 * result + properties.hashCode()
+        return result
+    }
 }
