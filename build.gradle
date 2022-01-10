@@ -37,7 +37,7 @@ allprojects {
         }
     }
     group GROUP
-    version VERSION_NAME
+    version getVersionName()
 }
 
 snyk {
@@ -49,6 +49,10 @@ snyk {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+def getVersionName() { // If not release build add SNAPSHOT suffix
+    return hasProperty('release') ? VERSION_NAME : VERSION_NAME+"-SNAPSHOT"
 }
 
 apply from: rootProject.file('gradle/promote.gradle')
