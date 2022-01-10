@@ -25,6 +25,9 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
 import java.lang.System as JavaSystem
+import android.media.MediaDrm
+import java.lang.Exception
+
 
 // Plugin that applies context related changes. Auto-added to system on build
 class AndroidContextPlugin : Plugin {
@@ -161,11 +164,7 @@ class AndroidContextPlugin : Plugin {
                     context,
                     Context.TELEPHONY_SERVICE
                 )
-            val telephonyId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                telephonyManager.imei
-            } else @Suppress("DEPRECATION") {
-                telephonyManager.deviceId
-            }
+            val telephonyId = getUniqueID()
             if (!telephonyId.isNullOrEmpty()) {
                 return telephonyId
             }
@@ -270,4 +269,29 @@ fun hasPermission(context: Context, permission: String): Boolean {
 /** Returns true if the application has the given feature.  */
 fun hasFeature(context: Context, feature: String): Boolean {
     return context.packageManager.hasSystemFeature(feature)
+}
+
+/**
+ * Workaround for not able to get device id on Android 10 or above
+ * see {@link https://stackoverflow.com/questions/58103580/android-10-imei-no-longer-available-on-api-29-looking-for-alternatives}
+ */
+fun getUniqueID(): String? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2)
+        return null
+
+    val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+    var wvDrm: MediaDrm? = null
+    try {
+        wvDrm = MediaDrm(WIDEVINE_UUID)
+        val wideVineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
+        return wideVineId.toString()
+    } catch (e: Exception) {
+        return null
+    } finally {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            wvDrm?.close()
+        } else {
+            wvDrm?.release()
+        }
+    }
 }
