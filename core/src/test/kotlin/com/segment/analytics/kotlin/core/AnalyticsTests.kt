@@ -2,18 +2,31 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
-import com.segment.analytics.kotlin.core.utils.*
-import io.mockk.*
+import com.segment.analytics.kotlin.core.utils.StubPlugin
+import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
+import com.segment.analytics.kotlin.core.utils.spyStore
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.time.Instant
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnalyticsTests {
@@ -351,6 +364,20 @@ class AnalyticsTests {
                 assertTrue(plugins.contains(child))
             }
         }
+    }
+
+    @Test
+    fun `settings fetches current Analytics Settings`() = runBlocking {
+        val settings = Settings(
+            integrations = buildJsonObject {
+                put("int1", true)
+                put("int2", false)
+            },
+            plan = emptyJsonObject,
+            edgeFunction = emptyJsonObject
+        )
+        analytics.store.dispatch(System.UpdateSettingsAction(settings), System::class)
+        assertEquals(settings, analytics.settings())
     }
 
     private fun BaseEvent.populate() = apply {

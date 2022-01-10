@@ -454,6 +454,20 @@ internal class JavaAnalyticsTest {
         assertEquals(json, analytics.traits())
     }
 
+    @Test
+    fun settings() = runBlocking {
+        val settings = Settings(
+            integrations = buildJsonObject {
+                put("int1", true)
+                put("int2", false)
+            },
+            plan = emptyJsonObject,
+            edgeFunction = emptyJsonObject
+        )
+        analytics.store.dispatch(System.UpdateSettingsAction(settings), System::class)
+        assertEquals(settings, analytics.settings())
+    }
+
     private fun BaseEvent.populate() = apply {
         anonymousId = "qwerty-qwerty-123"
         messageId = "qwerty-qwerty-123"
