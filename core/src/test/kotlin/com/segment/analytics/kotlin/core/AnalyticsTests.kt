@@ -1,20 +1,32 @@
 package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
-import com.segment.analytics.kotlin.core.utils.*
-import io.mockk.*
+import com.segment.analytics.kotlin.core.utils.StubPlugin
+import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
+import com.segment.analytics.kotlin.core.utils.spyStore
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.time.Instant
-import java.util.*
+import java.util.Date
+import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnalyticsTests {
@@ -24,7 +36,7 @@ class AnalyticsTests {
     private val testScope = TestCoroutineScope(testDispatcher)
 
     private val epochTimestamp = Date(0).toInstant().toString()
-    private val context = buildJsonObject {
+    private val baseContext = buildJsonObject {
         val lib = buildJsonObject {
             put(ContextPlugin.LIBRARY_NAME_KEY, "analytics-kotlin")
             put(ContextPlugin.LIBRARY_VERSION_KEY, Constants.LIBRARY_VERSION)
@@ -98,40 +110,6 @@ class AnalyticsTests {
             assertTrue(testPlugin1.ran)
             assertTrue(testPlugin2.ran)
         }
-
-        @Test
-        fun `adding destination plugin modifies integrations object`() = runBlocking  {
-            val testPlugin1 = object : DestinationPlugin() {
-                override val key: String = "TestDestination"
-            }
-            analytics
-                .add(testPlugin1)
-
-            val system = analytics.store.currentState(System::class)
-            val curIntegrations = system?.integrations
-            assertEquals(
-                buildJsonObject {
-                    put("TestDestination", false)
-                },
-                curIntegrations
-            )
-        }
-
-        @Test
-        fun `removing destination plugin modifies integrations object`() = runBlocking  {
-            val testPlugin1 = object : DestinationPlugin() {
-                override val key: String = "TestDestination"
-            }
-            analytics.add(testPlugin1)
-            analytics.remove(testPlugin1)
-
-            val system = analytics.store.currentState(System::class)
-            val curIntegrations = system?.integrations
-            assertEquals(
-                emptyJsonObject,
-                curIntegrations
-            )
-        }
     }
 
     @Nested
@@ -147,7 +125,7 @@ class AnalyticsTests {
                 assertTrue(it.anonymousId.isNotBlank())
                 assertTrue(it.messageId.isNotBlank())
                 assertEquals(epochTimestamp, it.timestamp)
-                assertEquals(context, it.context)
+                assertEquals(baseContext, it.context)
                 assertEquals(emptyJsonObject, it.integrations)
             }
         }
@@ -164,24 +142,7 @@ class AnalyticsTests {
                 assertTrue(it.messageId.isNotBlank())
                 assertTrue(it.timestamp == epochTimestamp)
                 assertEquals(emptyJsonObject, it.integrations)
-                assertEquals(context, it.context)
-            }
-        }
-
-        @Test
-        fun `event gets populated with correct integrations`() = runBlocking  {
-            val mockPlugin = spyk(StubPlugin())
-            analytics.add(mockPlugin)
-            analytics.store.dispatch(System.AddIntegrationAction("plugin1"), System::class)
-            analytics.track("track", buildJsonObject { put("foo", "bar") })
-            val track = slot<TrackEvent>()
-            verify { mockPlugin.track(capture(track)) }
-            track.captured.let {
-                assertTrue(it.anonymousId.isNotBlank())
-                assertTrue(it.messageId.isNotBlank())
-                assertTrue(it.timestamp == epochTimestamp)
-                assertEquals(it.context, context)
-                assertEquals(buildJsonObject { put("plugin1", false) }, it.integrations)
+                assertEquals(baseContext, it.context)
             }
         }
 
@@ -198,7 +159,7 @@ class AnalyticsTests {
                     TrackEvent(
                         properties = buildJsonObject { put("foo", "bar") },
                         event = "track"
-                    ),
+                    ).populate(),
                     track.captured
                 )
             }
@@ -218,7 +179,7 @@ class AnalyticsTests {
                     IdentifyEvent(
                         traits = buildJsonObject { put("name", "bar") },
                         userId = "foobar"
-                    ),
+                    ).populate(),
                     identify.captured
                 )
             }
@@ -270,7 +231,7 @@ class AnalyticsTests {
                         properties = buildJsonObject { put("foo", "bar") },
                         name = "main",
                         category = "mobile"
-                    ),
+                    ).populate(),
                     screen.captured
                 )
             }
@@ -289,7 +250,7 @@ class AnalyticsTests {
                     GroupEvent(
                         traits = buildJsonObject { put("foo", "bar") },
                         groupId = "high school"
-                    ),
+                    ).populate(),
                     group.captured
                 )
             }
@@ -309,7 +270,7 @@ class AnalyticsTests {
                     AliasEvent(
                         userId = "newId",
                         previousId = "qwerty-qwerty-123"
-                    ),
+                    ).populate(),
                     alias.captured
                 )
             }
@@ -326,7 +287,7 @@ class AnalyticsTests {
                     AliasEvent(
                         userId = "newId",
                         previousId = "oldId"
-                    ),
+                    ).populate(),
                     alias.captured
                 )
             }
@@ -403,5 +364,27 @@ class AnalyticsTests {
                 assertTrue(plugins.contains(child))
             }
         }
+    }
+
+    @Test
+    fun `settings fetches current Analytics Settings`() = runBlocking {
+        val settings = Settings(
+            integrations = buildJsonObject {
+                put("int1", true)
+                put("int2", false)
+            },
+            plan = emptyJsonObject,
+            edgeFunction = emptyJsonObject
+        )
+        analytics.store.dispatch(System.UpdateSettingsAction(settings), System::class)
+        assertEquals(settings, analytics.settings())
+    }
+
+    private fun BaseEvent.populate() = apply {
+        anonymousId = "qwerty-qwerty-123"
+        messageId = "qwerty-qwerty-123"
+        timestamp = epochTimestamp
+        context = baseContext
+        integrations = emptyJsonObject
     }
 }

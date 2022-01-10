@@ -1,8 +1,11 @@
 package com.segment.analytics.kotlin.core.platform
 
-import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.utils.mockAnalytics
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utilities.putInContext
+import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.serialization.json.buildJsonObject
@@ -11,7 +14,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.util.*
+import java.util.Date
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DestinationPluginTests {
@@ -77,8 +80,13 @@ class DestinationPluginTests {
 
     @Test
     fun `execute runs the destination timeline`() {
-        val destinationPlugin = spyk(object: DestinationPlugin() {
+        val destinationPlugin = spyk(object : DestinationPlugin() {
             override val key: String = "TestDestination"
+
+            init {
+                enabled = true
+            }
+
             override fun track(payload: TrackEvent): BaseEvent? {
                 return payload.putInContext("processedDestination", true)
             }

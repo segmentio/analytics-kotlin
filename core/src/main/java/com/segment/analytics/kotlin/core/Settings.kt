@@ -2,9 +2,12 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
@@ -22,28 +25,49 @@ data class Settings(
 ) {
     inline fun <reified T : Any> destinationSettings(
         name: String,
-        strategy: DeserializationStrategy<T> = Json.serializersModule.serializer()
+        strategy: DeserializationStrategy<T> = Json.serializersModule.serializer(),
     ): T? {
         val integrationData = integrations[name]?.safeJsonObject ?: return null
         val typedSettings = LenientJson.decodeFromJsonElement(strategy, integrationData)
         return typedSettings
     }
 
-    fun isDestinationEnabled(name: String): Boolean {
-        return integrations.containsKey(name)
+    fun hasIntegrationSettings(plugin: DestinationPlugin): Boolean {
+        return hasIntegrationSettings(plugin.key)
+    }
+
+    fun hasIntegrationSettings(key: String): Boolean {
+        return integrations.containsKey(key)
     }
 }
 
 internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
     timeline.applyClosure { plugin ->
         if (plugin is DestinationPlugin) {
-            plugin.enabled = settings.isDestinationEnabled(plugin.key)
+            plugin.enabled = settings.hasIntegrationSettings(plugin)
         }
         // tell all top level plugins to update.
         // For destination plugins they auto-handle propagation to sub-plugins
         plugin.update(settings, type)
     }
 }
+
+/**
+ * Manually enable a destination plugin.  This is useful when a given DestinationPlugin doesn't have any Segment tie-ins at all.
+ * This will allow the destination to be processed in the same way within this library.
+ */
+fun Analytics.manuallyEnableDestination(plugin: DestinationPlugin) {
+    analyticsScope.launch(analyticsDispatcher) {
+        store.dispatch(
+            System.AddDestinationToSettingsAction(destinationKey = plugin.key),
+            System::class
+        )
+        // Differs from swift, bcos kotlin can store `enabled` state. ref: https://git.io/J1bhJ
+        // finding it in timeline rather than using the ref that is provided to cover our bases
+        find(plugin::class)?.enabled = true
+    }
+}
+
 
 /**
  * Make analytics client call into Segment's settings API, to refresh certain configurations.
@@ -53,12 +77,13 @@ suspend fun Analytics.checkSettings() {
     val cdnHost = configuration.cdnHost
 
     // check current system state to determine whether it's initial or refresh
-    val systemState = store.currentState(System::class)
-    val hasSettings = systemState?.settings?.integrations != null &&
-            systemState.settings?.plan != null
-    val updateType = if (hasSettings) Plugin.UpdateType.Refresh else Plugin.UpdateType.Initial
+    val systemState = store.currentState(System::class) ?: return
+    val updateType = if (systemState.initialSettingsDispatched) {
+        Plugin.UpdateType.Refresh
+    } else {
+        Plugin.UpdateType.Initial
+    }
 
-    // stop things; queue in case our settings have changed.
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
 
     withContext(networkIODispatcher) {
@@ -67,10 +92,13 @@ suspend fun Analytics.checkSettings() {
             val connection = HTTPClient(writeKey).settings(cdnHost)
             val settingsString =
                 connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-            log( "Fetched Settings: $settingsString")
+            log("Fetched Settings: $settingsString")
             LenientJson.decodeFromString(settingsString)
         } catch (ex: Exception) {
-            Analytics.segmentLog("${ex.message}: failed to fetch settings", kind = LogFilterKind.ERROR)
+            Analytics.segmentLog(
+                "${ex.message}: failed to fetch settings",
+                kind = LogFilterKind.ERROR
+            )
             null
         }
 
@@ -79,6 +107,7 @@ suspend fun Analytics.checkSettings() {
                 log("Dispatching update settings on ${Thread.currentThread().name}")
                 store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
                 update(settingsObj, updateType)
+                store.dispatch(System.ToggleSettingsDispatch(dispatched = true), System::class)
             }
 
             // we're good to go back to a running state.

@@ -1,8 +1,13 @@
 package com.segment.analytics.kotlin.core.compat
 
-import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.Properties
+import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.Traits
+import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.Plugin
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
@@ -233,6 +238,11 @@ class JavaAnalytics private constructor() {
      * Retrieve the traits registered by a previous `identify` call
      */
     fun traits() = analytics.traits()
+
+    /**
+     * Retrieve the settings  in a blocking way.
+     */
+    fun settings() = analytics.settings()
 
     private fun setup(analytics: Analytics) {
         store = analytics.store
