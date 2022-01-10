@@ -10,7 +10,6 @@ import android.net.NetworkCapabilities.TRANSPORT_CELLULAR
 import android.net.NetworkCapabilities.TRANSPORT_WIFI
 import android.os.Build
 import android.provider.Settings.Secure
-import android.telephony.TelephonyManager
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Storage
@@ -155,19 +154,9 @@ class AndroidContextPlugin : Plugin {
             return buildNumber
         }
 
-        // Telephony ID, guaranteed to be on all phones, requires READ_PHONE_STATE permission
-        if (hasPermission(context, permission.READ_PHONE_STATE)
-            && hasFeature(context, PackageManager.FEATURE_TELEPHONY)
-        ) {
-            val telephonyManager =
-                getSystemService<TelephonyManager>(
-                    context,
-                    Context.TELEPHONY_SERVICE
-                )
-            val telephonyId = getUniqueID()
-            if (!telephonyId.isNullOrEmpty()) {
-                return telephonyId
-            }
+        val telephonyId = getUniqueID()
+        if (!telephonyId.isNullOrEmpty()) {
+            return telephonyId
         }
         // If this still fails, generate random identifier that does not persist across
         // installations
