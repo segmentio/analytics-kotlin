@@ -316,7 +316,7 @@ class AndroidLifecyclePluginTests {
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
 
-        verify (timeout = 2000){  mockPlugin.updateState(true) }
+        verify (timeout = 4000){  mockPlugin.updateState(true) }
         val track = slot<TrackEvent>()
         verify { mockPlugin.track(capture(track)) }
         with(track.captured) {

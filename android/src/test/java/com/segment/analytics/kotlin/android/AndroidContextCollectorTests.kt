@@ -10,6 +10,7 @@ import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
@@ -104,6 +105,7 @@ class AndroidContextCollectorTests {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
+        delay(500)
         val deviceId = contextCollector.getDeviceId(false)
         assertEquals(deviceId, "anonId")
     }
