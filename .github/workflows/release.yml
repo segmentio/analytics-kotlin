@@ -46,9 +46,9 @@ jobs:
         run: |
           curl \
              -X POST \
-             -H "Authorization: token $GITHUB_TOKEN" \
+             -H "Authorization: token $RELEASE_TOKEN" \
                 https://api.github.com/repos/${{github.repository}}/releases \
              -d '{"tag_name": "${{ env.RELEASE_VERSION }}", "name": "${{ env.RELEASE_VERSION }}", "body": "Release of version ${{ env.RELEASE_VERSION }}", "draft": false, "prerelease": false, "generate_release_notes": true}'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
