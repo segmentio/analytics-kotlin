@@ -7,6 +7,9 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.getUniqueID
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
@@ -105,8 +108,8 @@ class AndroidContextCollectorTests {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
-        delay(500)
         val deviceId = contextCollector.getDeviceId(false)
+        Analytics.segmentLog(deviceId, LogFilterKind.DEBUG)
         assertEquals(deviceId, "anonId")
     }
 
