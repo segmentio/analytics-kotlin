@@ -56,6 +56,8 @@ class AnalyticsTests {
     inner class Init {
         @Test
         fun `jvm initializer in jvm platform should succeed`() {
+            mockkStatic("com.segment.analytics.kotlin.core.AnalyticsKt")
+            every { isAndroid() } returns false
             try {
                 Analytics("123") {
                     application = "Test"
