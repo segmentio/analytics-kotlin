@@ -8,8 +8,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  core-test:
+  cancel_previous:
 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          workflow_id: ${{ github.event.workflow.id }}
+
+  core-test:
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -33,7 +41,7 @@ jobs:
       uses: codecov/codecov-action@v2
 
   android-test:
-
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -57,7 +65,7 @@ jobs:
         uses: codecov/codecov-action@v2
 
   destination-test:
-
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
@@ -81,7 +89,7 @@ jobs:
         uses: codecov/codecov-action@v2
 
   security:
-
+    needs: cancel_previous
     runs-on: ubuntu-latest
 
     steps:
