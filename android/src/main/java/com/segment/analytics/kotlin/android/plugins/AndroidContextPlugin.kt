@@ -124,7 +124,7 @@ class AndroidContextPlugin : Plugin {
         }
 
         device = buildJsonObject {
-            put(DEVICE_ID_KEY, getDeviceId(collectDeviceId, context))
+            put(DEVICE_ID_KEY, getDeviceId(collectDeviceId))
             put(DEVICE_MANUFACTURER_KEY, Build.MANUFACTURER)
             put(DEVICE_MODEL_KEY, Build.MODEL)
             put(DEVICE_NAME_KEY, Build.DEVICE)
@@ -132,7 +132,7 @@ class AndroidContextPlugin : Plugin {
         }
     }
 
-    internal fun getDeviceId(collectDeviceId: Boolean, context: Context): String {
+    internal fun getDeviceId(collectDeviceId: Boolean): String {
         if (!collectDeviceId) {
             return storage.read(Storage.Constants.AnonymousId) ?: ""
         }

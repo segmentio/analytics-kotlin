@@ -100,7 +100,7 @@ class AndroidContextCollectorTests {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
-        val deviceId = contextCollector.getDeviceId(false, appContext)
+        val deviceId = contextCollector.getDeviceId(false)
         assertEquals(deviceId, "anonId")
     }
 
