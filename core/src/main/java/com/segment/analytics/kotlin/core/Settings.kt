@@ -2,7 +2,9 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.launch
@@ -23,7 +25,7 @@ data class Settings(
 ) {
     inline fun <reified T : Any> destinationSettings(
         name: String,
-        strategy: DeserializationStrategy<T> = Json.serializersModule.serializer()
+        strategy: DeserializationStrategy<T> = Json.serializersModule.serializer(),
     ): T? {
         val integrationData = integrations[name]?.safeJsonObject ?: return null
         val typedSettings = LenientJson.decodeFromJsonElement(strategy, integrationData)
@@ -50,18 +52,19 @@ internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
     }
 }
 
+/**
+ * Manually enable a destination plugin.  This is useful when a given DestinationPlugin doesn't have any Segment tie-ins at all.
+ * This will allow the destination to be processed in the same way within this library.
+ */
 fun Analytics.manuallyEnableDestination(plugin: DestinationPlugin) {
     analyticsScope.launch(analyticsDispatcher) {
         store.dispatch(
             System.AddDestinationToSettingsAction(destinationKey = plugin.key),
             System::class
         )
-        val system = store.currentState(System::class)
-        system?.settings?.let { settings ->
-            findAll(DestinationPlugin::class).forEach {
-                plugin.enabled = settings.hasIntegrationSettings(it.key)
-            }
-        }
+        // Differs from swift, bcos kotlin can store `enabled` state. ref: https://git.io/J1bhJ
+        // finding it in timeline rather than using the ref that is provided to cover our bases
+        find(plugin::class)?.enabled = true
     }
 }
 

@@ -1,11 +1,12 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.spyStore
-import io.mockk.*
-import kotlinx.coroutines.delay
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -18,8 +19,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.net.HttpURLConnection
+import java.util.concurrent.atomic.AtomicInteger
 
 class SettingsTests {
 
@@ -124,7 +124,7 @@ class SettingsTests {
     data class FooConfig(
         var configA: Boolean,
         var configB: Int,
-        var configC: String
+        var configC: String,
     )
 
     @Test
@@ -146,5 +146,38 @@ class SettingsTests {
             assertEquals(10, configB)
             assertEquals("something", configC)
         }
+    }
+
+    @Test
+    fun `can manually enable destinations`() = runBlocking {
+        val settings = Settings(
+            integrations = buildJsonObject {
+                put("Foo", buildJsonObject {
+                    put("configA", true)
+                    put("configB", 10)
+                    put("configC", "something")
+                })
+            }
+        )
+
+        val eventCounter = AtomicInteger(0)
+        val barDestination = object : DestinationPlugin() {
+            override val key: String = "Bar"
+
+            override fun track(payload: TrackEvent): BaseEvent? {
+                eventCounter.incrementAndGet()
+                return super.track(payload)
+            }
+        }
+
+        analytics.add(barDestination)
+        analytics.update(settings, Plugin.UpdateType.Initial)
+
+        analytics.track("track", buildJsonObject { put("direct", true) })
+        assertEquals(0, eventCounter.get())
+
+        analytics.manuallyEnableDestination(barDestination)
+        analytics.track("track", buildJsonObject { put("direct", true) })
+        assertEquals(1, eventCounter.get())
     }
 }
