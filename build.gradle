@@ -27,13 +27,17 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
         maven { url "https://kotlin.bintray.com/kotlinx" }
         maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     }
-
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+        kotlinOptions {
+            freeCompilerArgs = ['-Xjvm-default=enable'] //enable or compatibility
+            jvmTarget = "1.8"
+        }
+    }
     group GROUP
-    version VERSION_NAME
+    version getVersionName()
 }
 
 snyk {
@@ -45,6 +49,10 @@ snyk {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+def getVersionName() { // If not release build add SNAPSHOT suffix
+    return hasProperty('release') ? VERSION_NAME : VERSION_NAME+"-SNAPSHOT"
 }
 
 apply from: rootProject.file('gradle/promote.gradle')

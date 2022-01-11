@@ -14,7 +14,7 @@ publishing {
                 artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
             }
             else {
-                artifact("$buildDir/libs/${project.getName()}-${VERSION_NAME}.jar")
+                artifact("$buildDir/libs/${project.getName()}-${version}.jar")
             }
             artifact sourcesJar
             artifact javadocJar

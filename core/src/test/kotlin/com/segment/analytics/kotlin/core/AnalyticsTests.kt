@@ -24,6 +24,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -63,6 +65,34 @@ class AnalyticsTests {
         val store = spyStore(testScope, testDispatcher)
         analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
+    }
+
+    @Nested
+    inner class Init {
+        @Test
+        fun `jvm initializer in jvm platform should succeed`() {
+            mockkStatic("com.segment.analytics.kotlin.core.AnalyticsKt")
+            every { isAndroid() } returns false
+            assertDoesNotThrow {
+                Analytics("123") {
+                    application = "Test"
+                }
+            }
+        }
+
+        @Test
+        fun `jvm initializer in android platform should failed`() {
+            mockkStatic("com.segment.analytics.kotlin.core.AnalyticsKt")
+            every { isAndroid() } returns true
+
+            val exception = assertThrows<Exception> {
+                Analytics("123") {
+                    application = "Test"
+                }
+            }
+
+            assertEquals(exception.message?.contains("Android"), true)
+        }
     }
 
     @Nested

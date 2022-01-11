@@ -2,11 +2,14 @@ package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
+import com.segment.analytics.kotlin.android.plugins.getUniqueID
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import io.mockk.every
+import io.mockk.mockkStatic
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
@@ -28,6 +31,8 @@ class AndroidContextCollectorTests {
         appContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
         val sharedPreferences: SharedPreferences = MemorySharedPreferences()
         every { appContext.getSharedPreferences(any(), any()) } returns sharedPreferences
+        mockkStatic("com.segment.analytics.kotlin.android.plugins.AndroidContextPluginKt")
+        every { getUniqueID() } returns "unknown"
 
         analytics  = Analytics(
             Configuration(
@@ -100,7 +105,8 @@ class AndroidContextCollectorTests {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
-        val deviceId = contextCollector.getDeviceId(false, appContext)
+        val deviceId = contextCollector.getDeviceId(false)
+        Log.d("debug flaky test", deviceId)
         assertEquals(deviceId, "anonId")
     }
 

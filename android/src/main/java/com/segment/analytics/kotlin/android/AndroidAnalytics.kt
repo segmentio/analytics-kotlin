@@ -11,8 +11,12 @@ import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 // A set of functions tailored to the Android implementation of analytics
 
 @Suppress("FunctionName")
-// constructor function to build android specific analytics in dsl format
-// Usage: Analytics("$writeKey", applicationContext, applicationScope)
+/**
+ * constructor function to build android specific analytics in dsl format
+ * Usage: Analytics("$writeKey", applicationContext, applicationScope)
+ *
+ * NOTE: this method should only be used for Android application. Context is required.
+ */
 public fun Analytics(
     writeKey: String,
     context: Context
@@ -29,12 +33,16 @@ public fun Analytics(
 }
 
 @Suppress("FunctionName")
-// constructor function to build android specific analytics in dsl format with config options
-// Usage: Analytics("$writeKey", applicationContext) {
-//            this.analyticsScope = applicationScope
-//            this.collectDeviceId = false
-//            this.flushAt = 10
-//        }
+/**
+ * constructor function to build android specific analytics in dsl format with config options
+ * Usage: Analytics("$writeKey", applicationContext) {
+ *            this.analyticsScope = applicationScope
+ *            this.collectDeviceId = false
+ *            this.flushAt = 10
+ *        }
+ *
+ * NOTE: this method should only be used for Android application. Context is required.
+ */
 public fun Analytics(
     writeKey: String,
     context: Context,

@@ -9,8 +9,6 @@ import android.net.NetworkCapabilities.TRANSPORT_BLUETOOTH
 import android.net.NetworkCapabilities.TRANSPORT_CELLULAR
 import android.net.NetworkCapabilities.TRANSPORT_WIFI
 import android.os.Build
-import android.provider.Settings.Secure
-import android.telephony.TelephonyManager
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Storage
@@ -25,6 +23,10 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
 import java.lang.System as JavaSystem
+import android.media.MediaDrm
+import java.lang.Exception
+import java.security.MessageDigest
+
 
 // Plugin that applies context related changes. Auto-added to system on build
 class AndroidContextPlugin : Plugin {
@@ -122,7 +124,7 @@ class AndroidContextPlugin : Plugin {
         }
 
         device = buildJsonObject {
-            put(DEVICE_ID_KEY, getDeviceId(collectDeviceId, context))
+            put(DEVICE_ID_KEY, getDeviceId(collectDeviceId))
             put(DEVICE_MANUFACTURER_KEY, Build.MANUFACTURER)
             put(DEVICE_MODEL_KEY, Build.MODEL)
             put(DEVICE_NAME_KEY, Build.DEVICE)
@@ -130,45 +132,15 @@ class AndroidContextPlugin : Plugin {
         }
     }
 
-    @SuppressLint("HardwareIds", "MissingPermission")
-    internal fun getDeviceId(collectDeviceId: Boolean, context: Context): String {
+    internal fun getDeviceId(collectDeviceId: Boolean): String {
         if (!collectDeviceId) {
             return storage.read(Storage.Constants.AnonymousId) ?: ""
         }
-        val androidId = Secure.getString(context.contentResolver, Secure.ANDROID_ID)
-        if (!androidId.isNullOrEmpty() && "unknown" != androidId) {
-            return androidId
-        }
 
-        // Serial number, guaranteed to be on all non phones in 2.3+.
-        val buildNumber = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Build.getSerial()
-        } else {
-            @Suppress("DEPRECATION")
-            Build.SERIAL
-        }
-
-        if (!buildNumber.isNullOrEmpty()) {
-            return buildNumber
-        }
-
-        // Telephony ID, guaranteed to be on all phones, requires READ_PHONE_STATE permission
-        if (hasPermission(context, permission.READ_PHONE_STATE)
-            && hasFeature(context, PackageManager.FEATURE_TELEPHONY)
-        ) {
-            val telephonyManager =
-                getSystemService<TelephonyManager>(
-                    context,
-                    Context.TELEPHONY_SERVICE
-                )
-            val telephonyId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                telephonyManager.imei
-            } else @Suppress("DEPRECATION") {
-                telephonyManager.deviceId
-            }
-            if (!telephonyId.isNullOrEmpty()) {
-                return telephonyId
-            }
+        // unique id generated from DRM API
+        val uniqueId = getUniqueID()
+        if (!uniqueId.isNullOrEmpty()) {
+            return uniqueId
         }
         // If this still fails, generate random identifier that does not persist across
         // installations
@@ -271,3 +243,34 @@ fun hasPermission(context: Context, permission: String): Boolean {
 fun hasFeature(context: Context, feature: String): Boolean {
     return context.packageManager.hasSystemFeature(feature)
 }
+
+
+/**
+ * Workaround for not able to get device id on Android 10 or above using DRM API
+ * {@see https://stackoverflow.com/questions/58103580/android-10-imei-no-longer-available-on-api-29-looking-for-alternatives}
+ * {@see https://developer.android.com/training/articles/user-data-ids}
+ */
+fun getUniqueID(): String? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2)
+        return null
+
+    val WIDEVINE_UUID = UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L)
+    var wvDrm: MediaDrm? = null
+    try {
+        wvDrm = MediaDrm(WIDEVINE_UUID)
+        val wideVineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
+        val md = MessageDigest.getInstance("SHA-256")
+        md.update(wideVineId)
+        return  md.digest().toHexString()
+    } catch (e: Exception) {
+        return null
+    } finally {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            wvDrm?.close()
+        } else {
+            wvDrm?.release()
+        }
+    }
+}
+
+fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
