@@ -3,13 +3,12 @@ package com.segment.analytics.kotlin.android.utils
 import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import androidx.annotation.Nullable
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Mock implementation of shared preference, which just saves data in memory using map.
  */
 class MemorySharedPreferences : SharedPreferences {
-    internal val preferenceMap: ConcurrentHashMap<String, Any?> = ConcurrentHashMap()
+    internal val preferenceMap: HashMap<String, Any?> = HashMap()
     private val preferenceEditor: MockSharedPreferenceEditor
     override fun getAll(): Map<String, *> {
         return preferenceMap
@@ -75,15 +74,10 @@ class MemorySharedPreferences : SharedPreferences {
 
     override fun registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener: OnSharedPreferenceChangeListener) {}
     override fun unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener: OnSharedPreferenceChangeListener) {}
-    class MockSharedPreferenceEditor(private val preferenceMap: ConcurrentHashMap<String, Any?>) :
+    class MockSharedPreferenceEditor(private val preferenceMap: HashMap<String, Any?>) :
         SharedPreferences.Editor {
         override fun putString(s: String, @Nullable s1: String?): SharedPreferences.Editor {
-            if (s1 == null) {
-                remove(s)
-            }
-            else {
-                preferenceMap[s] = s1
-            }
+            preferenceMap[s] = s1
             return this
         }
 
@@ -91,12 +85,7 @@ class MemorySharedPreferences : SharedPreferences {
             s: String,
             @Nullable set: Set<String>?
         ): SharedPreferences.Editor {
-            if (set == null) {
-                remove(s)
-            }
-            else {
-                preferenceMap[s] = set
-            }
+            preferenceMap[s] = set
             return this
         }
 

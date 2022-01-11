@@ -109,6 +109,7 @@ class AndroidContextCollectorTests {
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
         val deviceId = contextCollector.getDeviceId(false)
+        Analytics.segmentLog(deviceId, LogFilterKind.DEBUG)
         assertEquals(deviceId, "anonId")
     }
 
