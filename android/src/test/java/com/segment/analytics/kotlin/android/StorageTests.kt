@@ -22,6 +22,7 @@ import java.util.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.*
+import java.util.concurrent.ConcurrentHashMap
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class StorageTests {
@@ -317,7 +318,7 @@ class StorageTests {
         }
     }
 
-    fun getWorkingMap(sharedPreferences: SharedPreferences): HashMap<String, Any?> {
+    fun getWorkingMap(sharedPreferences: SharedPreferences): ConcurrentHashMap<String, Any?> {
         return (sharedPreferences as MemorySharedPreferences).preferenceMap
     }
 }
