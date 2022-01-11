@@ -73,13 +73,10 @@ class AnalyticsTests {
         fun `jvm initializer in jvm platform should succeed`() {
             mockkStatic("com.segment.analytics.kotlin.core.AnalyticsKt")
             every { isAndroid() } returns false
-            try {
+            assertDoesNotThrow {
                 Analytics("123") {
                     application = "Test"
                 }
-            }
-            catch(e: Exception){
-                fail()
             }
         }
 
@@ -88,15 +85,13 @@ class AnalyticsTests {
             mockkStatic("com.segment.analytics.kotlin.core.AnalyticsKt")
             every { isAndroid() } returns true
 
-            try {
+            val exception = assertThrows<Exception> {
                 Analytics("123") {
                     application = "Test"
                 }
-                fail()
             }
-            catch(e: Exception){
-                assertEquals(e.message?.contains("Android"), true)
-            }
+
+            assertEquals(exception.message?.contains("Android"), true)
         }
     }
 
