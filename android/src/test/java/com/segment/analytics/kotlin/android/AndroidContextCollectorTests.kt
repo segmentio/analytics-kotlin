@@ -2,18 +2,15 @@ package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.getUniqueID
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
-import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
@@ -109,7 +106,7 @@ class AndroidContextCollectorTests {
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
         val deviceId = contextCollector.getDeviceId(false)
-        Analytics.segmentLog(deviceId, LogFilterKind.DEBUG)
+        Log.d("debug flaky test", deviceId)
         assertEquals(deviceId, "anonId")
     }
 
