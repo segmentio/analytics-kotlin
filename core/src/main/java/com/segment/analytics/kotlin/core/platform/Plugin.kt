@@ -93,7 +93,12 @@ abstract class DestinationPlugin : EventPlugin {
         timeline.remove(plugin)
     }
 
+    /**
+     * Update `enabled` state of destination and apply settings update to destination timeline
+     * We recommend calling `super.update(..., ...) in case this function is overridden
+     */
     override fun update(settings: Settings, type: Plugin.UpdateType) {
+        enabled = settings.hasIntegrationSettings(this)
         // Apply settings update to its own plugins
         timeline.applyClosure {
             it.update(settings, type)
