@@ -1,5 +1,6 @@
 package com.segment.analytics.destinations.plugins
 
+import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.eclipsesource.v8.V8
@@ -7,7 +8,22 @@ import com.eclipsesource.v8.V8Array
 import com.eclipsesource.v8.V8Function
 import com.eclipsesource.v8.V8Object
 import com.eclipsesource.v8.utils.V8ObjectUtils
+import com.hippo.quickjs.android.JSBoolean
+import com.hippo.quickjs.android.JSContext
+import com.hippo.quickjs.android.JSDataException
+import com.hippo.quickjs.android.JSFunction
+import com.hippo.quickjs.android.JSNumber
+import com.hippo.quickjs.android.JSObject
+import com.hippo.quickjs.android.JSString
+import com.hippo.quickjs.android.JSValue
+import com.hippo.quickjs.android.JavaMethod
+import com.hippo.quickjs.android.QuickJS
+import com.hippo.quickjs.android.TypeAdapter
+import com.segment.analytics.kotlin.core.AliasEvent
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.GroupEvent
+import com.segment.analytics.kotlin.core.IdentifyEvent
+import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utilities.toContent
@@ -23,6 +39,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.BufferedReader
 import java.util.Date
+
 
 @RunWith(AndroidJUnit4::class)
 class Benchmark {
@@ -296,7 +313,7 @@ class Benchmark {
         }
       }""").toContent()
 
-        println("========================= 2")
+        println("========================= 1")
         simpleMeasureTest(
             ITERATIONS = 1000,
             TEST_COUNT = 50,
@@ -313,10 +330,10 @@ class Benchmark {
             TEST_COUNT = 50,
             WARM_COUNT = 2
         ) {
-            runtime.match(m2,e1)
-            runtime.match(m2,e2)
-            runtime.match(m2,e3)
-            runtime.match(m2,e4)
+            runtime.match(m2, e1)
+            runtime.match(m2, e2)
+            runtime.match(m2, e3)
+            runtime.match(m2, e4)
         }
         println("========================= 3")
         simpleMeasureTest(
@@ -324,10 +341,10 @@ class Benchmark {
             TEST_COUNT = 50,
             WARM_COUNT = 2
         ) {
-            runtime.match(m3,e1)
-            runtime.match(m3,e2)
-            runtime.match(m3,e3)
-            runtime.match(m3,e4)
+            runtime.match(m3, e1)
+            runtime.match(m3, e2)
+            runtime.match(m3, e3)
+            runtime.match(m3, e4)
         }
 
 
@@ -349,6 +366,322 @@ class Benchmark {
         }
 
 //        runtime.close()
+    }
+
+    @Test
+    fun usingJsRuntime2() {
+        println("[TimeTest] Using JSRuntime2")
+        val localJSMiddlewareInputStream = appContext.assets.open("sample.js")
+        val script = localJSMiddlewareInputStream.bufferedReader().use(BufferedReader::readText)
+        val runtime = JSRuntime(script)
+        val m1 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"!\",[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+
+        val m2 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+        val m3 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"Screen Opened\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Location\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Screen Closed\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Keyword\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View Map\"}],[\"=\",\"event\",{\"value\":\"App Opened\"}]]]]]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+
+        val e1 = (Json.encodeToJsonElement(e1) as JsonObject).toContent()
+        val e2 = (Json.encodeToJsonElement(e2) as JsonObject).toContent()
+        val e3 = (Json.encodeToJsonElement(e3) as JsonObject).toContent()
+        val e4 = (Json.encodeToJsonElement(e4) as JsonObject).toContent()
+
+        println("========================= 1")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 50,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m1, e1)
+            runtime.match(m1, e2)
+            runtime.match(m1, e3)
+            runtime.match(m1, e4)
+        }
+        println("========================= 2")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 50,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m2, e1)
+            runtime.match(m2, e2)
+            runtime.match(m2, e3)
+            runtime.match(m2, e4)
+        }
+        println("========================= 3")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 50,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m3, e1)
+            runtime.match(m3, e2)
+            runtime.match(m3, e3)
+            runtime.match(m3, e4)
+        }
+
+
+        val test = {
+            assertFalse(runtime.match(m1, e1))
+            assertTrue(runtime.match(m1, e2))
+            assertTrue(runtime.match(m1, e3))
+            assertFalse(runtime.match(m1, e4))
+
+            assertTrue(runtime.match(m2, e1))
+            assertFalse(runtime.match(m2, e2))
+            assertFalse(runtime.match(m2, e3))
+            assertTrue(runtime.match(m2, e4))
+
+            assertTrue(runtime.match(m3, e1))
+            assertTrue(runtime.match(m3, e2))
+            assertTrue(runtime.match(m3, e3))
+            assertFalse(runtime.match(m3, e4))
+        }
+
+//        runtime.close()
+    }
+
+    @Test
+    fun quickjs() {
+        val localJSMiddlewareInputStream = appContext.assets.open("sample.js")
+        val script = localJSMiddlewareInputStream.bufferedReader().use(BufferedReader::readText)
+        val runtime = QuickJSRuntime(script)
+        println("[TimeTest] Using QuickJSRuntime2")
+        val m1 = """{
+        "ir": "[\"!\",[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }"""
+
+        val m2 = """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }"""
+        val m3 = """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"Screen Opened\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Location\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Screen Closed\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Keyword\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View Map\"}],[\"=\",\"event\",{\"value\":\"App Opened\"}]]]]]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }"""
+//        runtime.match(m1, e1)
+
+        val e1 = Json.encodeToString(TrackEvent.serializer(), e1)
+        val e2 = Json.encodeToString(TrackEvent.serializer(), e2)
+        val e3 = Json.encodeToString(TrackEvent.serializer(), e3)
+        val e4 = Json.encodeToString(TrackEvent.serializer(), e4)
+
+        println("========================= 1")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 10,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m1, e1)
+            runtime.match(m1, e2)
+            runtime.match(m1, e3)
+            runtime.match(m1, e4)
+        }
+        println("========================= 2")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 10,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m2, e1)
+            runtime.match(m2, e2)
+            runtime.match(m2, e3)
+            runtime.match(m2, e4)
+        }
+        println("========================= 3")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 10,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m3, e1)
+            runtime.match(m3, e2)
+            runtime.match(m3, e3)
+            runtime.match(m3, e4)
+        }
+
+        val test = {
+            assertFalse(runtime.match(m1, e1))
+            assertTrue(runtime.match(m1, e2))
+            assertTrue(runtime.match(m1, e3))
+            assertFalse(runtime.match(m1, e4))
+
+            assertTrue(runtime.match(m2, e1))
+            assertFalse(runtime.match(m2, e2))
+            assertFalse(runtime.match(m2, e3))
+            assertTrue(runtime.match(m2, e4))
+
+            assertTrue(runtime.match(m3, e1))
+            assertTrue(runtime.match(m3, e2))
+            assertTrue(runtime.match(m3, e3))
+            assertFalse(runtime.match(m3, e4))
+        }
+    }
+
+    @Test
+    fun quickjs2() {
+        val localJSMiddlewareInputStream = appContext.assets.open("sample.js")
+        val script = localJSMiddlewareInputStream.bufferedReader().use(BufferedReader::readText)
+        val runtime = QuickJSRuntime(script)
+        println("[TimeTest] Using QuickJSRuntime2")
+        val m1 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"!\",[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+
+        val m2 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+        val m3 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"Screen Opened\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Location\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Screen Closed\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Keyword\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View Map\"}],[\"=\",\"event\",{\"value\":\"App Opened\"}]]]]]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+//        runtime.match(m1, e1)
+
+        val e1 = (Json.encodeToJsonElement(e1) as JsonObject).toContent()
+        val e2 = (Json.encodeToJsonElement(e2) as JsonObject).toContent()
+        val e3 = (Json.encodeToJsonElement(e3) as JsonObject).toContent()
+        val e4 = (Json.encodeToJsonElement(e4) as JsonObject).toContent()
+
+        println("========================= 1")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 20,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m1, e1)
+            runtime.match(m1, e2)
+            runtime.match(m1, e3)
+            runtime.match(m1, e4)
+        }
+//        println("========================= 2")
+//        simpleMeasureTest(
+//            ITERATIONS = 1000,
+//            TEST_COUNT = 10,
+//            WARM_COUNT = 2
+//        ) {
+//            runtime.match(m2, e1)
+//            runtime.match(m2, e2)
+//            runtime.match(m2, e3)
+//            runtime.match(m2, e4)
+//        }
+//        println("========================= 3")
+//        simpleMeasureTest(
+//            ITERATIONS = 1000,
+//            TEST_COUNT = 10,
+//            WARM_COUNT = 2
+//        ) {
+//            runtime.match(m3, e1)
+//            runtime.match(m3, e2)
+//            runtime.match(m3, e3)
+//            runtime.match(m3, e4)
+//        }
+    }
+
+    @Test
+    fun quickjs3() {
+        val localJSMiddlewareInputStream = appContext.assets.open("sample.js")
+        val script = localJSMiddlewareInputStream.bufferedReader().use(BufferedReader::readText)
+        val runtime = QuickJSRuntime(script)
+        println("[TimeTest] Using QuickJSRuntime2")
+        val m1 = runtime.jsonObject(Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"!\",[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent())
+
+        val m2 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"App Opened\"}],[\"=\",\"event\",{\"value\":\"App Closed\"}]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+        val m3 = Json.decodeFromString(JsonObject.serializer(), """{
+        "ir": "[\"or\",[\"=\",\"event\",{\"value\":\"Screen Opened\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Location\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Screen Closed\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - Select Keyword\"}],[\"or\",[\"=\",\"event\",{\"value\":\"Search - View Map\"}],[\"=\",\"event\",{\"value\":\"App Opened\"}]]]]]]]",
+        "type": "fql",
+        "config": {
+          "expr": "!(event = \"CP VOD - Start video\" or event = \"CP VOD - Track video\")"
+        }
+      }""").toContent()
+//        runtime.match(m1, e1)
+
+        val e1 = runtime.jsonObject((Json.encodeToJsonElement(e1) as JsonObject).toContent())
+        val e2 = runtime.jsonObject((Json.encodeToJsonElement(e2) as JsonObject).toContent())
+        val e3 = runtime.jsonObject((Json.encodeToJsonElement(e3) as JsonObject).toContent())
+        val e4 = runtime.jsonObject((Json.encodeToJsonElement(e4) as JsonObject).toContent())
+
+        println("========================= 1")
+        simpleMeasureTest(
+            ITERATIONS = 1000,
+            TEST_COUNT = 20,
+            WARM_COUNT = 2
+        ) {
+            runtime.match(m1, e1)
+            runtime.match(m1, e2)
+            runtime.match(m1, e3)
+            runtime.match(m1, e4)
+        }
+//        println("========================= 2")
+//        simpleMeasureTest(
+//            ITERATIONS = 1000,
+//            TEST_COUNT = 10,
+//            WARM_COUNT = 2
+//        ) {
+//            runtime.match(m2, e1)
+//            runtime.match(m2, e2)
+//            runtime.match(m2, e3)
+//            runtime.match(m2, e4)
+//        }
+//        println("========================= 3")
+//        simpleMeasureTest(
+//            ITERATIONS = 1000,
+//            TEST_COUNT = 10,
+//            WARM_COUNT = 2
+//        ) {
+//            runtime.match(m3, e1)
+//            runtime.match(m3, e2)
+//            runtime.match(m3, e3)
+//            runtime.match(m3, e4)
+//        }
     }
 }
 
@@ -399,7 +732,228 @@ class JSRuntime(private val script: String) {
         return fnResult == payload.event
     }
 
+    fun match(matcherJson: Map<String, Any?>, payload: Map<String, Any?>): Boolean {
+        val fn = getObject("edge_function.fnMatch") as V8Function
+
+        val params = V8Array(runtime.runtime)
+
+        params.push(V8ObjectUtils.toV8Object(runtime.runtime, payload))
+        params.push(V8ObjectUtils.toV8Object(runtime.runtime, matcherJson))
+
+        // call it and pick up the result
+        val fnResult = fn.call(null, params) as String
+//        println(fnResult)
+        return fnResult == (payload["event"] as String)
+    }
+
     fun close() {
         runtime.close()
+    }
+}
+
+class QuickJSRuntime(private val script: String) {
+    private val runtime = QuickJS.Builder().build().createJSRuntime()
+    private val context = runtime.createJSContext()
+
+    object Console {
+        fun log(msg: String) {
+            Log.d("console", msg);
+        }
+
+        fun info(msg: String) {
+            Log.i("console", msg);
+        }
+
+        fun error(msg: String) {
+            Log.e("console", msg);
+        }
+    }
+
+    init {
+        val console = context.createJSObject().also {
+            it.setProperty("log", context.createJSFunction(
+                Console,
+                JavaMethod.create(
+                    Void::class.java,
+                    Console::class.java.getMethod("log", String::class.java)
+                )))
+        }
+        context.globalObject.setProperty("console", console);
+        context.evaluate(script, "test.js")
+    }
+
+    fun getObject(key: String): JSValue {
+        val global = context.globalObject.getProperty("edge_function") as JSObject
+        val result = global.getProperty(key)
+        return result
+    }
+
+    fun match(matcherJson: String, payload: String): Boolean {
+        val script by lazy {
+            """
+            edge_function.fnMatch(
+            $payload
+            ,
+            $matcherJson
+            )
+        """
+        }
+
+        val x = context.evaluate(script, "test.js", String::class.java)
+
+        return true
+    }
+
+    fun match(matcherJson: Map<String, Any?>, payload: Map<String, Any?>): Boolean {
+        val fn = getObject("fnMatch") as JSFunction
+
+        val payloadParam = context.jsonObject(payload)
+        val matcherParam = context.jsonObject(matcherJson)
+
+        // call it and pick up the result
+        val fnResult = fn.invoke(null, arrayOf(payloadParam, matcherParam)) as JSString
+        return fnResult.string == (payload["event"] as String)
+    }
+
+    fun match(matcherParam: JSObject, payloadParam: JSObject): Boolean {
+        val fn = getObject("fnMatch") as JSFunction
+
+        // call it and pick up the result
+        val fnResult = fn.invoke(null, arrayOf(payloadParam, matcherParam)) as JSString
+        return true
+    }
+
+    fun close() {
+        context.close()
+        runtime.close()
+    }
+
+    fun jsonObject(payload: Map<String, Any?>) = context.jsonObject(payload)
+
+}
+
+fun JSContext.jsonObject(payload: Map<String, Any?>): JSObject {
+    val x = createJSObject()
+    for ((key, value) in payload) {
+        when (value) {
+            is String -> x.setProperty(key, this.createJSString(value))
+            is Int -> x.setProperty(key, this.createJSNumber(value))
+            is Double -> x.setProperty(key, this.createJSNumber(value))
+            is Boolean -> x.setProperty(key, this.createJSBoolean(value))
+            is Map<*, *> -> x.setProperty(key, jsonObject(value as Map<String, Any?>))
+        }
+    }
+    return x
+}
+
+object MapTypeAdapter : TypeAdapter<Map<String, Any?>>() {
+    override fun toJSValue(context: JSContext, value: Map<String, Any?>): JSValue {
+        val x = context.createJSObject()
+        value.forEach { (key: String, v: Any?) ->
+            when (v) {
+                is String -> x.setProperty(key, context.createJSString(v))
+                is Int -> x.setProperty(key, context.createJSNumber(v))
+                is Double -> x.setProperty(key, context.createJSNumber(v))
+                is Boolean -> x.setProperty(key, context.createJSBoolean(v))
+                is Map<*, *> -> x.setProperty(key, toJSValue(context, v as Map<String, Any?>))
+            }
+        }
+        return x
+    }
+
+    override fun fromJSValue(context: JSContext, value: JSValue): Map<String, Any?> {
+        val jo = value.cast(JSObject::class.java)
+        val keysFunction = context.globalObject
+            .getProperty("Object").cast(JSObject::class.java)
+            .getProperty("keys").cast(JSFunction::class.java)
+        val adapter: TypeAdapter<Array<String>> =
+            context.quickJS.getAdapter(Array<String>::class.java)
+        val keysResult = keysFunction.invoke(null, arrayOf<JSValue>(jo))
+        val keys: Array<String> = adapter.fromJSValue(context, keysResult)
+        val map = mutableMapOf<String, Any?>()
+        for (key in keys) {
+            val value = jo.getProperty(key)
+            when (value) {
+                is JSString -> map[key] = value.string
+                is JSNumber -> {
+                    try {
+                        val intVal = value.int
+                        map[key] = intVal
+                    } catch (ignore: JSDataException) {
+                        map[key] = value.double
+                    }
+                }
+                is JSBoolean -> map[key] = value.boolean
+                is JSObject -> map[key] = fromJSValue(context, value)
+            }
+        }
+        return map
+    }
+}
+
+
+object EventTypeAdapter : TypeAdapter<BaseEvent>() {
+    override fun toJSValue(context: JSContext, value: BaseEvent): JSValue {
+        val x = context.createJSObject()
+        x.setProperty("type", context.createJSString(value.type.name))
+        x.setProperty("timestamp", context.createJSString(value.timestamp))
+        x.setProperty("messageId", context.createJSString(value.messageId))
+        x.setProperty("anonymousId", context.createJSString(value.anonymousId))
+        if (value.userId.isNotBlank()) {
+            x.setProperty("userId", context.createJSString(value.timestamp))
+        }
+        x.setProperty("context", context.jsonObject(value.context))
+        x.setProperty("integrations", context.jsonObject(value.integrations))
+        when (value) {
+            is AliasEvent -> {
+                x.setProperty("previousId", context.createJSString(value.previousId))
+                x.setProperty("userId", context.createJSString(value.userId))
+            }
+            is GroupEvent -> {
+                x.setProperty("traits", context.jsonObject(value.traits))
+                x.setProperty("userId", context.createJSString(value.groupId))
+            }
+            is IdentifyEvent -> {
+                x.setProperty("traits", context.jsonObject(value.traits))
+                x.setProperty("userId", context.createJSString(value.userId))
+            }
+            is ScreenEvent -> {
+                x.setProperty("properties", context.jsonObject(value.properties))
+                x.setProperty("name", context.createJSString(value.name))
+                x.setProperty("category", context.createJSString(value.category))
+            }
+            is TrackEvent -> {
+                x.setProperty("properties", context.jsonObject(value.properties))
+                x.setProperty("event", context.createJSString(value.event))
+            }
+        }
+        return x
+    }
+
+    override fun fromJSValue(context: JSContext, value: JSValue): BaseEvent {
+        val jo = value.cast(JSObject::class.java)
+        val event: BaseEvent = when (jo.getProperty("type").cast(JSString::class.java).string) {
+            "track" -> {
+                val properties = MapTypeAdapter.fromJSValue(context, jo.getProperty("properties"))
+                val event = jo.getProperty("event").cast(JSString::class.java).string
+                TrackEvent(properties = JsonObject(properties), event = event)
+            }
+            "identify" -> {
+                TrackEvent()
+            }
+            "screen" -> {
+                TrackEvent()
+            }
+            "page" -> {
+                TrackEvent()
+            }
+            "group" -> {
+                TrackEvent()
+            }
+            "alias" -> {
+                TrackEvent()
+            }
+        }
+        // apply common fields
     }
 }

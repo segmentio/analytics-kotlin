@@ -78,6 +78,17 @@ dependencies {
     implementation 'com.segment.analytics.kotlin.destinations:mixpanel:1.5.2'
 
     implementation 'com.eclipsesource.j2v8:j2v8:6.2.0@aar'
+//    repositories {
+//        maven { url 'https://jitpack.io' }
+//    }
+//    implementation "com.github.seven332:quickjs-android:0.1.0"
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+    }
+
+    implementation(name:'library-debug', ext:'aar')
 }
 
 // Partner Dependencies

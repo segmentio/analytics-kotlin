@@ -2,8 +2,7 @@ package com.segment.analytics.kotlin.core.platform.plugins.logger
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.platform.Plugin
-import java.util.*
+import java.util.Date
 import kotlin.reflect.KClass
 
 /**
@@ -122,9 +121,9 @@ enum class MetricType {
 fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = -1) {
 
     // Check if we should send the event
-    if (!SegmentLog.loggingEnabled) {
-        return
-    }
+//    if (!SegmentLog.loggingEnabled) {
+//        return
+//    }
 
     val plugins = findAll(SegmentLog::class)
     plugins.forEach {
