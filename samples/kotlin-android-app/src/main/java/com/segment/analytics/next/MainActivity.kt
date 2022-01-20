@@ -8,7 +8,9 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.EventType
+import com.segment.analytics.kotlin.core.checkSettings
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
@@ -34,6 +36,9 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.groupBtn).setOnClickListener {
             loadFragment(groupFragment)
+            analytics.analyticsScope.launch {
+                analytics.checkSettings()
+            }
         }
         findViewById<Button>(R.id.flushBtn).setOnClickListener {
             analytics.log("Kinda a hopewell")
