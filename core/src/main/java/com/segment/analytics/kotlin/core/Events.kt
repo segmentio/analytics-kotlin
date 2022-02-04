@@ -7,6 +7,7 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
 import java.time.Instant
@@ -18,6 +19,7 @@ typealias Properties = JsonObject
 typealias Traits = JsonObject
 
 val emptyJsonObject = JsonObject(emptyMap())
+val emptyJsonArray = JsonArray(emptyList())
 
 class DateSerializer : KSerializer<Instant> {
     override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
@@ -30,6 +32,13 @@ class DateSerializer : KSerializer<Instant> {
         encoder.encodeString(value.toString())
     }
 }
+
+@Serializable
+data class DestinationMetadata(
+    var bundled: JsonArray = emptyJsonArray,
+    var unbundled: JsonArray = emptyJsonArray,
+    var bundledIds: JsonArray = emptyJsonArray,
+)
 
 @Serializable
 enum class EventType {
@@ -79,6 +88,8 @@ sealed class BaseEvent {
     // the userId tied to the event
     abstract var userId: String
 
+    abstract var _metadata: DestinationMetadata
+
     companion object {
         internal const val ALL_INTEGRATIONS_KEY = "All"
     }
@@ -122,6 +133,7 @@ sealed class BaseEvent {
             context = original.context
             integrations = original.integrations
             userId = original.userId
+            _metadata = original._metadata
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
@@ -140,6 +152,7 @@ sealed class BaseEvent {
         if (context != other.context) return false
         if (integrations != other.integrations) return false
         if (userId != other.userId) return false
+        if (_metadata != other._metadata) return false
 
         return true
     }
@@ -152,6 +165,7 @@ sealed class BaseEvent {
         result = 31 * result + context.hashCode()
         result = 31 * result + integrations.hashCode()
         result = 31 * result + userId.hashCode()
+        result = 31 * result + _metadata.hashCode()
         return result
     }
 }
@@ -168,6 +182,7 @@ data class TrackEvent(
     override lateinit var integrations: Integrations
     override lateinit var context: AnalyticsContext
     override var userId: String = ""
+    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override lateinit var timestamp: String
 
@@ -206,6 +221,7 @@ data class IdentifyEvent(
     override lateinit var context: AnalyticsContext
 
     override lateinit var timestamp: String
+    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -238,6 +254,7 @@ data class GroupEvent(
     override lateinit var integrations: Integrations
     override lateinit var context: AnalyticsContext
     override var userId: String = ""
+    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override lateinit var timestamp: String
     override fun equals(other: Any?): Boolean {
@@ -274,6 +291,7 @@ data class AliasEvent(
     override lateinit var context: AnalyticsContext
 
     override lateinit var timestamp: String
+    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -309,6 +327,7 @@ data class ScreenEvent(
     override var userId: String = ""
 
     override lateinit var timestamp: String
+    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
