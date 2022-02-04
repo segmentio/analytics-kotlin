@@ -134,7 +134,7 @@ class EventsFileManager(
             return
         }
         // close events array and batch object
-        val contents = """],"sentAt":"${Instant.now()}"}"""
+        val contents = """],"sentAt":"${Instant.now()}","writeKey":"$writeKey"}"""
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
         os?.close()

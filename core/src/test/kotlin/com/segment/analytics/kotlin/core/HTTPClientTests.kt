@@ -4,7 +4,9 @@ import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import io.mockk.clearConstructorMockk
 import io.mockk.every
 import io.mockk.spyk
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.io.IOException
@@ -19,11 +21,6 @@ class HTTPClientTests {
     init {
         clearConstructorMockk(HTTPClient::class)
         httpClient = HTTPClient("1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ")
-    }
-
-    @Test
-    fun `authHeader is correctly computed`() {
-        assertEquals("Basic MXZOZ1Vxd0plQ0htcWdJOVMxc09tOVVIQ3lmWXFiYVE6", httpClient.authHeader)
     }
 
     @Test
@@ -44,7 +41,7 @@ class HTTPClientTests {
     fun `settings connection has correct configuration`() {
         httpClient.upload("api.segment.io/v1").connection.let {
             assertEquals(
-                "https://api.segment.io/v1/batch",
+                "https://api.segment.io/v1/b",
                 it.url.toString()
             )
             assertEquals(
@@ -52,6 +49,7 @@ class HTTPClientTests {
                 it.getRequestProperty("User-Agent")
             )
             assertEquals("gzip", it.getRequestProperty("Content-Encoding"))
+            assertEquals("text/plain", it.getRequestProperty("Content-Type"))
             // ideally we would also test if auth Header is set, but due to security concerns this
             // is not possible https://bit.ly/3CVpR3J
         }

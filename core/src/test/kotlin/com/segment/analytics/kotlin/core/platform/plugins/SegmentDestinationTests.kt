@@ -175,9 +175,10 @@ class SegmentDestinationTests {
         verify { connection.close() }
         with(String(outputBytes)) {
             val contentsJson: JsonObject = Json.decodeFromString(this)
-            assertEquals(2, contentsJson.size)
+            assertEquals(3, contentsJson.size) // batch, sentAt, writeKey
             assertTrue(contentsJson.containsKey("batch"))
             assertTrue(contentsJson.containsKey("sentAt"))
+            assertTrue(contentsJson.containsKey("writeKey"))
             assertEquals(1, contentsJson["batch"]?.jsonArray?.size)
             val eventInFile = contentsJson["batch"]?.jsonArray?.get(0)
             val eventInFile2 =

@@ -8,13 +8,15 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
-import java.util.*
+import java.util.Date
 
 internal class EventsFileManagerTest{
     private val epochTimestamp = Date(0).toInstant().toString()
@@ -134,7 +136,7 @@ internal class EventsFileManagerTest{
         file.rollover()
         val fileUrls = file.read()
         assertEquals(1, fileUrls.size)
-        val expectedContents = """ {"batch":[${eventString}],"sentAt":"$epochTimestamp"} """.trim()
+        val expectedContents = """ {"batch":[${eventString}],"sentAt":"$epochTimestamp","writeKey":"123"}""".trim()
         val newFile = File(directory, "123-0")
         assertTrue(newFile.exists())
         val actualContents = newFile.readText()
@@ -161,7 +163,7 @@ internal class EventsFileManagerTest{
         file.read().let {
             assertEquals(1, it.size)
             val expectedContents =
-                """ {"batch":[${eventString}],"sentAt":"$epochTimestamp"} """.trim()
+                """ {"batch":[${eventString}],"sentAt":"$epochTimestamp","writeKey":"123"}""".trim()
             val newFile = File(directory, "123-0")
             assertTrue(newFile.exists())
             val actualContents = newFile.readText()

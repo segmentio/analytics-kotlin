@@ -12,6 +12,10 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 
+/**
+ * DestinationMetadataPlugin adds `_metadata` information to payloads that Segment uses to
+ * determine delivery of events to cloud/device-mode destinations
+ */
 class DestinationMetadataPlugin : Plugin {
     override val type: Plugin.Type = Plugin.Type.Enrichment
     override lateinit var analytics: Analytics
