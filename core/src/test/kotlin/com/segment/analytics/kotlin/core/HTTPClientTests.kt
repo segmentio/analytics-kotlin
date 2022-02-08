@@ -57,7 +57,7 @@ class HTTPClientTests {
 
     @Test
     fun `safeGetInputStream properly catches exception`() {
-        val connection = spyk(URL("https://api.segment.io/v1/batch").openConnection() as HttpURLConnection)
+        val connection = spyk(URL("https://api.segment.io/v1/b").openConnection() as HttpURLConnection)
         every { connection.inputStream } throws IOException()
         val errorStream: InputStream? = safeGetInputStream(connection)
         assertEquals(connection.errorStream, errorStream)
@@ -79,4 +79,10 @@ class HTTPClientTests {
             e.message?.let { assertTrue(it.contains("300")) }
         }
     }
+
+    @Test
+    fun `authHeader is correctly computed`() {
+        assertEquals("Basic MXZOZ1Vxd0plQ0htcWdJOVMxc09tOVVIQ3lmWXFiYVE6", httpClient.authHeader)
+    }
+
 }

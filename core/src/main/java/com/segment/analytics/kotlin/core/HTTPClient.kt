@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
+import com.segment.analytics.kotlin.core.utilities.encodeToBase64
 import java.io.BufferedReader
 import java.io.Closeable
 import java.io.IOException
@@ -12,6 +13,7 @@ import java.net.URL
 import java.util.zip.GZIPOutputStream
 
 class HTTPClient(private val writeKey: String) {
+    internal val authHeader = authorizationHeader(writeKey)
 
     fun settings(cdnHost: String): Connection {
         val connection: HttpURLConnection =
@@ -29,6 +31,7 @@ class HTTPClient(private val writeKey: String) {
         val connection: HttpURLConnection = openConnection("https://$apiHost/b")
         connection.setRequestProperty("Content-Type", "text/plain")
         connection.setRequestProperty("Content-Encoding", "gzip")
+        connection.setRequestProperty("Authorization", authHeader)
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
         return connection.createPostConnection()
@@ -54,6 +57,11 @@ class HTTPClient(private val writeKey: String) {
         )
         connection.doInput = true
         return connection
+    }
+
+    private fun authorizationHeader(writeKey: String): String {
+        val auth = "$writeKey:"
+        return "Basic ${encodeToBase64(auth)}"
     }
 }
 
