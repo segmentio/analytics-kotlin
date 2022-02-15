@@ -3,9 +3,7 @@ package com.segment.analytics.kotlin.android.utils
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.Connection
-import com.segment.analytics.kotlin.core.HTTPClient
+import com.segment.analytics.kotlin.core.*
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkConstructor
@@ -31,6 +29,10 @@ fun mockAnalytics(): Analytics {
     every { mock.networkIODispatcher } returns dispatcher
     every { mock.analyticsDispatcher } returns dispatcher
     return mock
+}
+
+fun testAnalytics(configuration: Configuration): Analytics {
+    return object : Analytics(configuration, TestCoroutineConfiguration()) {}
 }
 
 fun mockContext(): Context {
@@ -72,4 +74,24 @@ fun mockHTTPClient() {
     val httpConnection: HttpURLConnection = mockk()
     val connection = object : Connection(httpConnection, settingsStream, null) {}
     every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } returns connection
+}
+
+class TestCoroutineConfiguration : CoroutineConfiguration {
+    private val testScope = TestCoroutineScope()
+
+    private val testCoroutineDispatcher = TestCoroutineDispatcher()
+
+    override val store: Store = spyStore(testScope, testCoroutineDispatcher)
+
+    override val analyticsScope: CoroutineScope
+        get() = testScope
+
+    override val analyticsDispatcher: CoroutineDispatcher
+        get() = testCoroutineDispatcher
+
+    override val networkIODispatcher: CoroutineDispatcher
+        get() = testCoroutineDispatcher
+
+    override val fileIODispatcher: CoroutineDispatcher
+        get() = testCoroutineDispatcher
 }

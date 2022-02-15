@@ -6,14 +6,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
-import sovran.kotlin.State
 import sovran.kotlin.Store
-import sovran.kotlin.Subscriber
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.HttpURLConnection
 import kotlin.coroutines.CoroutineContext
-import kotlin.reflect.KClass
 
 /**
  * Retrieve a relaxed mock of analytics, that can be used while testing plugins
@@ -31,6 +28,10 @@ fun mockAnalytics(): Analytics {
     every { mock.networkIODispatcher } returns dispatcher
     every { mock.analyticsDispatcher } returns dispatcher
     return mock
+}
+
+fun testAnalytics(configuration: Configuration): Analytics {
+    return object : Analytics(configuration, TestCoroutineConfiguration()) {}
 }
 
 fun clearPersistentStorage() {
@@ -55,4 +56,24 @@ fun mockHTTPClient() {
     val httpConnection: HttpURLConnection = mockk()
     val connection = object : Connection(httpConnection, settingsStream, null) {}
     every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } returns connection
+}
+
+class TestCoroutineConfiguration : CoroutineConfiguration {
+    private val testScope = TestCoroutineScope()
+
+    private val testCoroutineDispatcher = TestCoroutineDispatcher()
+
+    override val store: Store = spyStore(testScope, testCoroutineDispatcher)
+
+    override val analyticsScope: CoroutineScope
+        get() = testScope
+
+    override val analyticsDispatcher: CoroutineDispatcher
+        get() = testCoroutineDispatcher
+
+    override val networkIODispatcher: CoroutineDispatcher
+        get() = testCoroutineDispatcher
+
+    override val fileIODispatcher: CoroutineDispatcher
+        get() = testCoroutineDispatcher
 }
