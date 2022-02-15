@@ -8,9 +8,9 @@ import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -136,7 +136,7 @@ internal class EventPipelineTest {
     }
 
     @Test
-    fun `flushInterval causes regular flushing of events`() = runBlocking {
+    fun `flushInterval causes regular flushing of events`() = runTest {
         //restart flushScheduler
         pipeline = EventPipeline(analytics,
             "test",
@@ -153,7 +153,7 @@ internal class EventPipelineTest {
     }
 
     @Test
-    fun `flush interrupted when no event file exist`() = runBlocking {
+    fun `flush interrupted when no event file exist`() = runTest {
         pipeline.put(EventPipeline.FLUSH_POISON)
         coVerify(exactly = 1) {
             storage.rollover()

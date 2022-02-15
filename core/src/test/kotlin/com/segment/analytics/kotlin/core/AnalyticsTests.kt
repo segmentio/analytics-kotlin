@@ -8,9 +8,9 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
@@ -210,7 +210,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `identify() overwrites userId and traits`() = runBlocking  {
+            fun `identify() overwrites userId and traits`() = runTest  {
                 analytics.store.dispatch(
                     UserInfo.SetUserIdAndTraitsAction(
                         "oldUserId",
@@ -318,7 +318,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `alias event modifies underlying userId`() = runBlocking  {
+            fun `alias event modifies underlying userId`() = runTest  {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.identify("oldId")
@@ -337,7 +337,7 @@ class AnalyticsTests {
         @Nested
         inner class Reset {
             @Test
-            fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking  {
+            fun `reset() overwrites userId and traits also resets event plugin`() = runTest  {
                 val plugin = spyk(StubPlugin())
                 analytics.add(plugin)
 
@@ -392,7 +392,7 @@ class AnalyticsTests {
     }
 
     @Test
-    fun `settings fetches current Analytics Settings`() = runBlocking {
+    fun `settings fetches current Analytics Settings`() = runTest {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("int1", true)

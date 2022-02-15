@@ -8,9 +8,9 @@ import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -65,7 +65,7 @@ class SegmentDestinationTests {
     }
 
     @Test
-    fun `enqueue adds event to storage`() = runBlocking {
+    fun `enqueue adds event to storage`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -209,7 +209,7 @@ class SegmentDestinationTests {
     }
 
     @Test
-    fun `flush reads events but does not delete on fail code_429`() = runBlocking {
+    fun `flush reads events but does not delete on fail code_429`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -251,7 +251,7 @@ class SegmentDestinationTests {
     }
 
     @Test
-    fun `flush reads events but does not delete on fail code_500`() = runBlocking {
+    fun `flush reads events but does not delete on fail code_500`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })

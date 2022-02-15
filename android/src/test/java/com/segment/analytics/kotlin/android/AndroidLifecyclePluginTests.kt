@@ -15,9 +15,9 @@ import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.android.utils.mockHTTPClient
 import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.*
@@ -127,7 +127,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application opened is tracked`() = runBlocking{
+    fun `application opened is tracked`() {
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
@@ -210,7 +210,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application updated is tracked`() = runBlocking {
+    fun `application updated is tracked`() = runTest {
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false

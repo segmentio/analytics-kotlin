@@ -12,9 +12,9 @@ import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -51,7 +51,7 @@ class AndroidContextCollectorTests {
     }
 
     @Test
-    fun `context fields applied correctly`() = runBlocking {
+    fun `context fields applied correctly`()  {
         // Context of the app under test.
         analytics.configuration.collectDeviceId = true
         val contextCollector = AndroidContextPlugin()
@@ -108,7 +108,7 @@ class AndroidContextCollectorTests {
     }
 
     @Test
-    fun `getDeviceId returns anonId when disabled`() = runBlocking {
+    fun `getDeviceId returns anonId when disabled`() = runTest {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)

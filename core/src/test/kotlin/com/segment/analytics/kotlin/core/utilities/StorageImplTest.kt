@@ -3,9 +3,9 @@ package com.segment.analytics.kotlin.core.utilities
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.spyStore
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import sovran.kotlin.Action
-import sovran.kotlin.Store
 import java.io.File
 import java.util.*
 
@@ -30,7 +29,7 @@ internal class StorageImplTest {
     private lateinit var storage: StorageImpl
 
     @BeforeEach
-    fun setup() = runBlocking  {
+    fun setup() = runTest  {
         clearPersistentStorage()
         store.provide(
             UserInfo(
@@ -58,7 +57,7 @@ internal class StorageImplTest {
 
 
     @Test
-    fun `userInfo update calls write`() = runBlocking {
+    fun `userInfo update calls write`() = runTest {
         val action = object : Action<UserInfo> {
             override fun reduce(state: UserInfo): UserInfo {
                 return UserInfo(
@@ -79,7 +78,7 @@ internal class StorageImplTest {
     }
 
     @Test
-    fun `system update calls write for settings`() = runBlocking {
+    fun `system update calls write for settings`() = runTest {
         val action = object : Action<System> {
             override fun reduce(state: System): System {
                 return System(
@@ -123,7 +122,7 @@ internal class StorageImplTest {
     inner class EventsStorage() {
 
         @Test
-        fun `writing events writes to eventsFile`() = runBlocking {
+        fun `writing events writes to eventsFile`() = runTest {
             val event = TrackEvent(
                 event = "clicked",
                 properties = buildJsonObject { put("behaviour", "good") })
@@ -144,7 +143,7 @@ internal class StorageImplTest {
         }
 
         @Test
-        fun `cannot write more than 32kb as event`() = runBlocking {
+        fun `cannot write more than 32kb as event`() = runTest {
             val stringified: String = "A".repeat(32002)
             val exception = try {
                 storage.write(
@@ -161,7 +160,7 @@ internal class StorageImplTest {
         }
 
         @Test
-        fun `reading events returns a non-null file handle with correct events`() = runBlocking {
+        fun `reading events returns a non-null file handle with correct events`() = runTest {
             val event = TrackEvent(
                 event = "clicked",
                 properties = buildJsonObject { put("behaviour", "good") })
@@ -201,7 +200,7 @@ internal class StorageImplTest {
         }
 
         @Test
-        fun `can write and read multiple events`() = runBlocking {
+        fun `can write and read multiple events`() = runTest {
             val event1 = TrackEvent(
                 event = "clicked",
                 properties = buildJsonObject { put("behaviour", "good") })
@@ -254,7 +253,7 @@ internal class StorageImplTest {
         }
 
         @Test
-        fun remove() = runBlocking {
+        fun remove() = runTest {
             val action = object : Action<UserInfo> {
                 override fun reduce(state: UserInfo): UserInfo {
                     return UserInfo(

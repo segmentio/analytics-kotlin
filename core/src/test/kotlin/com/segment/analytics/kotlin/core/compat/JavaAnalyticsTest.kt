@@ -6,9 +6,9 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -399,7 +399,7 @@ internal class JavaAnalyticsTest {
     @Nested
     inner class Reset {
         @Test
-        fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking {
+        fun `reset() overwrites userId and traits also resets event plugin`() {
             val plugin = spyk(StubPlugin())
             analytics.add(plugin)
 
@@ -438,20 +438,20 @@ internal class JavaAnalyticsTest {
     }
 
     @Test
-    fun userId() = runBlocking {
+    fun userId() {
         analytics.identify("userId")
         assertEquals("userId", analytics.userId())
     }
 
     @Test
-    fun traits() = runBlocking {
+    fun traits() {
         val json = buildJsonObject { put("name", "bar") }
         analytics.identify("userId", json)
         assertEquals(json, analytics.traits())
     }
 
     @Test
-    fun settings() = runBlocking {
+    fun settings() = runTest {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("int1", true)

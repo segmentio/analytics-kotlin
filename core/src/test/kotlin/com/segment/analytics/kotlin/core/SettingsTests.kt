@@ -7,9 +7,9 @@ import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -43,7 +43,7 @@ class SettingsTests {
     }
 
     @Test
-    fun `checkSettings updates settings`() = runBlocking {
+    fun `checkSettings updates settings`() = runTest {
         val system = analytics.store.currentState(System::class)
         val curSettings = system?.settings
         assertEquals(
@@ -61,7 +61,7 @@ class SettingsTests {
     }
 
     @Test
-    fun `settings update updates plugins`() = runBlocking {
+    fun `settings update updates plugins`() {
         val mockPlugin = spyk(StubPlugin())
         analytics.add(mockPlugin)
         verify {
@@ -145,7 +145,7 @@ class SettingsTests {
     }
 
     @Test
-    fun `can manually enable destinations`() = runBlocking {
+    fun `can manually enable destinations`() {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("Foo", buildJsonObject {

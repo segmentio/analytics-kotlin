@@ -7,9 +7,8 @@ import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.EventsFileManager
 import io.mockk.every
 import io.mockk.mockkStatic
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.*
@@ -40,7 +39,7 @@ class EventsFileTests {
     }
 
     @Test
-    fun `check if event is stored correctly and creates new file`() = runBlocking  {
+    fun `check if event is stored correctly and creates new file`() = runTest  {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -63,7 +62,7 @@ class EventsFileTests {
     }
 
     @Test
-    fun `storeEvent stores in existing file if available`() = runBlocking  {
+    fun `storeEvent stores in existing file if available`() = runTest  {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -87,7 +86,7 @@ class EventsFileTests {
     }
 
     @Test
-    fun `storeEvent creates new file when at capacity and closes other file`() = runBlocking  {
+    fun `storeEvent creates new file when at capacity and closes other file`() = runTest  {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -118,14 +117,14 @@ class EventsFileTests {
     }
 
     @Test
-    fun `read returns empty list when no events stored`() = runBlocking {
+    fun `read returns empty list when no events stored`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         file.rollover()
         assertTrue(file.read().isEmpty())
     }
 
     @Test
-    fun `read finishes open file and lists it`() = runBlocking {
+    fun `read finishes open file and lists it`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -151,7 +150,7 @@ class EventsFileTests {
     }
 
     @Test
-    fun `multiple reads doesnt create extra files`() = runBlocking {
+    fun `multiple reads doesnt create extra files`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -185,7 +184,7 @@ class EventsFileTests {
     }
 
     @Test
-    fun `read lists all available files for writekey`() = runBlocking {
+    fun `read lists all available files for writekey`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -241,7 +240,7 @@ class EventsFileTests {
 //    }
 
     @Test
-    fun `remove deletes file`() = runBlocking {
+    fun `remove deletes file`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
