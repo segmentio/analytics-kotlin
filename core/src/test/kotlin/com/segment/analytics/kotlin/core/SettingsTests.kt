@@ -4,12 +4,10 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -24,8 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger
 class SettingsTests {
 
     private lateinit var analytics: Analytics
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
 
     init {
         mockHTTPClient()
@@ -33,16 +29,11 @@ class SettingsTests {
 
     @BeforeEach
     fun setup() {
-        analytics = Analytics(
-            Configuration(
-                writeKey = "123",
-                application = "Test"
-            ),
-            spyStore(testScope, testDispatcher),
-            testScope,
-            testDispatcher,
-            testDispatcher
-        )
+
+        analytics = testAnalytics(Configuration(
+            writeKey = "123",
+            application = "Test"
+        ))
         analytics.configuration.autoAddSegmentDestination = false
     }
 

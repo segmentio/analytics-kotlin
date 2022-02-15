@@ -8,6 +8,7 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.getUniqueID
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
+import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
@@ -34,7 +35,7 @@ class AndroidContextCollectorTests {
         mockkStatic("com.segment.analytics.kotlin.android.plugins.AndroidContextPluginKt")
         every { getUniqueID() } returns "unknown"
 
-        analytics  = Analytics(
+        analytics  = testAnalytics(
             Configuration(
                 writeKey = "123",
                 application = appContext,
@@ -44,7 +45,7 @@ class AndroidContextCollectorTests {
     }
 
     @Test
-    fun `context fields applied correctly`() {
+    fun `context fields applied correctly`() = runBlocking {
         // Context of the app under test.
         analytics.configuration.collectDeviceId = true
         val contextCollector = AndroidContextPlugin()

@@ -4,14 +4,9 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
-import com.segment.analytics.kotlin.core.utils.StubPlugin
-import com.segment.analytics.kotlin.core.utils.TestRunPlugin
-import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -27,9 +22,6 @@ import java.util.function.Consumer
 internal class JavaAnalyticsTest {
     private lateinit var analytics: JavaAnalytics
     private lateinit var mockPlugin: StubPlugin
-
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
 
     private val epochTimestamp = Date(0).toInstant().toString()
     private val baseContext = buildJsonObject {
@@ -55,9 +47,8 @@ internal class JavaAnalyticsTest {
             .setAutoAddSegmentDestination(false)
             .build()
 
-        val store = spyStore(testScope, testDispatcher)
         analytics = JavaAnalytics(
-            Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+            analytics = testAnalytics(config)
         )
         mockPlugin = spyk(StubPlugin())
     }

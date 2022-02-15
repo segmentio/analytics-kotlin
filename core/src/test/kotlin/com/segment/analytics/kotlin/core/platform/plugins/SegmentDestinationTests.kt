@@ -6,11 +6,9 @@ import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -30,11 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SegmentDestinationTests {
     private lateinit var analytics: Analytics
-
-    private val testDispatcher = TestCoroutineDispatcher()
-
-    // val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val testScope = TestCoroutineScope(testDispatcher)
 
     private lateinit var segmentDestination: SegmentDestination
 
@@ -61,8 +54,7 @@ class SegmentDestinationTests {
             flushAt = 2,
             flushInterval = 0
         )
-        val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+        analytics = testAnalytics(config)
         segmentDestination.setup(analytics)
     }
 

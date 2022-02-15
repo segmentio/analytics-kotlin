@@ -5,10 +5,8 @@ import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.*
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -22,11 +20,6 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DeviceTokenPluginTests {
     private lateinit var analytics: Analytics
-
-    private val testDispatcher = TestCoroutineDispatcher()
-
-    // val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val testScope = TestCoroutineScope(testDispatcher)
 
     init {
         mockkStatic(Instant::class)
@@ -43,8 +36,7 @@ class DeviceTokenPluginTests {
                 application = "Test",
                 autoAddSegmentDestination = false
             )
-        val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+        analytics = testAnalytics(config)
     }
 
     @Test

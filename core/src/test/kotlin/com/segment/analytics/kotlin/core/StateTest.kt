@@ -2,10 +2,8 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -16,9 +14,6 @@ import org.junit.jupiter.api.Test
 
 internal class StateTest {
     private lateinit var analytics: Analytics
-
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
 
     init {
         mockHTTPClient()
@@ -31,8 +26,7 @@ internal class StateTest {
             writeKey = "123",
             application = "Test"
         )
-        val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+        analytics = testAnalytics(config)
 
         analytics.configuration.autoAddSegmentDestination = false
     }
