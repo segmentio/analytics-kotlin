@@ -4,8 +4,8 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.spyStore
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -22,7 +22,11 @@ internal class StorageImplTest {
 
     private val epochTimestamp = Date(0).toInstant().toString()
 
-    private var store = spyStore(TestCoroutineScope(), TestCoroutineDispatcher())
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val testScope = TestScope(testDispatcher)
+
+    private var store = spyStore(testScope, testDispatcher)
     private lateinit var storage: StorageImpl
 
     @BeforeEach
@@ -47,7 +51,7 @@ internal class StorageImplTest {
         storage = StorageImpl(
             store,
             "123",
-            TestCoroutineDispatcher()
+            UnconfinedTestDispatcher()
         )
         storage.subscribeToStore()
     }

@@ -5,6 +5,8 @@ import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
@@ -15,7 +17,9 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PluginTests {
 
-    private val mockAnalytics = mockAnalytics()
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+    private val mockAnalytics = mockAnalytics(testScope, testDispatcher)
     private val timeline: Timeline
 
     init {

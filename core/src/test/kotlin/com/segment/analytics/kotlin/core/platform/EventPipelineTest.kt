@@ -9,6 +9,8 @@ import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -23,13 +25,17 @@ internal class EventPipelineTest {
 
     private lateinit var storage: Storage
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val testScope = TestScope(testDispatcher)
+
     @BeforeEach
     internal fun setUp() {
         MockKAnnotations.init(this)
         mockkConstructor(HTTPClient::class)
         mockkConstructor(File::class)
 
-        analytics = mockAnalytics()
+        analytics = mockAnalytics(testScope, testDispatcher)
         storage = spyk(ConcreteStorageProvider.getStorage(
             analytics,
             analytics.store,

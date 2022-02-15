@@ -7,6 +7,8 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -32,6 +34,9 @@ internal class JavaAnalyticsTest {
         put(ContextPlugin.LIBRARY_KEY, lib)
     }
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+
     init {
         mockkStatic(Instant::class)
         every { Instant.now() } returns Date(0).toInstant()
@@ -48,7 +53,7 @@ internal class JavaAnalyticsTest {
             .build()
 
         analytics = JavaAnalytics(
-            analytics = testAnalytics(config)
+            analytics = testAnalytics(config, testScope, testDispatcher)
         )
         mockPlugin = spyk(StubPlugin())
     }

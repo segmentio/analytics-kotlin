@@ -4,8 +4,7 @@ import com.segment.analytics.kotlin.core.*
 import io.mockk.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.*
 import sovran.kotlin.Store
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -17,28 +16,26 @@ import kotlin.coroutines.CoroutineContext
  * Current capabilities:
  * - In-memory sovran.store
  */
-fun mockAnalytics(): Analytics {
+fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
-    val scope = TestCoroutineScope()
-    val dispatcher = TestCoroutineDispatcher()
-    val mockStore = spyStore(scope, dispatcher)
+    val mockStore = spyStore(testScope, testDispatcher)
     every { mock.store } returns mockStore
-    every { mock.analyticsScope } returns scope
-    every { mock.fileIODispatcher } returns dispatcher
-    every { mock.networkIODispatcher } returns dispatcher
-    every { mock.analyticsDispatcher } returns dispatcher
+    every { mock.analyticsScope } returns testScope
+    every { mock.fileIODispatcher } returns testDispatcher
+    every { mock.networkIODispatcher } returns testDispatcher
+    every { mock.analyticsDispatcher } returns testDispatcher
     return mock
 }
 
-fun testAnalytics(configuration: Configuration): Analytics {
-    return object : Analytics(configuration, TestCoroutineConfiguration()) {}
+fun testAnalytics(configuration: Configuration, testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
+    return object : Analytics(configuration, TestCoroutineConfiguration(testScope, testDispatcher)) {}
 }
 
 fun clearPersistentStorage() {
     File("/tmp/analytics-kotlin/123").deleteRecursively()
 }
 
-fun spyStore(scope: CoroutineScope, dispatcher: CoroutineDispatcher): Store {
+fun spyStore(scope: TestScope, dispatcher: TestDispatcher): Store {
     val store = spyk(Store())
     every { store getProperty "sovranScope" } propertyType CoroutineScope::class returns scope
     every { store getProperty "syncQueue" } propertyType CoroutineContext::class returns dispatcher
@@ -58,22 +55,22 @@ fun mockHTTPClient() {
     every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } returns connection
 }
 
-class TestCoroutineConfiguration : CoroutineConfiguration {
-    private val testScope = TestCoroutineScope()
+class TestCoroutineConfiguration(
+        val testScope: TestScope,
+        val testDispatcher: TestDispatcher
+    ) : CoroutineConfiguration {
 
-    private val testCoroutineDispatcher = TestCoroutineDispatcher()
-
-    override val store: Store = spyStore(testScope, testCoroutineDispatcher)
+    override val store: Store = spyStore(testScope, testDispatcher)
 
     override val analyticsScope: CoroutineScope
         get() = testScope
 
     override val analyticsDispatcher: CoroutineDispatcher
-        get() = testCoroutineDispatcher
+        get() = testDispatcher
 
     override val networkIODispatcher: CoroutineDispatcher
-        get() = testCoroutineDispatcher
+        get() = testDispatcher
 
     override val fileIODispatcher: CoroutineDispatcher
-        get() = testCoroutineDispatcher
+        get() = testDispatcher
 }

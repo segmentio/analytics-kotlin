@@ -6,6 +6,8 @@ import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.every
 import io.mockk.spyk
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.*
@@ -17,6 +19,10 @@ internal class StartupQueueTest {
 
     private lateinit var analytics: Analytics
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val testScope = TestScope(testDispatcher)
+
     @BeforeEach
     internal fun setUp() {
         val config = Configuration(
@@ -24,8 +30,7 @@ internal class StartupQueueTest {
             application = "Tetst",
             autoAddSegmentDestination = false
         )
-        analytics = testAnalytics(config)
-        analytics = Analytics(config)
+        analytics = testAnalytics(config, testScope, testDispatcher)
     }
 
     @Test

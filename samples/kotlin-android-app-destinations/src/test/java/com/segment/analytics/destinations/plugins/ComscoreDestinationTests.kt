@@ -16,8 +16,8 @@ import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.getString
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -60,9 +60,9 @@ class ComscoreDestinationTests {
     @MockK
     lateinit var mockedContext: Context
 
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
-    private val testScope = TestCoroutineScope(testDispatcher)
+    private val testScope = TestScope(testDispatcher)
 
     init {
         MockKAnnotations.init(this)

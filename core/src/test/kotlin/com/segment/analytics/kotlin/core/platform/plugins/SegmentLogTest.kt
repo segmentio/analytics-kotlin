@@ -7,6 +7,8 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.testAnalytics
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.AfterEach
@@ -20,6 +22,10 @@ internal class SegmentLogTest {
     private lateinit var analytics: Analytics
 
     private val mockLogger = LoggerMockPlugin()
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val testScope = TestScope(testDispatcher)
 
     class LoggerMockPlugin : SegmentLog() {
 
@@ -46,7 +52,7 @@ internal class SegmentLogTest {
             autoAddSegmentDestination = false
         )
 
-        analytics = testAnalytics(config)
+        analytics = testAnalytics(config, testScope, testDispatcher)
         analytics.add(mockLogger)
         SegmentLog.loggingEnabled = true
     }

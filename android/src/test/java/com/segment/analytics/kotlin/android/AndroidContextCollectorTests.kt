@@ -13,6 +13,8 @@ import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -28,6 +30,9 @@ class AndroidContextCollectorTests {
     val appContext: Context
     val analytics: Analytics
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+
     init {
         appContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
         val sharedPreferences: SharedPreferences = MemorySharedPreferences()
@@ -40,7 +45,8 @@ class AndroidContextCollectorTests {
                 writeKey = "123",
                 application = appContext,
                 storageProvider = AndroidStorageProvider
-            )
+            ),
+            testScope, testDispatcher
         )
     }
 

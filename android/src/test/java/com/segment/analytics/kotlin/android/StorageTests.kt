@@ -5,11 +5,9 @@ import android.content.SharedPreferences
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import com.segment.analytics.kotlin.android.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.android.utils.mockAnalytics
 import com.segment.analytics.kotlin.android.utils.mockContext
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.serialization.decodeFromString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -56,7 +54,7 @@ class StorageTests {
                 mockContext,
                 store,
                 "123",
-                TestCoroutineDispatcher()
+                UnconfinedTestDispatcher()
             )
             androidStorage.subscribeToStore()
         }

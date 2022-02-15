@@ -16,6 +16,8 @@ import com.segment.analytics.kotlin.android.utils.mockHTTPClient
 import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.*
@@ -34,6 +36,9 @@ class AndroidLifecyclePluginTests {
 
     private lateinit var analytics: Analytics
     private val mockContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     init {
         val packageInfo = PackageInfo()
@@ -61,7 +66,8 @@ class AndroidLifecyclePluginTests {
                 writeKey = "123",
                 application = mockContext,
                 storageProvider = AndroidStorageProvider
-            )
+            ),
+            testScope, testDispatcher
         )
     }
 

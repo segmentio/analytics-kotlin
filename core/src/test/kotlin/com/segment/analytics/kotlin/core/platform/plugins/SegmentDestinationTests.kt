@@ -9,6 +9,8 @@ import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -33,6 +35,10 @@ class SegmentDestinationTests {
 
     private val epochTimestamp = Date(0).toInstant().toString()
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val testScope = TestScope(testDispatcher)
+
     init {
         mockkStatic(Instant::class)
         every { Instant.now() } returns Date(0).toInstant()
@@ -54,7 +60,7 @@ class SegmentDestinationTests {
             flushAt = 2,
             flushInterval = 0
         )
-        analytics = testAnalytics(config)
+        analytics = testAnalytics(config, testScope, testDispatcher)
         segmentDestination.setup(analytics)
     }
 

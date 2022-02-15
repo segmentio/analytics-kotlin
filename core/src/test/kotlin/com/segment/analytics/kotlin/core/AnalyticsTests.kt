@@ -9,6 +9,8 @@ import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
@@ -37,6 +39,9 @@ class AnalyticsTests {
         put(ContextPlugin.LIBRARY_KEY, lib)
     }
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+
     init {
         mockkStatic(Instant::class)
         every { Instant.now() } returns Date(0).toInstant()
@@ -53,7 +58,7 @@ class AnalyticsTests {
             application = "Test"
         )
 
-        analytics = testAnalytics(config)
+        analytics = testAnalytics(config, testScope, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
     }
 
