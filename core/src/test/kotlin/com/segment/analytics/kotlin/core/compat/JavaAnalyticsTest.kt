@@ -418,8 +418,8 @@ internal class JavaAnalyticsTest {
             .add(testPlugin1)
             .add(testPlugin2)
             .process(TrackEvent(event = "track", properties = emptyJsonObject))
-        verify(timeout = 2000) { testPlugin1.updateState(true) }
-        verify(timeout = 2000) { testPlugin2.updateState(true) }
+        verify { testPlugin1.updateState(true) }
+        verify { testPlugin2.updateState(true) }
     }
 
     @Test

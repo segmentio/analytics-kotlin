@@ -120,7 +120,7 @@ class SegmentDestinationTests {
         analytics.add(testLogger)
         val destSpy = spyk(segmentDestination)
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        verify(timeout = 2000) { errorAddingPayload.set(true) }
+        verify { errorAddingPayload.set(true) }
     }
 
     @Test
@@ -149,7 +149,7 @@ class SegmentDestinationTests {
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
 
-        verify(timeout = 2000) { connection.close() }
+        verify { connection.close() }
         with(String(outputBytes)) {
             val contentsJson: JsonObject = Json.decodeFromString(this)
             assertEquals(2, contentsJson.size)
@@ -199,7 +199,7 @@ class SegmentDestinationTests {
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
-        verify(timeout = 2000) { payloadsRejected.set(true) }
+        verify { payloadsRejected.set(true) }
     }
 
     @Test
@@ -236,7 +236,7 @@ class SegmentDestinationTests {
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
-        verify(timeout = 2000) { errorUploading.set(true) }
+        verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
             eventsFile.rollover()
@@ -279,7 +279,7 @@ class SegmentDestinationTests {
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
-        verify(timeout = 2000) { errorUploading.set(true) }
+        verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
             eventsFile.rollover()
@@ -317,6 +317,6 @@ class SegmentDestinationTests {
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
 
-        verify(timeout = 2000) { exceptionUploading.set(true) }
+        verify { exceptionUploading.set(true) }
     }
 }

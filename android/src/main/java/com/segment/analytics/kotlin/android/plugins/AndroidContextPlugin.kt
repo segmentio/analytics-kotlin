@@ -25,8 +25,10 @@ import java.util.UUID
 import java.lang.System as JavaSystem
 import android.media.MediaDrm
 import com.segment.analytics.kotlin.core.utilities.*
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.lang.Exception
 import java.security.MessageDigest
 
@@ -143,8 +145,17 @@ class AndroidContextPlugin : Plugin {
             var deviceId = fallbackDeviceId
 
             // restrict getDeviceId to 2s to avoid ANR
-            withTimeout(20_000) {
-                deviceId = getDeviceId(collectDeviceId, fallbackDeviceId)
+            val task = async {
+                getDeviceId(collectDeviceId, fallbackDeviceId)
+            }
+
+            try {
+                withTimeoutOrNull(200_000) {
+                    deviceId = task.await()
+                }
+            }
+            catch (e : Exception) {
+                e.printStackTrace()
             }
 
             if (deviceId != fallbackDeviceId) {

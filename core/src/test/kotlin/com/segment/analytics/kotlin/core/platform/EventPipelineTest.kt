@@ -48,14 +48,14 @@ internal class EventPipelineTest {
     fun put() {
         val event = "event 1"
         pipeline.put(event)
-        coVerify(timeout = 2000) { storage.write(Storage.Constants.Events, event) }
+        coVerify { storage.write(Storage.Constants.Events, event) }
     }
 
     @Test
     fun flush() {
         pipeline.put("event 1")
         pipeline.put(EventPipeline.FLUSH_POISON)
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -78,7 +78,7 @@ internal class EventPipelineTest {
     fun `put more than flushCount causes flush`() {
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -91,7 +91,7 @@ internal class EventPipelineTest {
         every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "")
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -104,7 +104,7 @@ internal class EventPipelineTest {
         every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(300, "", "")
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -119,7 +119,7 @@ internal class EventPipelineTest {
         every { anyConstructed<HTTPClient>().upload(any()) } throws Exception()
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
