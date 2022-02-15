@@ -1,6 +1,5 @@
 package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
@@ -30,17 +29,27 @@ import kotlin.reflect.KClass
  * @property networkIODispatcher coroutine dispatcher that runs the network tasks
  * @property fileIODispatcher coroutine dispatcher that runs the file related tasks
  */
-class Analytics internal constructor(
+open class Analytics protected constructor(
     val configuration: Configuration,
-    val store: Store,
-    val analyticsScope: CoroutineScope = CoroutineScope(SupervisorJob()),
-    val analyticsDispatcher: CoroutineDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher(),
-    val networkIODispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
-    val fileIODispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
-) : Subscriber {
+    coroutineConfig: CoroutineConfiguration
+) : Subscriber, CoroutineConfiguration by coroutineConfig {
 
-    internal val timeline: Timeline
-    val storage: Storage
+    // use lazy to avoid the instance being leak before fully initialized
+    internal val timeline: Timeline by lazy {
+        Timeline().also { it.analytics = this }
+    }
+
+    // use lazy to avoid the instance being leak before fully initialized
+    val storage: Storage by lazy {
+        configuration.storageProvider.getStorage(
+            analytics = this,
+            writeKey = configuration.writeKey,
+            ioDispatcher = fileIODispatcher,
+            store = store,
+            application = configuration.application!!
+        )
+    }
+
     companion object {
         var debugLogsEnabled: Boolean = false
             set(value) {
@@ -51,15 +60,6 @@ class Analytics internal constructor(
 
     init {
         require(configuration.isValid()) { "invalid configuration" }
-        timeline = Timeline().also { it.analytics = this }
-
-        storage = configuration.storageProvider.getStorage(
-            analytics = this,
-            writeKey = configuration.writeKey,
-            ioDispatcher = fileIODispatcher,
-            store = store,
-            application = configuration.application!!
-        )
         build()
     }
 
@@ -67,7 +67,13 @@ class Analytics internal constructor(
      * Public constructor of Analytics.
      * @property configuration configuration that analytics can use
      */
-    constructor(configuration: Configuration): this(configuration, Store())
+    constructor(configuration: Configuration): this(configuration, object : CoroutineConfiguration{
+        override val store = Store()
+        override val analyticsScope = CoroutineScope(SupervisorJob())
+        override val analyticsDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
+        override val networkIODispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+        override val fileIODispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+    })
 
     // This function provides a default state to the store & attaches the storage and store instances
     // Initiates the initial call to settings and adds default system plugins
