@@ -25,10 +25,7 @@ import java.util.UUID
 import java.lang.System as JavaSystem
 import android.media.MediaDrm
 import com.segment.analytics.kotlin.core.utilities.*
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.*
 import java.lang.Exception
 import java.security.MessageDigest
 
@@ -145,17 +142,15 @@ class AndroidContextPlugin : Plugin {
             var deviceId = fallbackDeviceId
 
             // restrict getDeviceId to 2s to avoid ANR
-            val task = async {
+            // have to use a different scope than analyticsScope.
+            // otherwise, timeout cancellation won't work (i.e. the scope can't cancel itself)
+            val task = CoroutineScope(SupervisorJob()).async {
                 getDeviceId(collectDeviceId, fallbackDeviceId)
             }
 
-            try {
-                withTimeoutOrNull(200_000) {
-                    deviceId = task.await()
-                }
-            }
-            catch (e : Exception) {
-                e.printStackTrace()
+            // restrict getDeviceId to 2s to avoid ANR
+            withTimeoutOrNull(2_000) {
+                deviceId = task.await()
             }
 
             if (deviceId != fallbackDeviceId) {

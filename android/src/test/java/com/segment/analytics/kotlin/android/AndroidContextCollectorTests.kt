@@ -2,7 +2,6 @@ package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
@@ -12,11 +11,11 @@ import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.*
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,16 +26,19 @@ import java.util.*
 @Config(manifest = Config.NONE)
 class AndroidContextCollectorTests {
 
-    val appContext: Context
-    val analytics: Analytics
+    lateinit var appContext: Context
+    lateinit var analytics: Analytics
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    init {
+    @Before
+    fun setUp() {
         appContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
         val sharedPreferences: SharedPreferences = MemorySharedPreferences()
         every { appContext.getSharedPreferences(any(), any()) } returns sharedPreferences
+        mockkStatic(UUID::class)
+        every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
         mockkStatic("com.segment.analytics.kotlin.android.plugins.AndroidContextPluginKt")
         every { getUniqueID() } returns "unknown"
 
@@ -113,7 +115,6 @@ class AndroidContextCollectorTests {
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
         val deviceId = contextCollector.getDeviceId(false, "")
-        Log.d("debug flaky test", deviceId)
         assertEquals(deviceId, "anonId")
     }
 
