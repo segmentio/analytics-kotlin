@@ -115,5 +115,33 @@ class AndroidContextCollectorTests {
         assertEquals(deviceId, "anonId")
     }
 
+    @Test
+    fun `device id cache is used when presented`() = runTest {
+        analytics.storage.write(Storage.Constants.DeviceId, "anonId")
+
+        analytics.configuration.collectDeviceId = true
+        val contextCollector = AndroidContextPlugin()
+        contextCollector.setup(analytics)
+
+        val event = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = Date(0).toInstant().toString()
+            }
+        contextCollector.execute(event)
+
+        with(event.context) {
+            assertTrue(this.containsKey("device"))
+            this["device"]?.jsonObject?.let {
+                assertEquals("anonId", it["id"].asString())
+            }
+        }
+    }
+
     private fun JsonElement?.asString(): String? = this?.jsonPrimitive?.content
 }

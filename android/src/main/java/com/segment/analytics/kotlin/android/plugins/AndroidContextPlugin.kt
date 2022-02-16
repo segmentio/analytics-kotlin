@@ -125,15 +125,22 @@ class AndroidContextPlugin : Plugin {
             emptyJsonObject
         }
 
+        // use empty string to indicate device id not yet ready
+        val deviceId = storage.read(Storage.Constants.DeviceId) ?: ""
         device = buildJsonObject {
-            // use empty string to indicate device id not yet ready
-            put(DEVICE_ID_KEY, "")
+            put(DEVICE_ID_KEY, deviceId)
             put(DEVICE_MANUFACTURER_KEY, Build.MANUFACTURER)
             put(DEVICE_MODEL_KEY, Build.MODEL)
             put(DEVICE_NAME_KEY, Build.DEVICE)
             put(DEVICE_TYPE_KEY, "android")
         }
 
+        if (deviceId.isEmpty()) {
+            loadDeviceId(collectDeviceId)
+        }
+    }
+
+    private fun loadDeviceId(collectDeviceId: Boolean) {
         // run `getDeviceId` in coroutine, since the DRM API takes a long time
         // to generate device id on certain devices and causes ANR issue.
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
@@ -159,6 +166,8 @@ class AndroidContextPlugin : Plugin {
                     it[DEVICE_ID_KEY] = deviceId
                 }
             }
+
+            storage.write(Storage.Constants.DeviceId, deviceId)
         }
     }
 
