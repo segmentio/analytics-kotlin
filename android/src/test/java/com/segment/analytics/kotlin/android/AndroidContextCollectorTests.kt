@@ -11,7 +11,6 @@ import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
