@@ -125,11 +125,9 @@ class AndroidContextPlugin : Plugin {
             emptyJsonObject
         }
 
-        // generate random identifier that does not persist across installations
-        // use it as the default device id in case DRM API failed to generate one.
-        val fallbackDeviceId = UUID.randomUUID().toString()
         device = buildJsonObject {
-            put(DEVICE_ID_KEY, fallbackDeviceId)
+            // use empty string to indicate device id not yet ready
+            put(DEVICE_ID_KEY, "")
             put(DEVICE_MANUFACTURER_KEY, Build.MANUFACTURER)
             put(DEVICE_MODEL_KEY, Build.MODEL)
             put(DEVICE_NAME_KEY, Build.DEVICE)
@@ -139,9 +137,12 @@ class AndroidContextPlugin : Plugin {
         // run `getDeviceId` in coroutine, since the DRM API takes a long time
         // to generate device id on certain devices and causes ANR issue.
         analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+
+            // generate random identifier that does not persist across installations
+            // use it as the fallback in case DRM API failed to generate one.
+            val fallbackDeviceId = UUID.randomUUID().toString()
             var deviceId = fallbackDeviceId
 
-            // restrict getDeviceId to 2s to avoid ANR
             // have to use a different scope than analyticsScope.
             // otherwise, timeout cancellation won't work (i.e. the scope can't cancel itself)
             val task = CoroutineScope(SupervisorJob()).async {
