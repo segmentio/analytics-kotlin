@@ -37,8 +37,6 @@ class AndroidContextCollectorTests {
         appContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
         val sharedPreferences: SharedPreferences = MemorySharedPreferences()
         every { appContext.getSharedPreferences(any(), any()) } returns sharedPreferences
-        mockkStatic(UUID::class)
-        every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
         mockkStatic("com.segment.analytics.kotlin.android.plugins.AndroidContextPluginKt")
         every { getUniqueID() } returns "unknown"
 
