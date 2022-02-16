@@ -2,19 +2,15 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
-import com.segment.analytics.kotlin.core.utils.StubPlugin
-import com.segment.analytics.kotlin.core.utils.TestRunPlugin
-import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
@@ -34,9 +30,6 @@ import java.util.UUID
 class AnalyticsTests {
     private lateinit var analytics: Analytics
 
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
-
     private val epochTimestamp = Date(0).toInstant().toString()
     private val baseContext = buildJsonObject {
         val lib = buildJsonObject {
@@ -45,6 +38,9 @@ class AnalyticsTests {
         }
         put(ContextPlugin.LIBRARY_KEY, lib)
     }
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     init {
         mockkStatic(Instant::class)
@@ -62,8 +58,7 @@ class AnalyticsTests {
             application = "Test"
         )
 
-        val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+        analytics = testAnalytics(config, testScope, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
     }
 
@@ -215,7 +210,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `identify() overwrites userId and traits`() = runBlocking  {
+            fun `identify() overwrites userId and traits`() = runTest  {
                 analytics.store.dispatch(
                     UserInfo.SetUserIdAndTraitsAction(
                         "oldUserId",
@@ -275,7 +270,7 @@ class AnalyticsTests {
                 analytics.add(mockPlugin)
                 analytics.group("high school", buildJsonObject { put("foo", "bar") })
                 val group = slot<GroupEvent>()
-                verify (timeout = 2000) { mockPlugin.group(capture(group)) }
+                verify { mockPlugin.group(capture(group)) }
                 assertEquals(
                     GroupEvent(
                         traits = buildJsonObject { put("foo", "bar") },
@@ -323,7 +318,7 @@ class AnalyticsTests {
             }
 
             @Test
-            fun `alias event modifies underlying userId`() = runBlocking  {
+            fun `alias event modifies underlying userId`() = runTest  {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.identify("oldId")
@@ -342,7 +337,7 @@ class AnalyticsTests {
         @Nested
         inner class Reset {
             @Test
-            fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking  {
+            fun `reset() overwrites userId and traits also resets event plugin`() = runTest  {
                 val plugin = spyk(StubPlugin())
                 analytics.add(plugin)
 
@@ -397,7 +392,7 @@ class AnalyticsTests {
     }
 
     @Test
-    fun `settings fetches current Analytics Settings`() = runBlocking {
+    fun `settings fetches current Analytics Settings`() = runTest {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("int1", true)

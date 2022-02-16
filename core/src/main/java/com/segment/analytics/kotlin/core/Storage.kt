@@ -36,7 +36,8 @@ interface Storage {
         Settings("segment.settings"),
         Events("segment.events"),
         AppVersion("segment.app.version"),
-        AppBuild("segment.app.build")
+        AppBuild("segment.app.build"),
+        DeviceId("segment.device.id")
     }
 
     suspend fun subscribeToStore()

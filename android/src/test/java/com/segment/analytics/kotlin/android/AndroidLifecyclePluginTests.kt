@@ -13,9 +13,11 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.android.utils.mockHTTPClient
+import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.*
@@ -34,6 +36,9 @@ class AndroidLifecyclePluginTests {
 
     private lateinit var analytics: Analytics
     private val mockContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     init {
         val packageInfo = PackageInfo()
@@ -56,12 +61,13 @@ class AndroidLifecyclePluginTests {
 
     @Before
     fun setup() {
-        analytics = Analytics(
+        analytics = testAnalytics(
             Configuration(
                 writeKey = "123",
                 application = mockContext,
                 storageProvider = AndroidStorageProvider
-            )
+            ),
+            testScope, testDispatcher
         )
     }
 
@@ -121,7 +127,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application opened is tracked`() = runBlocking{
+    fun `application opened is tracked`() {
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
@@ -134,12 +140,10 @@ class AndroidLifecyclePluginTests {
 
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
-        delay(500)
         lifecyclePlugin.onActivityStarted(mockActivity)
-        delay(500)
         lifecyclePlugin.onActivityResumed(mockActivity)
 
-        verify (timeout = 2000){  mockPlugin.updateState(true) }
+        verify {  mockPlugin.updateState(true) }
         val tracks = mutableListOf<TrackEvent>()
         verify { mockPlugin.track(capture(tracks)) }
         assertEquals(2, tracks.size)
@@ -169,7 +173,7 @@ class AndroidLifecyclePluginTests {
         lifecyclePlugin.onActivityStopped(mockActivity)
         lifecyclePlugin.onActivityDestroyed(mockActivity)
 
-        verify (timeout = 2000){  mockPlugin.updateState(true) }
+        verify {  mockPlugin.updateState(true) }
         val track = slot<TrackEvent>()
         verify { mockPlugin.track(capture(track)) }
         with(track.captured) {
@@ -193,7 +197,7 @@ class AndroidLifecyclePluginTests {
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
 
-        verify (timeout = 4000){  mockPlugin.updateState(true) }
+        verify {  mockPlugin.updateState(true) }
         val track = slot<TrackEvent>()
         verify { mockPlugin.track(capture(track)) }
         with(track.captured) {
@@ -206,7 +210,7 @@ class AndroidLifecyclePluginTests {
     }
 
     @Test
-    fun `application updated is tracked`() = runBlocking {
+    fun `application updated is tracked`() = runTest {
         analytics.configuration.trackApplicationLifecycleEvents = true
         analytics.configuration.trackDeepLinks = false
         analytics.configuration.useLifecycleObserver = false
@@ -224,7 +228,7 @@ class AndroidLifecyclePluginTests {
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
 
-        verify (timeout = 2000){  mockPlugin.updateState(true) }
+        verify {  mockPlugin.updateState(true) }
         val track = slot<TrackEvent>()
         verify { mockPlugin.track(capture(track)) }
         with(track.captured) {
@@ -281,7 +285,7 @@ class AndroidLifecyclePluginTests {
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
 
-        verify (timeout = 2000){  mockPlugin.updateState(true) }
+        verify {  mockPlugin.updateState(true) }
         val track = slot<TrackEvent>()
         verify { mockPlugin.track(capture(track)) }
         with(track.captured) {
@@ -316,7 +320,7 @@ class AndroidLifecyclePluginTests {
         // Simulate activity startup
         lifecyclePlugin.onActivityCreated(mockActivity, mockBundle)
 
-        verify (timeout = 4000){  mockPlugin.updateState(true) }
+        verify {  mockPlugin.updateState(true) }
         val track = slot<TrackEvent>()
         verify { mockPlugin.track(capture(track)) }
         with(track.captured) {

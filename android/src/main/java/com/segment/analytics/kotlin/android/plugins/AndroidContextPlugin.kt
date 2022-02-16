@@ -24,6 +24,8 @@ import java.util.TimeZone
 import java.util.UUID
 import java.lang.System as JavaSystem
 import android.media.MediaDrm
+import com.segment.analytics.kotlin.core.utilities.*
+import kotlinx.coroutines.*
 import java.lang.Exception
 import java.security.MessageDigest
 
@@ -123,16 +125,53 @@ class AndroidContextPlugin : Plugin {
             emptyJsonObject
         }
 
+        // use empty string to indicate device id not yet ready
+        val deviceId = storage.read(Storage.Constants.DeviceId) ?: ""
         device = buildJsonObject {
-            put(DEVICE_ID_KEY, getDeviceId(collectDeviceId))
+            put(DEVICE_ID_KEY, deviceId)
             put(DEVICE_MANUFACTURER_KEY, Build.MANUFACTURER)
             put(DEVICE_MODEL_KEY, Build.MODEL)
             put(DEVICE_NAME_KEY, Build.DEVICE)
             put(DEVICE_TYPE_KEY, "android")
         }
+
+        if (deviceId.isEmpty()) {
+            loadDeviceId(collectDeviceId)
+        }
     }
 
-    internal fun getDeviceId(collectDeviceId: Boolean): String {
+    private fun loadDeviceId(collectDeviceId: Boolean) {
+        // run `getDeviceId` in coroutine, since the DRM API takes a long time
+        // to generate device id on certain devices and causes ANR issue.
+        analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+
+            // generate random identifier that does not persist across installations
+            // use it as the fallback in case DRM API failed to generate one.
+            val fallbackDeviceId = UUID.randomUUID().toString()
+            var deviceId = fallbackDeviceId
+
+            // have to use a different scope than analyticsScope.
+            // otherwise, timeout cancellation won't work (i.e. the scope can't cancel itself)
+            val task = CoroutineScope(SupervisorJob()).async {
+                getDeviceId(collectDeviceId, fallbackDeviceId)
+            }
+
+            // restrict getDeviceId to 2s to avoid ANR
+            withTimeoutOrNull(2_000) {
+                deviceId = task.await()
+            }
+
+            if (deviceId != fallbackDeviceId) {
+                device = updateJsonObject(device) {
+                    it[DEVICE_ID_KEY] = deviceId
+                }
+            }
+
+            storage.write(Storage.Constants.DeviceId, deviceId)
+        }
+    }
+
+    internal fun getDeviceId(collectDeviceId: Boolean, fallbackDeviceId: String): String {
         if (!collectDeviceId) {
             return storage.read(Storage.Constants.AnonymousId) ?: ""
         }
@@ -142,9 +181,8 @@ class AndroidContextPlugin : Plugin {
         if (!uniqueId.isNullOrEmpty()) {
             return uniqueId
         }
-        // If this still fails, generate random identifier that does not persist across
-        // installations
-        return UUID.randomUUID().toString()
+        // If this still fails, falls back to the random uuid
+        return fallbackDeviceId
     }
 
     @SuppressLint("MissingPermission")

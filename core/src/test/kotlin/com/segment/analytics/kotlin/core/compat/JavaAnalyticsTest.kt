@@ -4,14 +4,11 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
-import com.segment.analytics.kotlin.core.utils.StubPlugin
-import com.segment.analytics.kotlin.core.utils.TestRunPlugin
-import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -28,9 +25,6 @@ internal class JavaAnalyticsTest {
     private lateinit var analytics: JavaAnalytics
     private lateinit var mockPlugin: StubPlugin
 
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
-
     private val epochTimestamp = Date(0).toInstant().toString()
     private val baseContext = buildJsonObject {
         val lib = buildJsonObject {
@@ -39,6 +33,9 @@ internal class JavaAnalyticsTest {
         }
         put(ContextPlugin.LIBRARY_KEY, lib)
     }
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     init {
         mockkStatic(Instant::class)
@@ -55,9 +52,8 @@ internal class JavaAnalyticsTest {
             .setAutoAddSegmentDestination(false)
             .build()
 
-        val store = spyStore(testScope, testDispatcher)
         analytics = JavaAnalytics(
-            Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+            analytics = testAnalytics(config, testScope, testDispatcher)
         )
         mockPlugin = spyk(StubPlugin())
     }
@@ -403,7 +399,7 @@ internal class JavaAnalyticsTest {
     @Nested
     inner class Reset {
         @Test
-        fun `reset() overwrites userId and traits also resets event plugin`() = runBlocking {
+        fun `reset() overwrites userId and traits also resets event plugin`() {
             val plugin = spyk(StubPlugin())
             analytics.add(plugin)
 
@@ -427,8 +423,8 @@ internal class JavaAnalyticsTest {
             .add(testPlugin1)
             .add(testPlugin2)
             .process(TrackEvent(event = "track", properties = emptyJsonObject))
-        verify(timeout = 2000) { testPlugin1.updateState(true) }
-        verify(timeout = 2000) { testPlugin2.updateState(true) }
+        verify { testPlugin1.updateState(true) }
+        verify { testPlugin2.updateState(true) }
     }
 
     @Test
@@ -442,20 +438,20 @@ internal class JavaAnalyticsTest {
     }
 
     @Test
-    fun userId() = runBlocking {
+    fun userId() {
         analytics.identify("userId")
         assertEquals("userId", analytics.userId())
     }
 
     @Test
-    fun traits() = runBlocking {
+    fun traits() {
         val json = buildJsonObject { put("name", "bar") }
         analytics.identify("userId", json)
         assertEquals(json, analytics.traits())
     }
 
     @Test
-    fun settings() = runBlocking {
+    fun settings() = runTest {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("int1", true)

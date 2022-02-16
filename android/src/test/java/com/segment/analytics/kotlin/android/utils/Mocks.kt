@@ -3,34 +3,34 @@ package com.segment.analytics.kotlin.android.utils
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.Connection
-import com.segment.analytics.kotlin.core.HTTPClient
+import com.segment.analytics.kotlin.core.*
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.spyk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.TestScope
 import sovran.kotlin.Store
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.HttpURLConnection
 import kotlin.coroutines.CoroutineContext
 
-fun mockAnalytics(): Analytics {
+fun mockAnalytics(testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
     val mock = mockk<Analytics>(relaxed = true)
-    val scope = TestCoroutineScope()
-    val dispatcher = TestCoroutineDispatcher()
-    val mockStore = spyStore(scope, dispatcher)
+    val mockStore = spyStore(testScope, testDispatcher)
     every { mock.store } returns mockStore
-    every { mock.analyticsScope } returns scope
-    every { mock.fileIODispatcher } returns dispatcher
-    every { mock.networkIODispatcher } returns dispatcher
-    every { mock.analyticsDispatcher } returns dispatcher
+    every { mock.analyticsScope } returns testScope
+    every { mock.fileIODispatcher } returns testDispatcher
+    every { mock.networkIODispatcher } returns testDispatcher
+    every { mock.analyticsDispatcher } returns testDispatcher
     return mock
+}
+
+fun testAnalytics(configuration: Configuration, testScope: TestScope, testDispatcher: TestDispatcher): Analytics {
+    return object : Analytics(configuration, TestCoroutineConfiguration(testScope, testDispatcher)) {}
 }
 
 fun mockContext(): Context {
@@ -72,4 +72,25 @@ fun mockHTTPClient() {
     val httpConnection: HttpURLConnection = mockk()
     val connection = object : Connection(httpConnection, settingsStream, null) {}
     every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } returns connection
+}
+
+class TestCoroutineConfiguration(
+    val testScope: TestScope,
+    val testDispatcher: TestDispatcher
+) : CoroutineConfiguration {
+
+    override val store: Store =
+        spyStore(testScope, testDispatcher)
+
+    override val analyticsScope: CoroutineScope
+        get() = testScope
+
+    override val analyticsDispatcher: CoroutineDispatcher
+        get() = testDispatcher
+
+    override val networkIODispatcher: CoroutineDispatcher
+        get() = testDispatcher
+
+    override val fileIODispatcher: CoroutineDispatcher
+        get() = testDispatcher
 }

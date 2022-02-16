@@ -5,11 +5,9 @@ import android.content.SharedPreferences
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import com.segment.analytics.kotlin.android.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.android.utils.mockAnalytics
 import com.segment.analytics.kotlin.android.utils.mockContext
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -34,7 +32,7 @@ class StorageTests {
         private var mockContext: Context = mockContext()
 
         @BeforeEach
-        fun setup() = runBlocking  {
+        fun setup() = runTest  {
             clearPersistentStorage()
             store.provide(
                 UserInfo(
@@ -56,14 +54,14 @@ class StorageTests {
                 mockContext,
                 store,
                 "123",
-                TestCoroutineDispatcher()
+                UnconfinedTestDispatcher()
             )
             androidStorage.subscribeToStore()
         }
 
 
         @Test
-        fun `userInfo update calls write`() = runBlocking {
+        fun `userInfo update calls write`() = runTest {
             val action = object : Action<UserInfo> {
                 override fun reduce(state: UserInfo): UserInfo {
                     return UserInfo(
@@ -84,7 +82,7 @@ class StorageTests {
         }
 
         @Test
-        fun `system update calls write for settings`() = runBlocking {
+        fun `system update calls write for settings`() = runTest {
             val action = object : Action<System> {
                 override fun reduce(state: System): System {
                     return System(
@@ -129,7 +127,7 @@ class StorageTests {
             val map = getWorkingMap(mockContext.getSharedPreferences("", 0))
 
             @Test
-            fun `write updates sharedPreferences`() = runBlocking {
+            fun `write updates sharedPreferences`() = runTest {
                 androidStorage.write(Storage.Constants.AppVersion, "100")
                 assertEquals("100", map["segment.app.version"])
             }
@@ -151,7 +149,7 @@ class StorageTests {
         inner class EventsStorage() {
 
             @Test
-            fun `writing events writes to eventsFile`() = runBlocking {
+            fun `writing events writes to eventsFile`() = runTest {
                 val event = TrackEvent(
                     event = "clicked",
                     properties = buildJsonObject { put("behaviour", "good") })
@@ -172,7 +170,7 @@ class StorageTests {
             }
 
             @Test
-            fun `cannot write more than 32kb as event`() = runBlocking {
+            fun `cannot write more than 32kb as event`() = runTest {
                 val stringified: String = "A".repeat(32002)
                 val exception = try {
                     androidStorage.write(
@@ -190,7 +188,7 @@ class StorageTests {
             }
 
             @Test
-            fun `reading events returns a non-null file handle with correct events`() = runBlocking {
+            fun `reading events returns a non-null file handle with correct events`() = runTest {
                 val event = TrackEvent(
                     event = "clicked",
                     properties = buildJsonObject { put("behaviour", "good") })
@@ -224,14 +222,14 @@ class StorageTests {
             }
 
             @Test
-            fun `reading events with empty storage return empty list`() = runBlocking {
+            fun `reading events with empty storage return empty list`() = runTest {
                 androidStorage.eventsFile.rollover()
                 val fileUrls = androidStorage.read(Storage.Constants.Events)
                 assertTrue(fileUrls!!.isEmpty())
             }
 
             @Test
-            fun `can write and read multiple events`() = runBlocking {
+            fun `can write and read multiple events`() = runTest {
                 val event1 = TrackEvent(
                     event = "clicked",
                     properties = buildJsonObject { put("behaviour", "good") })

@@ -2,10 +2,10 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.spyStore
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import com.segment.analytics.kotlin.core.utils.testAnalytics
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test
 internal class StateTest {
     private lateinit var analytics: Analytics
 
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     init {
         mockHTTPClient()
@@ -31,8 +31,7 @@ internal class StateTest {
             writeKey = "123",
             application = "Test"
         )
-        val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+        analytics = testAnalytics(config, testScope, testDispatcher)
 
         analytics.configuration.autoAddSegmentDestination = false
     }
@@ -41,7 +40,7 @@ internal class StateTest {
     inner class UserInfoTests {
 
         @Test
-        fun resetAction() = runBlocking  {
+        fun resetAction() = runTest  {
             val traits = buildJsonObject { put("behaviour", "bad") }
             analytics.store.dispatch(
                 UserInfo.SetUserIdAndTraitsAction(
@@ -59,7 +58,7 @@ internal class StateTest {
         }
 
         @Test
-        fun setUserIdAction() = runBlocking  {
+        fun setUserIdAction() = runTest  {
             analytics.store.dispatch(UserInfo.SetUserIdAction("oldUserId"), UserInfo::class)
             assertEquals("oldUserId", analytics.userId())
 
@@ -68,13 +67,13 @@ internal class StateTest {
         }
 
         @Test
-        fun setAnonymousIdAction() = runBlocking  {
+        fun setAnonymousIdAction() = runTest  {
             analytics.store.dispatch(UserInfo.SetAnonymousIdAction("anonymous"), UserInfo::class)
             assertEquals("anonymous", analytics.store.currentState(UserInfo::class)?.anonymousId)
         }
 
         @Test
-        fun setTraitsAction() = runBlocking  {
+        fun setTraitsAction() = runTest  {
             val traits = buildJsonObject { put("behaviour", "bad") }
 
             analytics.store.dispatch(UserInfo.SetUserIdAction("oldUserId"), UserInfo::class)
@@ -86,7 +85,7 @@ internal class StateTest {
         }
 
         @Test
-        fun setUserIdAndTraitsAction() = runBlocking  {
+        fun setUserIdAndTraitsAction() = runTest  {
             val traits = buildJsonObject { put("behaviour", "bad") }
             analytics.store.dispatch(
                 UserInfo.SetUserIdAndTraitsAction(

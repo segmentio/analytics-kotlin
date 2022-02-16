@@ -6,11 +6,11 @@ import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -31,14 +31,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 class SegmentDestinationTests {
     private lateinit var analytics: Analytics
 
-    private val testDispatcher = TestCoroutineDispatcher()
-
-    // val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val testScope = TestCoroutineScope(testDispatcher)
-
     private lateinit var segmentDestination: SegmentDestination
 
     private val epochTimestamp = Date(0).toInstant().toString()
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val testScope = TestScope(testDispatcher)
 
     init {
         mockkStatic(Instant::class)
@@ -61,13 +60,12 @@ class SegmentDestinationTests {
             flushAt = 2,
             flushInterval = 0
         )
-        val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+        analytics = testAnalytics(config, testScope, testDispatcher)
         segmentDestination.setup(analytics)
     }
 
     @Test
-    fun `enqueue adds event to storage`() = runBlocking {
+    fun `enqueue adds event to storage`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -128,7 +126,7 @@ class SegmentDestinationTests {
         analytics.add(testLogger)
         val destSpy = spyk(segmentDestination)
         assertEquals(trackEvent, destSpy.track(trackEvent))
-        verify(timeout = 2000) { errorAddingPayload.set(true) }
+        verify { errorAddingPayload.set(true) }
     }
 
     @Test
@@ -157,7 +155,7 @@ class SegmentDestinationTests {
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
 
-        verify(timeout = 2000) { connection.close() }
+        verify { connection.close() }
         with(String(outputBytes)) {
             val contentsJson: JsonObject = Json.decodeFromString(this)
             assertEquals(2, contentsJson.size)
@@ -207,11 +205,11 @@ class SegmentDestinationTests {
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
-        verify(timeout = 2000) { payloadsRejected.set(true) }
+        verify { payloadsRejected.set(true) }
     }
 
     @Test
-    fun `flush reads events but does not delete on fail code_429`() = runBlocking {
+    fun `flush reads events but does not delete on fail code_429`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -244,7 +242,7 @@ class SegmentDestinationTests {
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
-        verify(timeout = 2000) { errorUploading.set(true) }
+        verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
             eventsFile.rollover()
@@ -253,7 +251,7 @@ class SegmentDestinationTests {
     }
 
     @Test
-    fun `flush reads events but does not delete on fail code_500`() = runBlocking {
+    fun `flush reads events but does not delete on fail code_500`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -287,7 +285,7 @@ class SegmentDestinationTests {
 
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
-        verify(timeout = 2000) { errorUploading.set(true) }
+        verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
             eventsFile.rollover()
@@ -325,6 +323,6 @@ class SegmentDestinationTests {
         assertEquals(trackEvent, destSpy.track(trackEvent))
         destSpy.flush()
 
-        verify(timeout = 2000) { exceptionUploading.set(true) }
+        verify { exceptionUploading.set(true) }
     }
 }

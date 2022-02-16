@@ -2,18 +2,19 @@ package com.segment.analytics.kotlin.android
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.getUniqueID
 import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
+import com.segment.analytics.kotlin.android.utils.testAnalytics
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.*
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -24,27 +25,32 @@ import java.util.*
 @Config(manifest = Config.NONE)
 class AndroidContextCollectorTests {
 
-    val appContext: Context
-    val analytics: Analytics
+    lateinit var appContext: Context
+    lateinit var analytics: Analytics
 
-    init {
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+
+    @Before
+    fun setUp() {
         appContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)
         val sharedPreferences: SharedPreferences = MemorySharedPreferences()
         every { appContext.getSharedPreferences(any(), any()) } returns sharedPreferences
         mockkStatic("com.segment.analytics.kotlin.android.plugins.AndroidContextPluginKt")
         every { getUniqueID() } returns "unknown"
 
-        analytics  = Analytics(
+        analytics  = testAnalytics(
             Configuration(
                 writeKey = "123",
                 application = appContext,
                 storageProvider = AndroidStorageProvider
-            )
+            ),
+            testScope, testDispatcher
         )
     }
 
     @Test
-    fun `context fields applied correctly`() {
+    fun `context fields applied correctly`()  {
         // Context of the app under test.
         analytics.configuration.collectDeviceId = true
         val contextCollector = AndroidContextPlugin()
@@ -101,13 +107,40 @@ class AndroidContextCollectorTests {
     }
 
     @Test
-    fun `getDeviceId returns anonId when disabled`() = runBlocking {
+    fun `getDeviceId returns anonId when disabled`() = runTest {
         analytics.storage.write(Storage.Constants.AnonymousId, "anonId")
         val contextCollector = AndroidContextPlugin()
         contextCollector.setup(analytics)
-        val deviceId = contextCollector.getDeviceId(false)
-        Log.d("debug flaky test", deviceId)
+        val deviceId = contextCollector.getDeviceId(false, "")
         assertEquals(deviceId, "anonId")
+    }
+
+    @Test
+    fun `device id cache is used when presented`() = runTest {
+        analytics.storage.write(Storage.Constants.DeviceId, "anonId")
+
+        analytics.configuration.collectDeviceId = true
+        val contextCollector = AndroidContextPlugin()
+        contextCollector.setup(analytics)
+
+        val event = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = Date(0).toInstant().toString()
+            }
+        contextCollector.execute(event)
+
+        with(event.context) {
+            assertTrue(this.containsKey("device"))
+            this["device"]?.jsonObject?.let {
+                assertEquals("anonId", it["id"].asString())
+            }
+        }
     }
 
     private fun JsonElement?.asString(): String? = this?.jsonPrimitive?.content

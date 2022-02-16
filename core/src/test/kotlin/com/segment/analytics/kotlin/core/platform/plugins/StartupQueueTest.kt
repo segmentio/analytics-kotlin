@@ -3,11 +3,11 @@ package com.segment.analytics.kotlin.core.platform.plugins
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.TrackEvent
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.every
 import io.mockk.spyk
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.*
@@ -19,9 +19,9 @@ internal class StartupQueueTest {
 
     private lateinit var analytics: Analytics
 
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
-    private val testScope = TestCoroutineScope(testDispatcher)
+    private val testScope = TestScope(testDispatcher)
 
     @BeforeEach
     internal fun setUp() {
@@ -30,9 +30,7 @@ internal class StartupQueueTest {
             application = "Tetst",
             autoAddSegmentDestination = false
         )
-        val store = spyStore(testScope, testDispatcher)
-        analytics = Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
-        analytics = Analytics(config)
+        analytics = testAnalytics(config, testScope, testDispatcher)
     }
 
     @Test

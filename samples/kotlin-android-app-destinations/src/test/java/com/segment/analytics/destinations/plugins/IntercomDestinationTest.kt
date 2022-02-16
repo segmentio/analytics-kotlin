@@ -4,14 +4,12 @@ import android.app.Application
 import android.util.Log
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.intercom.android.sdk.Company
 import io.intercom.android.sdk.Intercom
 import io.intercom.android.sdk.UserAttributes
 import io.intercom.android.sdk.identity.Registration
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -74,7 +72,7 @@ internal class IntercomDestinationTest {
     }
 
     @Test
-    fun `intercom client not re-initialized when settings is fresh`() = runBlocking  {
+    fun `intercom client not re-initialized when settings is fresh`()  {
         intercomDestination.update(settings, Plugin.UpdateType.Refresh)
         verify (exactly = 0) {
             Intercom.initialize(any(), any(), any())

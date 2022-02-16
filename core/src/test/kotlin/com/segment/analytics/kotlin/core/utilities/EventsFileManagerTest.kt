@@ -4,7 +4,7 @@ import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import io.mockk.every
 import io.mockk.mockkStatic
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -32,7 +32,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `check if event is stored correctly and creates new file`() = runBlocking {
+    fun `check if event is stored correctly and creates new file`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -55,7 +55,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `storeEvent stores in existing file if available`() = runBlocking {
+    fun `storeEvent stores in existing file if available`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -79,7 +79,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `storeEvent creates new file when at capacity and closes other file`() = runBlocking {
+    fun `storeEvent creates new file when at capacity and closes other file`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -116,7 +116,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `read finishes open file and lists it`() = runBlocking {
+    fun `read finishes open file and lists it`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -142,7 +142,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `multiple reads doesnt create extra files`() = runBlocking {
+    fun `multiple reads doesnt create extra files`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",
@@ -175,7 +175,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `read lists all available files for writekey`() = runBlocking {
+    fun `read lists all available files for writekey`() = runTest {
         val trackEvent = TrackEvent(
             event = "clicked",
             properties = buildJsonObject { put("behaviour", "good") })
@@ -202,7 +202,7 @@ internal class EventsFileManagerTest{
     }
 
     @Test
-    fun `remove deletes file`() = runBlocking {
+    fun `remove deletes file`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
             event = "clicked",

@@ -4,7 +4,7 @@ import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_CDN_HOST
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import kotlinx.coroutines.*
-import java.util.concurrent.Executors
+import sovran.kotlin.Store
 
 /**
  * Configuration that analytics can use
@@ -39,4 +39,16 @@ data class Configuration(
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
     }
+}
+
+interface CoroutineConfiguration {
+    val store: Store
+
+    val analyticsScope: CoroutineScope
+
+    val analyticsDispatcher: CoroutineDispatcher
+
+    val networkIODispatcher: CoroutineDispatcher
+
+    val fileIODispatcher: CoroutineDispatcher
 }

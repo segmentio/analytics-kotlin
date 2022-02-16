@@ -8,7 +8,9 @@ import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -23,13 +25,17 @@ internal class EventPipelineTest {
 
     private lateinit var storage: Storage
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val testScope = TestScope(testDispatcher)
+
     @BeforeEach
     internal fun setUp() {
         MockKAnnotations.init(this)
         mockkConstructor(HTTPClient::class)
         mockkConstructor(File::class)
 
-        analytics = mockAnalytics()
+        analytics = mockAnalytics(testScope, testDispatcher)
         storage = spyk(ConcreteStorageProvider.getStorage(
             analytics,
             analytics.store,
@@ -48,14 +54,14 @@ internal class EventPipelineTest {
     fun put() {
         val event = "event 1"
         pipeline.put(event)
-        coVerify(timeout = 2000) { storage.write(Storage.Constants.Events, event) }
+        coVerify { storage.write(Storage.Constants.Events, event) }
     }
 
     @Test
     fun flush() {
         pipeline.put("event 1")
         pipeline.put(EventPipeline.FLUSH_POISON)
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -78,7 +84,7 @@ internal class EventPipelineTest {
     fun `put more than flushCount causes flush`() {
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -91,7 +97,7 @@ internal class EventPipelineTest {
         every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "")
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -104,7 +110,7 @@ internal class EventPipelineTest {
         every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(300, "", "")
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -119,7 +125,7 @@ internal class EventPipelineTest {
         every { anyConstructed<HTTPClient>().upload(any()) } throws Exception()
         pipeline.put("event 1")
         pipeline.put("event 2")
-        coVerify(timeout = 2000) {
+        coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
             anyConstructed<HTTPClient>().upload(any())
@@ -130,7 +136,7 @@ internal class EventPipelineTest {
     }
 
     @Test
-    fun `flushInterval causes regular flushing of events`() = runBlocking {
+    fun `flushInterval causes regular flushing of events`() = runTest {
         //restart flushScheduler
         pipeline = EventPipeline(analytics,
             "test",
@@ -147,7 +153,7 @@ internal class EventPipelineTest {
     }
 
     @Test
-    fun `flush interrupted when no event file exist`() = runBlocking {
+    fun `flush interrupted when no event file exist`() = runTest {
         pipeline.put(EventPipeline.FLUSH_POISON)
         coVerify(exactly = 1) {
             storage.rollover()

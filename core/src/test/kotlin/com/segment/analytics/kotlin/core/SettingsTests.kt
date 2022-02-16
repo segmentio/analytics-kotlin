@@ -4,12 +4,12 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -24,8 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger
 class SettingsTests {
 
     private lateinit var analytics: Analytics
-    private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestCoroutineScope(testDispatcher)
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     init {
         mockHTTPClient()
@@ -33,21 +34,16 @@ class SettingsTests {
 
     @BeforeEach
     fun setup() {
-        analytics = Analytics(
-            Configuration(
-                writeKey = "123",
-                application = "Test"
-            ),
-            spyStore(testScope, testDispatcher),
-            testScope,
-            testDispatcher,
-            testDispatcher
-        )
+
+        analytics = testAnalytics(Configuration(
+            writeKey = "123",
+            application = "Test"
+        ), testScope, testDispatcher)
         analytics.configuration.autoAddSegmentDestination = false
     }
 
     @Test
-    fun `checkSettings updates settings`() = runBlocking {
+    fun `checkSettings updates settings`() = runTest {
         val system = analytics.store.currentState(System::class)
         val curSettings = system?.settings
         assertEquals(
@@ -65,7 +61,7 @@ class SettingsTests {
     }
 
     @Test
-    fun `settings update updates plugins`() = runBlocking {
+    fun `settings update updates plugins`() {
         val mockPlugin = spyk(StubPlugin())
         analytics.add(mockPlugin)
         verify {
@@ -149,7 +145,7 @@ class SettingsTests {
     }
 
     @Test
-    fun `can manually enable destinations`() = runBlocking {
+    fun `can manually enable destinations`() {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("Foo", buildJsonObject {
