@@ -8,9 +8,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.safeJsonArray
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * DestinationMetadataPlugin adds `_metadata` information to payloads that Segment uses to
@@ -33,24 +31,15 @@ class DestinationMetadataPlugin : Plugin {
             ?.filter { it.enabled && it !is SegmentDestination }
         val metadata = DestinationMetadata().apply {
             // Mark all loaded destinations as bundled
-            this.bundled = buildJsonArray {
-                enabledDestinations?.forEach {
-                    add(it.key)
-                }
-            }
+            this.bundled = enabledDestinations?.map { it.key }
+
             // All unbundledIntegrations not in `bundled` are put in `unbundled`
-            this.unbundled = buildJsonArray {
-                analyticsSettings.integrations["Segment.io"]?.safeJsonObject
-                    ?.get("unbundledIntegrations")?.safeJsonArray?.let { unbundledList ->
-                        unbundledList.forEach {
-                            if (!bundled.contains(it)) {
-                                add(it)
-                            }
-                        }
-                    }
-            }
+            this.unbundled = analyticsSettings.integrations["Segment.io"]?.safeJsonObject
+                ?.get("unbundledIntegrations")?.safeJsonArray?.map { (it as JsonPrimitive).content }
+                ?.filter { !(bundled?.contains(it) ?: false) }
+
             // `bundledIds` for mobile is empty
-            this.bundledIds = JsonArray(emptyList())
+            this.bundledIds = emptyList()
         }
 
         val payload = event.copy<BaseEvent>().apply {

@@ -11,7 +11,6 @@ import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.util.zip.GZIPOutputStream
-
 class HTTPClient(private val writeKey: String) {
     internal val authHeader = authorizationHeader(writeKey)
 
@@ -30,7 +29,6 @@ class HTTPClient(private val writeKey: String) {
     fun upload(apiHost: String): Connection {
         val connection: HttpURLConnection = openConnection("https://$apiHost/b")
         connection.setRequestProperty("Content-Type", "text/plain")
-        connection.setRequestProperty("Content-Encoding", "gzip")
         connection.setRequestProperty("Authorization", authHeader)
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
@@ -99,6 +97,7 @@ internal fun HttpURLConnection.createGetConnection(): Connection {
 
 internal fun HttpURLConnection.createPostConnection(): Connection {
     val outputStream: OutputStream
+    setRequestProperty("Content-Encoding", "gzip")
     outputStream = GZIPOutputStream(this.outputStream)
     return object : Connection(this, null, outputStream) {
         @Throws(IOException::class)
@@ -139,3 +138,15 @@ internal class HTTPException(
         return responseCode in 400..499
     }
 }
+/*
+
+curl -H "Authorization:Basic: 2Iv5ifBwYxcTWwYPsfIwrzY9bKRtabKi" -H "Content-Type:application/json" \
+-d '{"type":"identify","userId":"bob","traits":{"email":"bob@example.com"},"timestamp":"2022-01-06T12:34:56.789Z"}' \
+https://api.segment.build/v1/i
+
+
+curl -H "Authorization:Basic: 2Iv5ifBwYxcTWwYPsfIwrzY9bKRtabKi" -H "Content-Encoding:gzip" -H "Content-Type:application/json" \
+--data-binary @<(echo '{"type":"identify","userId":"bob","traits":{"email":"bob@example.com"},"timestamp":"2022-01-06T12:34:56.789Z"}' | gzip) \
+https://api.segment.build/v1/i
+
+*/

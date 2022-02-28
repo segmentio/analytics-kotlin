@@ -18,7 +18,6 @@ import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -104,14 +103,9 @@ class DestinationMetadataPluginTests {
 
         val expected = trackEvent.copy<TrackEvent>().apply {
             _metadata = DestinationMetadata(
-                unbundled = buildJsonArray {
-                    add("Customer.io")
-                    add("Amplitude")
-                },
-                bundled = buildJsonArray {
-                    add("Mixpanel")
-                },
-                bundledIds = JsonArray(emptyList())
+                unbundled = listOf("Customer.io","Amplitude"),
+                bundled = listOf("Mixpanel"),
+                bundledIds = emptyList()
             )
         }
         val actual = plugin.execute(trackEvent)

@@ -35,9 +35,9 @@ class DateSerializer : KSerializer<Instant> {
 
 @Serializable
 data class DestinationMetadata(
-    var bundled: JsonArray = emptyJsonArray,
-    var unbundled: JsonArray = emptyJsonArray,
-    var bundledIds: JsonArray = emptyJsonArray,
+    var bundled: List<String>? = emptyList(),
+    var unbundled: List<String>? = emptyList(),
+    var bundledIds: List<String>? = emptyList(),
 )
 
 @Serializable
