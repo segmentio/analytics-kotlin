@@ -138,15 +138,3 @@ internal class HTTPException(
         return responseCode in 400..499
     }
 }
-/*
-
-curl -H "Authorization:Basic: 2Iv5ifBwYxcTWwYPsfIwrzY9bKRtabKi" -H "Content-Type:application/json" \
--d '{"type":"identify","userId":"bob","traits":{"email":"bob@example.com"},"timestamp":"2022-01-06T12:34:56.789Z"}' \
-https://api.segment.build/v1/i
-
-
-curl -H "Authorization:Basic: 2Iv5ifBwYxcTWwYPsfIwrzY9bKRtabKi" -H "Content-Encoding:gzip" -H "Content-Type:application/json" \
---data-binary @<(echo '{"type":"identify","userId":"bob","traits":{"email":"bob@example.com"},"timestamp":"2022-01-06T12:34:56.789Z"}' | gzip) \
-https://api.segment.build/v1/i
-
-*/
