@@ -12,12 +12,12 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.every
 import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -33,10 +33,9 @@ import java.util.UUID
 class DestinationMetadataPluginTests {
     private lateinit var analytics: Analytics
 
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
-    // val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val testScope = TestCoroutineScope(testDispatcher)
+    private val testScope = TestScope(testDispatcher)
 
     private lateinit var plugin: DestinationMetadataPlugin
 
@@ -63,9 +62,7 @@ class DestinationMetadataPluginTests {
             flushAt = 2,
             flushInterval = 0
         )
-        val store = spyStore(testScope, testDispatcher)
-        analytics =
-            Analytics(config, store, testScope, testDispatcher, testDispatcher, testDispatcher)
+        analytics = testAnalytics(config, testScope, testDispatcher)
         plugin.setup(analytics)
     }
 
