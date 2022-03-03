@@ -11,13 +11,13 @@ import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.util.zip.GZIPOutputStream
-
 class HTTPClient(private val writeKey: String) {
     internal val authHeader = authorizationHeader(writeKey)
 
     fun settings(cdnHost: String): Connection {
         val connection: HttpURLConnection =
             openConnection("https://$cdnHost/projects/$writeKey/settings")
+        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
         val responseCode = connection.responseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
             connection.disconnect()
@@ -27,17 +27,12 @@ class HTTPClient(private val writeKey: String) {
     }
 
     fun upload(apiHost: String): Connection {
-        val connection: HttpURLConnection = openConnection("https://$apiHost/batch")
+        val connection: HttpURLConnection = openConnection("https://$apiHost/b")
+        connection.setRequestProperty("Content-Type", "text/plain")
         connection.setRequestProperty("Authorization", authHeader)
-        connection.setRequestProperty("Content-Encoding", "gzip")
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
         return connection.createPostConnection()
-    }
-
-    private fun authorizationHeader(writeKey: String): String {
-        val auth = "$writeKey:"
-        return "Basic ${encodeToBase64(auth)}"
     }
 
     /**
@@ -54,13 +49,17 @@ class HTTPClient(private val writeKey: String) {
         connection.connectTimeout = 15_000 // 15s
         connection.readTimeout = 20_1000 // 20s
 
-        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
         connection.setRequestProperty(
             "User-Agent",
             "analytics-kotlin/$LIBRARY_VERSION"
         )
         connection.doInput = true
         return connection
+    }
+
+    private fun authorizationHeader(writeKey: String): String {
+        val auth = "$writeKey:"
+        return "Basic ${encodeToBase64(auth)}"
     }
 }
 
@@ -98,6 +97,7 @@ internal fun HttpURLConnection.createGetConnection(): Connection {
 
 internal fun HttpURLConnection.createPostConnection(): Connection {
     val outputStream: OutputStream
+    setRequestProperty("Content-Encoding", "gzip")
     outputStream = GZIPOutputStream(this.outputStream)
     return object : Connection(this, null, outputStream) {
         @Throws(IOException::class)

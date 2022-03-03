@@ -1,7 +1,16 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.Connection
+import com.segment.analytics.kotlin.core.HTTPClient
+import com.segment.analytics.kotlin.core.HTTPException
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogMessage
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LoggingType
+import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
@@ -13,7 +22,14 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -21,10 +37,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.lang.Exception
 import java.net.HttpURLConnection
 import java.time.Instant
-import java.util.*
+import java.util.Base64
+import java.util.Date
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -158,9 +175,10 @@ class SegmentDestinationTests {
         verify { connection.close() }
         with(String(outputBytes)) {
             val contentsJson: JsonObject = Json.decodeFromString(this)
-            assertEquals(2, contentsJson.size)
+            assertEquals(3, contentsJson.size) // batch, sentAt, writeKey
             assertTrue(contentsJson.containsKey("batch"))
             assertTrue(contentsJson.containsKey("sentAt"))
+            assertTrue(contentsJson.containsKey("writeKey"))
             assertEquals(1, contentsJson["batch"]?.jsonArray?.size)
             val eventInFile = contentsJson["batch"]?.jsonArray?.get(0)
             val eventInFile2 =

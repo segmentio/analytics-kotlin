@@ -15,15 +15,12 @@ import com.segment.analytics.kotlin.core.platform.EventPipeline
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
-import com.segment.analytics.kotlin.core.utilities.putAll
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 
 @Serializable
 data class SegmentSettings(
@@ -70,15 +67,14 @@ class SegmentDestination : DestinationPlugin() {
     }
 
     private inline fun <reified T : BaseEvent> enqueue(payload: T) {
-        val finalPayload = configureCloudDestination(payload)
         // needs to be inline reified for encoding using Json
-        val jsonVal = EncodeDefaultsJson.encodeToJsonElement(finalPayload)
+        val finalPayload = EncodeDefaultsJson.encodeToJsonElement(payload)
             .jsonObject.filterNot { (k, v) ->
                 // filter out empty userId and traits values
                 (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
             }
 
-        val stringVal = Json.encodeToString(jsonVal)
+        val stringVal = Json.encodeToString(finalPayload)
         analytics.log("$key running $stringVal")
 
         pipeline.put(stringVal)
@@ -86,6 +82,9 @@ class SegmentDestination : DestinationPlugin() {
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
+
+        // Add DestinationMetadata enrichment plugin
+        add(DestinationMetadataPlugin())
 
         with(analytics) {
             pipeline = EventPipeline(
@@ -111,24 +110,5 @@ class SegmentDestination : DestinationPlugin() {
 
     override fun flush() {
         pipeline.flush()
-    }
-
-    internal fun <T : BaseEvent> configureCloudDestination(event: T): T {
-        // Using this over `findAll` for that teensy performance benefit
-        val enabledDestinations = analytics.timeline.plugins[Plugin.Type.Destination]?.plugins
-            ?.map { it as DestinationPlugin }
-            ?.filter { it.enabled && it !is SegmentDestination }
-        val merged = buildJsonObject {
-            // Mark all loaded destinations as false
-            enabledDestinations?.forEach {
-                put(it.key, false)
-            }
-            // apply customer values; the customer is always right!
-            putAll(event.integrations)
-        }
-        val newEvent = event.copy<T>().apply {
-            integrations = merged
-        }
-        return newEvent
     }
 }

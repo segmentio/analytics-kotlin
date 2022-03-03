@@ -1,6 +1,12 @@
 package com.segment.analytics.kotlin.core.utilities
 
-import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.Settings
+import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.UserInfo
+import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.spyStore
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -8,14 +14,21 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
-import org.junit.jupiter.api.Assertions.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.put
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import sovran.kotlin.Action
 import java.io.File
-import java.util.*
+import java.util.Date
 
 internal class StorageImplTest {
 
@@ -180,9 +193,10 @@ internal class StorageImplTest {
             fileUrl!!.let {
                 val contentsStr = File(it).inputStream().readBytes().toString(Charsets.UTF_8)
                 val contentsJson: JsonObject = Json.decodeFromString(contentsStr)
-                assertEquals(2, contentsJson.size)
+                assertEquals(3, contentsJson.size) // batch, sentAt, writeKey
                 assertTrue(contentsJson.containsKey("batch"))
                 assertTrue(contentsJson.containsKey("sentAt"))
+                assertTrue(contentsJson.containsKey("writeKey"))
                 assertEquals(1, contentsJson["batch"]?.jsonArray?.size)
                 val eventInFile = contentsJson["batch"]?.jsonArray?.get(0)
                 val eventInFile2 = Json.decodeFromString(
@@ -232,9 +246,10 @@ internal class StorageImplTest {
             fileUrl!!.let {
                 val contentsStr = File(it).inputStream().readBytes().toString(Charsets.UTF_8)
                 val contentsJson: JsonObject = Json.decodeFromString(contentsStr)
-                assertEquals(2, contentsJson.size)
+                assertEquals(3, contentsJson.size) // batch, sentAt, writeKey
                 assertTrue(contentsJson.containsKey("batch"))
                 assertTrue(contentsJson.containsKey("sentAt"))
+                assertTrue(contentsJson.containsKey("writeKey"))
                 assertEquals(2, contentsJson["batch"]?.jsonArray?.size)
                 val eventInFile = contentsJson["batch"]?.jsonArray?.get(0)
                 val eventInFile2 = Json.decodeFromString(
