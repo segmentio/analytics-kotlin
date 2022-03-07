@@ -44,6 +44,10 @@ interface Plugin {
     }
 }
 
+interface VersionedPlugin {
+    fun version(): String
+}
+
 // Advanced plugin that can act on specific event payloads
 interface EventPlugin : Plugin {
     fun track(payload: TrackEvent): BaseEvent? {
