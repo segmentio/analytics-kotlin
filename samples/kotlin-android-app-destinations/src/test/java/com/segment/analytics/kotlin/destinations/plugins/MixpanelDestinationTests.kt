@@ -1,8 +1,6 @@
-package com.segment.analytics.destinations.plugins
+package com.segment.analytics.kotlin.destinations.plugins
 
-import android.app.Activity
 import android.content.Context
-import android.os.Bundle
 import com.mixpanel.android.mpmetrics.MixpanelAPI
 import com.segment.analytics.kotlin.core.AliasEvent
 import com.segment.analytics.kotlin.core.Analytics
@@ -13,15 +11,12 @@ import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.mockk.Called
 import io.mockk.Matcher
 import io.mockk.MockKAnnotations
 import io.mockk.MockKMatcherScope
-import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify

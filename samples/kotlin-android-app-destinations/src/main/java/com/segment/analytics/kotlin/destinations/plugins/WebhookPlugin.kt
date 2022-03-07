@@ -1,13 +1,11 @@
-package com.segment.analytics.destinations.plugins
+package com.segment.analytics.kotlin.destinations.plugins
 
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.DataOutputStream
 import java.io.IOException
 import java.io.InputStream

@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         multiDexEnabled true
-        applicationId "com.segment.analytics.destinations"
+        applicationId "com.segment.analytics.kotlin.destinations"
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 3

@@ -1,4 +1,4 @@
-package com.segment.analytics.destinations.plugins
+package com.segment.analytics.kotlin.destinations.plugins
 
 import android.app.Activity
 import android.content.Context
@@ -7,13 +7,10 @@ import androidx.core.os.bundleOf
 import com.appsflyer.AppsFlyerLib
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import io.mockk.Called
 import io.mockk.MockKAnnotations
-import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
@@ -59,7 +56,7 @@ class AppsflyerDestinationTests {
             {
               "integrations": {
                 "AppsFlyer": {
-                  "androidAppID": "com.segment.analytics.destinations",
+                  "androidAppID": "com.segment.analytics.kotlin.destinations",
                   "appleAppID": "",
                   "appsFlyerDevKey": "devKey",
                   "httpFallback": false,
@@ -99,7 +96,7 @@ class AppsflyerDestinationTests {
             {
               "integrations": {
                 "AppsFlyer": {
-                  "androidAppID": "com.segment.analytics.destinations",
+                  "androidAppID": "com.segment.analytics.kotlin.destinations",
                   "appleAppID": "",
                   "appsFlyerDevKey": "devKey",
                   "httpFallback": false,
