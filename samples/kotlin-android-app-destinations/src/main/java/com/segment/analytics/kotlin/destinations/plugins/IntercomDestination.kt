@@ -1,4 +1,4 @@
-package com.segment.analytics.destinations.plugins
+package com.segment.analytics.kotlin.destinations.plugins
 
 import android.app.Application
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle

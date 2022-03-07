@@ -1,4 +1,4 @@
-package com.segment.analytics.destinations
+package com.segment.analytics.kotlin.destinations
 
 import android.os.Bundle
 import android.text.Html

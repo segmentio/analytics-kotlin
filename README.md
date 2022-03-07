@@ -54,6 +54,16 @@ You can find usage documentation at [https://segment.com/docs/sources/mobile/kot
 
 Explore more via the [example projects](samples) which showcase analytics instrumentation on different platforms/languages and usage of plugins. These projects contain sample [plugins](samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins) and [destination plugins](samples/kotlin-android-app-destinations/src/main/java/com/segment/analytics/destinations/plugins) 
 
+## Supported Device Mode Destinations
+
+| Partner | Package |
+| --- | --- |
+| Amplitude | https://github.com/segment-integrations/analytics-kotlin-amplitude |
+| AppsFlyer | https://github.com/segment-integrations/analytics-kotlin-appsflyer |
+| Firebase | https://github.com/segment-integrations/analytics-kotlin-firebase |
+| Mixpanel | https://github.com/segment-integrations/analytics-kotlin-mixpanel |
+
+
 ## Compatibility
 
 * If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.

@@ -1,4 +1,4 @@
-package com.segment.analytics.destinations
+package com.segment.analytics.kotlin.destinations
 
 import android.os.Bundle
 import android.widget.Button
@@ -7,7 +7,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.segment.analytics.kotlin.core.EventType
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 
 
 class MainActivity : AppCompatActivity() {

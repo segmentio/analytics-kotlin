@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         multiDexEnabled true
-        applicationId "com.segment.analytics.destinations"
+        applicationId "com.segment.analytics.kotlin.destinations"
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 3
@@ -54,23 +54,14 @@ dependencies {
 
 // Partner Dependencies
 dependencies {
-    // Mixpanel
-    api 'com.mixpanel.android:mixpanel-android:5.8.7'
 
     // Comscore
     api 'com.comscore:android-analytics:6.5.0'
-
-    // Firebase
-    implementation platform('com.google.firebase:firebase-bom:28.2.1')
-    implementation 'com.google.firebase:firebase-analytics-ktx'
 
     // Intercom
     implementation 'io.intercom.android:intercom-sdk-base:10.1.1'
     implementation 'io.intercom.android:intercom-sdk-fcm:10.1.1'
 
-    // appsflyer
-    implementation 'com.appsflyer:af-android-sdk:6.3.2'
-    implementation 'com.android.installreferrer:installreferrer:2.2'
 }
 
 // Test Dependencies
