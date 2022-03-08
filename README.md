@@ -8,10 +8,6 @@
 
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM). Analytics helps you measure your users, product, and business. It unlocks insights into your app's funnel, core business metrics, and whether you have product-market fit.
 
-NOTE: This project is currently in the Beta phase and is covered by Segment's [First Access & Beta Preview Terms](https://segment.com/legal/first-access-beta-preview/).  We encourage you
-to try out this new library. Please provide feedback via Github issues/PRs, and feel free to submit pull requests.  This library will eventually 
-supplant our `analytics-android` library.
-
 ## How to get started
 1. **Collect analytics data** from your app(s).
   - The top 200 Segment companies collect data from 5+ source types (web, mobile, server, CRM, etc.).
