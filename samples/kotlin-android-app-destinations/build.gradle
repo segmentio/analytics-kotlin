@@ -52,6 +52,14 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.4.0'
 }
 
+// Supported destinations
+dependencies {
+    implementation 'com.segment.analytics.kotlin.destinations:amplitude:1.5.1'
+    implementation 'com.segment.analytics.kotlin.destinations:appsflyer:1.5.1'
+    implementation 'com.segment.analytics.kotlin.destinations:firebase:1.5.2'
+    implementation 'com.segment.analytics.kotlin.destinations:mixpanel:1.5.2'
+}
+
 // Partner Dependencies
 dependencies {
 
