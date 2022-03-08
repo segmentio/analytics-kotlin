@@ -1,18 +1,11 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.AliasEvent
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
-import com.segment.analytics.kotlin.core.GroupEvent
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.Settings
-import com.segment.analytics.kotlin.core.TrackEvent
-import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPipeline
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.VersionedPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.serialization.Serializable
@@ -35,7 +28,7 @@ data class SegmentSettings(
  * - We store events into a file with the batch api format (@link {https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#batch})
  * - We upload events on a dedicated thread using the batch api
  */
-class SegmentDestination : DestinationPlugin() {
+class SegmentDestination : DestinationPlugin(), VersionedPlugin {
 
     private lateinit var pipeline: EventPipeline
 
@@ -110,5 +103,9 @@ class SegmentDestination : DestinationPlugin() {
 
     override fun flush() {
         pipeline.flush()
+    }
+
+    override fun version(): String {
+        return Constants.LIBRARY_VERSION
     }
 }
