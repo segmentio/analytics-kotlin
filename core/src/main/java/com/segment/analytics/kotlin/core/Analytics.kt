@@ -530,16 +530,16 @@ open class Analytics protected constructor(
      * in coroutines.
      */
     @BlockingApi
-    fun anonymousId(): String? = runBlocking {
+    fun anonymousId(): String = runBlocking {
         anonymousIdAsync()
     }
 
     /**
      * Retrieve the anonymousId
      */
-    suspend fun anonymousIdAsync(): String? {
+    suspend fun anonymousIdAsync(): String {
         val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.anonymousId
+        return userInfo?.anonymousId ?: ""
     }
 
     /**
