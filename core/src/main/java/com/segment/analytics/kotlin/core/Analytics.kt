@@ -56,6 +56,12 @@ open class Analytics protected constructor(
                 SegmentLog.loggingEnabled = value
                 field = value
             }
+
+        /**
+         * Retrieve the version of this library in use.
+         * - Returns: A string representing the version in "BREAKING.FEATURE.FIX" format.
+         */
+        fun version(): String = Constants.LIBRARY_VERSION
     }
 
     init {
@@ -517,6 +523,30 @@ open class Analytics protected constructor(
         val system = store.currentState(System::class)
         return system?.settings
     }
+
+    /**
+     * Retrieve the anonymousId  in a blocking way.
+     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
+     * in coroutines.
+     */
+    @BlockingApi
+    fun anonymousId(): String = runBlocking {
+        anonymousIdAsync()
+    }
+
+    /**
+     * Retrieve the anonymousId
+     */
+    suspend fun anonymousIdAsync(): String {
+        val userInfo = store.currentState(UserInfo::class)
+        return userInfo?.anonymousId ?: ""
+    }
+
+    /**
+     * Retrieve the version of this library in use.
+     * - Returns: A string representing the version in "BREAKING.FEATURE.FIX" format.
+    */
+    fun version() = Analytics.version()
 }
 
 

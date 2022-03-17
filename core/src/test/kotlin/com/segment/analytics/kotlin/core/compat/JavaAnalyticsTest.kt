@@ -464,6 +464,16 @@ internal class JavaAnalyticsTest {
         assertEquals(settings, analytics.settings())
     }
 
+    @Test
+    fun anonymousId() {
+        assertEquals("qwerty-qwerty-123", analytics.anonymousId())
+    }
+
+    @Test
+    fun version() {
+        assertEquals(Constants.LIBRARY_VERSION, analytics.version())
+    }
+
     private fun BaseEvent.populate() = apply {
         anonymousId = "qwerty-qwerty-123"
         messageId = "qwerty-qwerty-123"

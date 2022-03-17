@@ -244,6 +244,17 @@ class JavaAnalytics private constructor() {
      */
     fun settings() = analytics.settings()
 
+    /**
+     * Retrieve the anonymousId
+     */
+    fun anonymousId() = analytics.anonymousId()
+
+    /**
+     * Retrieve the version of this library in use.
+     * - Returns: A string representing the version in "BREAKING.FEATURE.FIX" format.
+     */
+    fun version() = analytics.version()
+
     private fun setup(analytics: Analytics) {
         store = analytics.store
         storage = analytics.storage
