@@ -3,11 +3,7 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.slot
-import io.mockk.spyk
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -391,6 +387,20 @@ class AnalyticsTests {
         }
     }
 
+    @Nested
+    inner class AnanoymousId {
+        @Test
+        fun `anonymousId fetches current Analytics anonymousId`() = runTest {
+            assertEquals("qwerty-qwerty-123", analytics.anonymousIdAsync())
+        }
+
+        @Test
+        fun `anonymousId returns empty string when null`() = runTest {
+            coEvery { analytics.store.currentState(UserInfo::class) } returns null
+            assertEquals("", analytics.anonymousIdAsync())
+        }
+    }
+
     @Test
     fun `settings fetches current Analytics Settings`() = runTest {
         val settings = Settings(
@@ -403,6 +413,11 @@ class AnalyticsTests {
         )
         analytics.store.dispatch(System.UpdateSettingsAction(settings), System::class)
         assertEquals(settings, analytics.settings())
+    }
+
+    @Test
+    fun `version fetches current Analytics version`() {
+        assertEquals(Constants.LIBRARY_VERSION, analytics.version())
     }
 
     private fun BaseEvent.populate() = apply {
