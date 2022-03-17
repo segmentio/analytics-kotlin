@@ -388,7 +388,7 @@ class AnalyticsTests {
     }
 
     @Nested
-    inner class AnanoymousId {
+    inner class AnonymousId {
         @Test
         fun `anonymousId fetches current Analytics anonymousId`() = runTest {
             assertEquals("qwerty-qwerty-123", analytics.anonymousIdAsync())
