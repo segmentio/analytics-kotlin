@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
+import java.io.ByteArrayInputStream
+import java.net.HttpURLConnection
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -43,12 +45,12 @@ class AnalyticsTests {
         every { Instant.now() } returns Date(0).toInstant()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
-        mockHTTPClient()
     }
 
     @BeforeEach
     fun setup() {
         clearPersistentStorage()
+        mockHTTPClient()
         val config = Configuration(
             writeKey = "123",
             application = "Test"
@@ -83,6 +85,48 @@ class AnalyticsTests {
             }
 
             assertEquals(exception.message?.contains("Android"), true)
+        }
+
+        @Test
+        fun `analytics should respect remote apiHost`() {
+            // need the following block in `init` to inject mock before analytics gets instantiate
+            val settingsStream = ByteArrayInputStream(
+                """
+                {"integrations":{"Segment.io":{"apiKey":"1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ","apiHost":"remote"}},"plan":{},"edgeFunction":{}}
+            """.trimIndent().toByteArray()
+            )
+            val httpConnection: HttpURLConnection = mockk()
+            val connection = object : Connection(httpConnection, settingsStream, null) {}
+            every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } returns connection
+
+            val config = Configuration(
+                writeKey = "123",
+                application = "Test",
+                apiHost = "local"
+            )
+            analytics = testAnalytics(config, testScope, testDispatcher)
+            analytics.track("test")
+            analytics.flush()
+
+            val apiHost = slot<String>()
+            verify { anyConstructed<HTTPClient>().upload(capture(apiHost)) }
+            assertEquals("remote", apiHost.captured)
+        }
+
+        @Test
+        fun `analytics should respect local modified apiHost if remote not presented`() {
+            val config = Configuration(
+                writeKey = "123",
+                application = "Test",
+                apiHost = "local"
+            )
+            analytics = testAnalytics(config, testScope, testDispatcher)
+            analytics.track("test")
+            analytics.flush()
+
+            val apiHost = slot<String>()
+            verify { anyConstructed<HTTPClient>().upload(capture(apiHost)) }
+            assertEquals("local", apiHost.captured)
         }
     }
 
