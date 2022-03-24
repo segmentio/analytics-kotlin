@@ -95,6 +95,7 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
         if (settings.hasIntegrationSettings(this)) {
+            // only populate the apiHost value if it exists
             settings.destinationSettings<SegmentSettings>(key)?.apiHost?.let {
                 pipeline.apiHost = it
             }
