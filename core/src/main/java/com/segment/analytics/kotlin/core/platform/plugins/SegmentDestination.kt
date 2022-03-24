@@ -18,7 +18,7 @@ import kotlinx.serialization.json.jsonPrimitive
 @Serializable
 data class SegmentSettings(
     var apiKey: String,
-    var apiHost: String = DEFAULT_API_HOST,
+    var apiHost: String? = null
 )
 
 /**
@@ -95,8 +95,8 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
         if (settings.hasIntegrationSettings(this)) {
-            settings.destinationSettings<SegmentSettings>(key)?.let {
-                pipeline.apiHost = it.apiHost
+            settings.destinationSettings<SegmentSettings>(key)?.apiHost?.let {
+                pipeline.apiHost = it
             }
         }
     }
