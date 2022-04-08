@@ -139,13 +139,7 @@ class AutoUIEventTracking(
                 }
             }
 
-            if (args.size == 1) {
-                method?.invoke(realObject, args[0])
-            }
-            else {
-                method?.invoke(realObject, args)
-            }
-
+            method?.invoke(realObject, *args)
             return realObject
         }
     }
