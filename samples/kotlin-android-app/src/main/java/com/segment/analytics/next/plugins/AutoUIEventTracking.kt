@@ -2,16 +2,21 @@ package com.segment.analytics.next.plugins
 
 import android.app.Activity
 import android.view.*
+import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.platform.Plugin
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
+
 class AutoUIEventTracking(
-    private val uiEventHandler: UIEventHandler,
-    val swizzleEvents: Set<UIEvent> = emptySet()
-    ): Plugin {
+    private val uiEventHandler: UIEventHandler = DefaultUIEventHandler()
+    ): Plugin, AndroidLifecycle {
     override val type: Plugin.Type = Plugin.Type.Utility
 
     override lateinit var analytics: Analytics
@@ -26,10 +31,35 @@ class AutoUIEventTracking(
      */
     var listenerInfoName = "mListenerInfo"
 
-    fun autoTracking(activity: Activity) {
-        if (swizzleEvents.isEmpty()) return
+    override fun onActivityStarted(activity: Activity?) {
+        activity?.let {
+            autoTracking(it)
+
+            registerFragmentLifeCycle(it as AppCompatActivity)
+
+        }
+    }
+
+    private fun registerFragmentLifeCycle(activity: AppCompatActivity) {
+        activity.supportFragmentManager.registerFragmentLifecycleCallbacks(object : FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
+                super.onFragmentStarted(fm, f)
+                autoTracking(f)
+            }
+        }, false)
+    }
+
+    private fun autoTracking(activity: Activity) {
+        if (uiEventHandler.swizzleEvents.isEmpty()) return
 
         val root = activity.findViewById<View>(android.R.id.content).rootView as ViewGroup
+        swizzle(root)
+    }
+
+    private fun autoTracking(fragment: Fragment) {
+        if (uiEventHandler.swizzleEvents.isEmpty()) return
+
+        val root = fragment.view as ViewGroup
         swizzle(root)
     }
 
@@ -48,7 +78,7 @@ class AutoUIEventTracking(
         listenerInfoField.isAccessible = true
         val listenerInfo = listenerInfoField.get(view) ?: return
 
-        for (uiEvent in swizzleEvents) {
+        for (uiEvent in uiEventHandler.swizzleEvents) {
             delegate(listenerInfo, uiEvent.value)
         }
 
@@ -120,7 +150,20 @@ class AutoUIEventTracking(
         }
     }
 
+    class DefaultUIEventHandler: UIEventHandler {
+        override val swizzleEvents: Set<UIEvent> = setOf(UIEvent.Click)
+
+        override fun onClick(analytics: Analytics, view: View) {
+            if (view is Button) {
+                analytics.track("${view.text} Clicked")
+            }
+        }
+    }
+
     interface UIEventHandler {
+
+        val swizzleEvents: Set<UIEvent>
+
         /**
          * OnKeyListener
          */
@@ -149,22 +192,22 @@ class AutoUIEventTracking(
         /**
          * OnDragListener
          */
-        fun onDrag(analytics: Analytics, view: View, event: DragEvent)
+        fun onDrag(analytics: Analytics, view: View, event: DragEvent) {}
 
         /**
          * OnFocusChangeListener
          */
-        fun onFocusChange(analytics: Analytics, hasFocus: Boolean)
+        fun onFocusChange(analytics: Analytics, hasFocus: Boolean) {}
 
         /**
          * OnClickListener
          */
-        fun onClick(analytics: Analytics, view: View)
+        fun onClick(analytics: Analytics, view: View) {}
 
         /**
          * OnCreateContextMenuListener
          */
-        fun onCreateContextMenu(analytics: Analytics, menu: ContextMenu, view: View, menuInfo: ContextMenu.ContextMenuInfo)
+        fun onCreateContextMenu(analytics: Analytics, menu: ContextMenu, view: View, menuInfo: ContextMenu.ContextMenuInfo) {}
     }
 
     /**
