@@ -5,3 +5,4 @@ include ':samples:kotlin-android-app-destinations'
 include ':samples:java-android-app'
 include ':samples:kotlin-jvm-app'
 rootProject.name = "Analytics-Android-Next"
+include ':subtrata-kotlin'

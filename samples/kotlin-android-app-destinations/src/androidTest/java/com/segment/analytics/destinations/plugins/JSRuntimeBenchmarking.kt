@@ -24,6 +24,7 @@ import org.junit.runner.RunWith
 import java.io.BufferedReader
 import java.util.Date
 import kotlin.system.measureTimeMillis
+import com.segment.analytics.destinations.plugins.Utils2.toV8Object as toV8Object2
 
 @RunWith(AndroidJUnit4::class)
 class JSRuntimeBenchmarking {
@@ -43,46 +44,46 @@ class JSRuntimeBenchmarking {
         }
     }
 
-    @Test
-    fun buildJ2V8() {
-        val time = benchmark {
-            val runtime: V8 = V8.createV8Runtime().also {
-                val console = Console()
-                val v8Console = V8Object(it)
-                v8Console.registerJavaMethod(console,
-                    "log",
-                    "log",
-                    arrayOf<Class<*>>(String::class.java))
-                v8Console.registerJavaMethod(console,
-                    "error",
-                    "err",
-                    arrayOf<Class<*>>(String::class.java))
-                it.add("console", v8Console)
-            }
-        }
-        println("[Benchmarking] Build time with j2v8 took on average $time ms")
-    }
-
-    @Test
-    fun setupJ2V8() {
-        val time = benchmark {
-            val runtime: V8 = V8.createV8Runtime().also {
-                val console = Console()
-                val v8Console = V8Object(it)
-                v8Console.registerJavaMethod(console,
-                    "log",
-                    "log",
-                    arrayOf<Class<*>>(String::class.java))
-                v8Console.registerJavaMethod(console,
-                    "error",
-                    "err",
-                    arrayOf<Class<*>>(String::class.java))
-                it.add("console", v8Console)
-            }
-            runtime.executeScript(script)
-        }
-        println("[Benchmarking] Evaluate time with tsub-script j2v8 took on average $time ms")
-    }
+//    @Test
+//    fun buildJ2V8() {
+//        val time = benchmark {
+//            val runtime: V8 = V8.createV8Runtime().also {
+//                val console = Console()
+//                val v8Console = V8Object(it)
+//                v8Console.registerJavaMethod(console,
+//                    "log",
+//                    "log",
+//                    arrayOf<Class<*>>(String::class.java))
+//                v8Console.registerJavaMethod(console,
+//                    "error",
+//                    "err",
+//                    arrayOf<Class<*>>(String::class.java))
+//                it.add("console", v8Console)
+//            }
+//        }
+//        println("[Benchmarking] Build time with j2v8 took on average $time ms")
+//    }
+//
+//    @Test
+//    fun setupJ2V8() {
+//        val time = benchmark {
+//            val runtime: V8 = V8.createV8Runtime().also {
+//                val console = Console()
+//                val v8Console = V8Object(it)
+//                v8Console.registerJavaMethod(console,
+//                    "log",
+//                    "log",
+//                    arrayOf<Class<*>>(String::class.java))
+//                v8Console.registerJavaMethod(console,
+//                    "error",
+//                    "err",
+//                    arrayOf<Class<*>>(String::class.java))
+//                it.add("console", v8Console)
+//            }
+//            runtime.executeScript(script)
+//        }
+//        println("[Benchmarking] Evaluate time with tsub-script j2v8 took on average $time ms")
+//    }
 
     @Test
     fun executeJ2V8() {
@@ -137,44 +138,44 @@ class JSRuntimeBenchmarking {
         println("[Benchmarking] Matching Execution time with tsub-script j2v8 took on average $time ms")
     }
 
-    @Test
-    fun buildQuick() {
-        val time = benchmark {
-            val runtime = QuickJS.Builder().build().createJSRuntime()
-            val context = runtime.createJSContext()
-            val console = context.createJSObject().also {
-                it.setProperty("log", context.createJSFunction(
-                    QuickJSRuntime.Console,
-                    JavaMethod.create(
-                        Void::class.java,
-                        QuickJSRuntime.Console::class.java.getMethod("log", String::class.java)
-                    )))
-            }
-            context.globalObject.setProperty("console", console);
-            runtime.close()
-        }
-        println("[Benchmarking] Build time with quickJs took on average $time ms")
-    }
-
-    @Test
-    fun setupQuick() {
-        val time = benchmark {
-            val runtime = QuickJS.Builder().build().createJSRuntime()
-            val context = runtime.createJSContext()
-            val console = context.createJSObject().also {
-                it.setProperty("log", context.createJSFunction(
-                    QuickJSRuntime.Console,
-                    JavaMethod.create(
-                        Void::class.java,
-                        QuickJSRuntime.Console::class.java.getMethod("log", String::class.java)
-                    )))
-            }
-            context.globalObject.setProperty("console", console);
-            context.evaluate(script, "test.js")
-            runtime.close()
-        }
-        println("[Benchmarking] Evaluate time with tsub-script quickJs took on average $time ms")
-    }
+//    @Test
+//    fun buildQuick() {
+//        val time = benchmark {
+//            val runtime = QuickJS.Builder().build().createJSRuntime()
+//            val context = runtime.createJSContext()
+//            val console = context.createJSObject().also {
+//                it.setProperty("log", context.createJSFunction(
+//                    QuickJSRuntime.Console,
+//                    JavaMethod.create(
+//                        Void::class.java,
+//                        QuickJSRuntime.Console::class.java.getMethod("log", String::class.java)
+//                    )))
+//            }
+//            context.globalObject.setProperty("console", console);
+//            runtime.close()
+//        }
+//        println("[Benchmarking] Build time with quickJs took on average $time ms")
+//    }
+//
+//    @Test
+//    fun setupQuick() {
+//        val time = benchmark {
+//            val runtime = QuickJS.Builder().build().createJSRuntime()
+//            val context = runtime.createJSContext()
+//            val console = context.createJSObject().also {
+//                it.setProperty("log", context.createJSFunction(
+//                    QuickJSRuntime.Console,
+//                    JavaMethod.create(
+//                        Void::class.java,
+//                        QuickJSRuntime.Console::class.java.getMethod("log", String::class.java)
+//                    )))
+//            }
+//            context.globalObject.setProperty("console", console);
+//            context.evaluate(script, "test.js")
+//            runtime.close()
+//        }
+//        println("[Benchmarking] Evaluate time with tsub-script quickJs took on average $time ms")
+//    }
 
     @Test
     fun executeQuick() {
@@ -411,19 +412,139 @@ class JSRuntimeBenchmarking {
         println("[Benchmarking] (J2V8) Time to run + encode/decode is $time ms")
     }
 
+    @Test
+    fun benchmarkSerializationJ2V8() {
+        val runtime: V8 = V8.createV8Runtime().also {
+            val console = Console()
+            val v8Console = V8Object(it)
+            v8Console.registerJavaMethod(console,
+                "log",
+                "log",
+                arrayOf<Class<*>>(String::class.java))
+            v8Console.registerJavaMethod(console,
+                "error",
+                "err",
+                arrayOf<Class<*>>(String::class.java))
+            it.add("console", v8Console)
+        }
+        val e = TrackEvent(
+            event = "App Closed",
+            properties = buildJsonObject { put("new", false); put("click", true) }
+        ).apply {
+            messageId = "qwerty-1234"
+            anonymousId = "anonId"
+            integrations = buildJsonObject {
+                put("key1", "true")
+                put("key2", "2")
+                put("key3", "4f")
+                put("key4", "4f")
+            }
+            this.context = buildJsonObject {
+                put("key1", true)
+                put("key2", 2)
+                put("key3", 4f)
+                put("key4", 4f)
+                put("key4", buildJsonObject {
+                    put("key1", true)
+                    put("key2", false)
+                })
+            }
+            timestamp = Date(0).toInstant().toString()
+        }
+
+        val time1 = benchmark {
+            serializeToJS(runtime, e)
+        }
+        println("[Benchmarking] (J2V8) Native Encode is $time1 ms")
+        val time2 = benchmark {
+            e.toV8Object(runtime)
+        }
+        println("[Benchmarking] (J2V8) Custom Encode is $time2 ms")
+        val time3 = benchmark {
+            e.toV8Object2(runtime)
+        }
+        println("[Benchmarking] (J2V8) Custom Encode w/o cache is $time3 ms")
+//
+//
+//        val time4 = benchmark {
+//            e.toV8Object(runtime)
+//        }
+//        println("[Benchmarking] (J2V8) Custom Encode is $time4 ms")
+//        val time3 = benchmark {
+//            serializeToJS(runtime, e)
+//        }
+//        println("[Benchmarking] (J2V8) Native Encode is $time3 ms")
+    }
 
     @Test
-    fun testPerformance() {
-        for (i in 0..0) {
-//        testDataBridgeQuick()
-//        testDataBridgeJ2V8()
-            testReturnCallbackQuick()
-            testReturnCallbackJ2V8()
+    fun benchmarkDeSerializationJ2V8() {
+        val runtime: V8 = V8.createV8Runtime().also {
+            val console = Console()
+            val v8Console = V8Object(it)
+            v8Console.registerJavaMethod(console,
+                "log",
+                "log",
+                arrayOf<Class<*>>(String::class.java))
+            v8Console.registerJavaMethod(console,
+                "error",
+                "err",
+                arrayOf<Class<*>>(String::class.java))
+            it.add("console", v8Console)
+        }
+        val e = TrackEvent(
+            event = "App Closed",
+            properties = buildJsonObject { put("new", false); put("click", true) }
+        ).apply {
+            messageId = "qwerty-1234"
+            anonymousId = "anonId"
+            integrations = buildJsonObject {
+                put("key1", "true")
+                put("key2", "2")
+                put("key3", "4f")
+                put("key4", "4f")
+            }
+            this.context = buildJsonObject {
+                put("key1", true)
+                put("key2", 2)
+                put("key3", 4f)
+                put("key4", 4f)
+                put("key4", buildJsonObject {
+                    put("key1", true)
+                    put("key2", false)
+                })
+            }
+            timestamp = Date(0).toInstant().toString()
+        }
+
+        val obj = e.toV8Object(runtime)
+        println(obj)
+//        val time1 = benchmark {
+//            deserializeFromJS<TrackEvent>(obj)
+//        }
+//        println("[Benchmarking] (J2V8) Native Decode is $time1 ms")
+        val time2 = benchmark {
+            obj.toSegmentEvent<TrackEvent>()
+        }
+        println("[Benchmarking] (J2V8) Custom Decode is $time2 ms")
+        val x: TrackEvent? = obj.toSegmentEvent()
+        x?.let {
+            println(Json { prettyPrint = true }.encodeToString(TrackEvent.serializer(), it))
         }
     }
+
+
+//    @Test
+//    fun testPerformance() {
+//        for (i in 0..0) {
+//        testDataBridgeQuick()
+//        testDataBridgeJ2V8()
+//            testReturnCallbackQuick()
+//            testReturnCallbackJ2V8()
+//        }
+//    }
 }
 
-fun benchmark(times: Int = 100000, closure: () -> Unit): Double {
+fun benchmark(times: Int = 10000, closure: () -> Unit): Double {
     val list = mutableListOf<Long>()
     for (i in 1..times) {
         list.add(measureTimeMillis(closure))

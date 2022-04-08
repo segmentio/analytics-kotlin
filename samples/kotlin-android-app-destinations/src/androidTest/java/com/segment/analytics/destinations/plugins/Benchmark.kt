@@ -19,11 +19,7 @@ import com.hippo.quickjs.android.JSValue
 import com.hippo.quickjs.android.JavaMethod
 import com.hippo.quickjs.android.QuickJS
 import com.hippo.quickjs.android.TypeAdapter
-import com.segment.analytics.kotlin.core.AliasEvent
 import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.GroupEvent
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utilities.toContent
@@ -891,7 +887,7 @@ object MapTypeAdapter : TypeAdapter<Map<String, Any?>>() {
     }
 }
 
-
+/*
 object EventTypeAdapter : TypeAdapter<BaseEvent>() {
     override fun toJSValue(context: JSContext, value: BaseEvent): JSValue {
         val x = context.createJSObject()
@@ -957,3 +953,4 @@ object EventTypeAdapter : TypeAdapter<BaseEvent>() {
         // apply common fields
     }
 }
+*/

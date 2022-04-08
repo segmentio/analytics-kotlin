@@ -72,12 +72,13 @@ dependencies {
 
 // Supported destinations
 dependencies {
-    implementation 'com.segment.analytics.kotlin.destinations:amplitude:1.5.1'
+//    implementation 'com.segment.analytics.kotlin.destinations:amplitude:1.5.1'
     implementation 'com.segment.analytics.kotlin.destinations:appsflyer:1.5.1'
     implementation 'com.segment.analytics.kotlin.destinations:firebase:1.5.2'
     implementation 'com.segment.analytics.kotlin.destinations:mixpanel:1.5.2'
 
     implementation 'com.eclipsesource.j2v8:j2v8:6.2.0@aar'
+    implementation 'io.alicorn.v8:v8-adapter:1.59'
 //    repositories {
 //        maven { url 'https://jitpack.io' }
 //    }
@@ -100,6 +101,13 @@ dependencies {
     // Intercom
     implementation 'io.intercom.android:intercom-sdk-base:10.1.1'
     implementation 'io.intercom.android:intercom-sdk-fcm:10.1.1'
+
+    repositories {
+        maven {
+            url '/Users/prayansh.srivastava/.m2/repository/'
+        }
+    }
+    implementation 'com.segment.analytics.kotlin.destinations:amplitude:1.5.2-SNAPSHOT'
 
 }
 
