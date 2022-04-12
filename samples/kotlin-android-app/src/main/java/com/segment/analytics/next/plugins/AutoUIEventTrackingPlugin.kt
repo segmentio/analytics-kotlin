@@ -14,7 +14,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 
-class AutoUIEventTracking(
+class AutoUIEventTrackingPlugin(
     private val uiEventHandler: UIEventHandler = DefaultUIEventHandler()
     ): Plugin, AndroidLifecycle {
     override val type: Plugin.Type = Plugin.Type.Utility
@@ -105,8 +105,8 @@ class AutoUIEventTracking(
 
         override fun invoke(proxy: Any?, method: Method?, args: Array<out Any>?): Any {
             if (args == null || args.isEmpty()) {
-                method?.invoke(realObject, args)
-                return realObject
+                val result = method?.invoke(realObject, args)
+                return result ?: realObject
             }
 
             when (realObject) {
@@ -139,8 +139,8 @@ class AutoUIEventTracking(
                 }
             }
 
-            method?.invoke(realObject, *args)
-            return realObject
+            val result = method?.invoke(realObject, *args)
+            return result ?: realObject
         }
     }
 
