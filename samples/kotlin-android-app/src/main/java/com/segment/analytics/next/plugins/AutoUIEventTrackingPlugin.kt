@@ -35,8 +35,9 @@ class AutoUIEventTrackingPlugin(
         activity?.let {
             autoTracking(it)
 
-            registerFragmentLifeCycle(it as AppCompatActivity)
-
+            if (it is AppCompatActivity) {
+                registerFragmentLifeCycle(it)
+            }
         }
     }
 
