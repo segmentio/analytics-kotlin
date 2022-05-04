@@ -6,8 +6,13 @@ import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
-import kotlinx.coroutines.*
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
@@ -76,7 +81,7 @@ open class Analytics protected constructor(
     constructor(configuration: Configuration): this(configuration, object : CoroutineConfiguration{
         override val store = Store()
         override val analyticsScope = CoroutineScope(SupervisorJob())
-        override val analyticsDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
+        override val analyticsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
         override val networkIODispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
         override val fileIODispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     })
@@ -378,7 +383,7 @@ open class Analytics protected constructor(
     fun process(event: BaseEvent) {
         event.applyBaseData()
 
-        log("applying base attributes on ${Thread.currentThread().name}")
+//        log("applying base attributes on ${Thread.currentThread().name}")
         analyticsScope.launch(analyticsDispatcher) {
             event.applyBaseEventData(store)
             log("processing event on ${Thread.currentThread().name}")
