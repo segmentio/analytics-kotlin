@@ -159,7 +159,7 @@ class YourJsonSerializable implements JsonSerializable {
 analytics.track("View Product", new YourJsonSerializable());
 ```
 
-For implementations supporting a minimum API version below 24, the `buildJsonObjectFunc` fucntion will need to be used.
+For implementations supporting a minimum API version below 24, the `buildJsonObjectFunc` function will need to be used.
 ```java
 analytics.track("View Product", Builders.buildJsonObjectFunc(o -> {
     o.put("productId", 123)
