@@ -164,6 +164,7 @@ For implementations supporting a minimum API version below 24, the `buildJsonObj
 analytics.track("View Product", Builders.buildJsonObjectFunc(o -> {
     o.put("productId", 123)
         .put("productName", "Striped trousers");
+   return Unit.INSTANCE;
 }));
 ```
 
