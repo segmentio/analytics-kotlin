@@ -205,7 +205,7 @@ class JavaAnalytics private constructor() {
      * Retrieve the first match of registered destination plugin by name. It finds
      * @param destination [String]
      */
-    fun find(destination: String): DestinationPlugin? = analytics.find(destination)
+    fun find(destinationKey: String): DestinationPlugin? = analytics.find(destinationKey)
 
     /**
      * Retrieve the first match of registered plugin. It finds

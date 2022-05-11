@@ -407,10 +407,10 @@ open class Analytics protected constructor(
     fun <T: Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
 
     /**
-     * Retrieve the first match of registered destination plugin by name. It finds
-     * @param destination [String]
+     * Retrieve the first match of registered destination plugin by key. It finds
+     * @param destinationKey [String]
      */
-    fun find(destination: String): DestinationPlugin? = this.timeline.find(destination)
+    fun find(destinationKey: String): DestinationPlugin? = this.timeline.find(destinationKey)
 
     /**
      * Retrieve the first match of registered plugin. It finds
