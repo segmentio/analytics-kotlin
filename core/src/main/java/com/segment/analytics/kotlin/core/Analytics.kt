@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
@@ -404,6 +405,12 @@ open class Analytics protected constructor(
      * @param plugin [KClass]
      */
     fun <T: Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
+
+    /**
+     * Retrieve the first match of registered destination plugin by name. It finds
+     * @param destination [String]
+     */
+    fun find(destination: String): DestinationPlugin? = this.timeline.find(destination)
 
     /**
      * Retrieve the first match of registered plugin. It finds
