@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.core.Properties
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.Traits
 import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonObject
@@ -199,6 +200,20 @@ class JavaAnalytics private constructor() {
      * @param plugin [Plugin] in Java Class
      */
     fun <T: Plugin> find(plugin: Class<T>) = analytics.find(plugin.kotlin)
+
+    /**
+     * Retrieve the first match of registered destination plugin by name. It finds
+     * @param destination [String]
+     */
+    fun find(destinationKey: String): DestinationPlugin? = analytics.find(destinationKey)
+
+    /**
+     * Retrieve the first match of registered plugin. It finds
+     *      1. all instances of the given class/interface
+     *      2. and all instances of subclass of the given class/interface
+     * @param plugin [Class]
+     */
+    fun <T: Plugin> findAll(plugin: Class<T>): List<T> = analytics.findAll(plugin.kotlin)
 
     /**
      * Remove a plugin from the analytics timeline using its name

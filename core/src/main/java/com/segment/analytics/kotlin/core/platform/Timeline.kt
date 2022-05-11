@@ -91,6 +91,13 @@ internal class Timeline {
         return null
     }
 
+    // Find a destination plugin by its name
+    fun find(destination: String) =
+        plugins[Plugin.Type.Destination]?.plugins?.find {
+            it is DestinationPlugin && it.key == destination
+        } as? DestinationPlugin
+
+
     fun <T: Plugin> findAll(pluginClass: KClass<T>): List<T> {
         val result = mutableListOf<T>()
         plugins.forEach { (_, list) ->

@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*
@@ -427,6 +428,19 @@ class AnalyticsTests {
                 assertEquals(plugins.size, 2)
                 assertTrue(plugins.contains(parent))
                 assertTrue(plugins.contains(child))
+            }
+
+            @Test
+            fun `find() finds destination plugin by name`() {
+                val dest = "testPlugin"
+                val expected = object: DestinationPlugin() {
+                    override val key = dest
+                }
+                analytics.add(expected)
+
+                val actual = analytics.find(dest)
+
+                assertEquals(expected, actual)
             }
         }
     }
