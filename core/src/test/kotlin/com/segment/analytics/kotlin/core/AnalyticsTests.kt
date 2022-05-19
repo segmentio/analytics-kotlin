@@ -88,6 +88,7 @@ class AnalyticsTests {
             assertEquals(exception.message?.contains("Android"), true)
         }
 
+        @Disabled
         @Test
         fun `analytics should respect remote apiHost`() {
             // need the following block in `init` to inject mock before analytics gets instantiate
@@ -114,6 +115,7 @@ class AnalyticsTests {
             assertEquals("remote", apiHost.captured)
         }
 
+        @Disabled
         @Test
         fun `analytics should respect local modified apiHost if remote not presented`() {
             val config = Configuration(
