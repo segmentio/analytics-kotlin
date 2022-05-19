@@ -100,11 +100,11 @@ open class Analytics protected constructor(
                 storage.subscribeToStore()
             }
 
-            checkSettings()
-
             if (configuration.autoAddSegmentDestination) {
                 add(SegmentDestination())
             }
+
+            checkSettings()
         }
     }
 
