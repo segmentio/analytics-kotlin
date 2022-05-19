@@ -27,29 +27,10 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
             if (result != null) {
                 when (plugin) {
                     is DestinationPlugin -> {
-                        plugin.process(result)
-                    }
-                    is EventPlugin -> {
-                        when (result) {
-                            is IdentifyEvent -> {
-                                result = plugin.identify(result as IdentifyEvent)
-                            }
-                            is TrackEvent -> {
-                                result = plugin.track(result as TrackEvent)
-                            }
-                            is GroupEvent -> {
-                                result = plugin.group(result as GroupEvent)
-                            }
-                            is ScreenEvent -> {
-                                result = plugin.screen(result as ScreenEvent)
-                            }
-                            is AliasEvent -> {
-                                result = plugin.alias(result as AliasEvent)
-                            }
-                        }
+                        plugin.execute(result!!)
                     }
                     else -> {
-                        result = plugin.execute(result as BaseEvent)
+                        result = plugin.execute(result!!)
                     }
                 }
             }

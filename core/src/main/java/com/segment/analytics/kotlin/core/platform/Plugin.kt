@@ -70,6 +70,14 @@ interface EventPlugin : Plugin {
         return payload
     }
 
+    override fun execute(event: BaseEvent): BaseEvent? = when (event) {
+        is IdentifyEvent -> identify(event)
+        is TrackEvent -> track(event)
+        is GroupEvent -> group(event)
+        is ScreenEvent -> screen(event)
+        is AliasEvent -> alias(event)
+    }
+
     open fun flush() {}
 
     open fun reset() {}
@@ -143,9 +151,7 @@ abstract class DestinationPlugin : EventPlugin {
         return afterResult
     }
 
-    final override fun execute(event: BaseEvent): BaseEvent? {
-        return null
-    }
+    final override fun execute(event: BaseEvent): BaseEvent? = process(event)
 
     internal fun isDestinationEnabled(event: BaseEvent?): Boolean {
         // if event payload has integration marked false then its disabled by customer

@@ -17,6 +17,7 @@ class TestRunPlugin(var closure: (BaseEvent?) -> Unit): EventPlugin {
     }
 
     override fun execute(event: BaseEvent): BaseEvent {
+        super.execute(event)
         updateState(true)
         return event
     }
