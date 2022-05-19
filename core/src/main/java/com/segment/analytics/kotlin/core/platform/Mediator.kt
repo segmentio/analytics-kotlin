@@ -24,13 +24,13 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         var result: BaseEvent? = event
 
         plugins.forEach { plugin ->
-            if (result != null) {
+            result?.let {
                 when (plugin) {
                     is DestinationPlugin -> {
-                        plugin.execute(result!!)
+                        plugin.execute(it)
                     }
                     else -> {
-                        result = plugin.execute(result!!)
+                        result = plugin.execute(it)
                     }
                 }
             }
