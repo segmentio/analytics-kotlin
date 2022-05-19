@@ -4,7 +4,6 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.platform.Plugin
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import sovran.kotlin.Subscriber
@@ -65,9 +64,8 @@ class StartupQueue : Plugin, Subscriber {
 
     private fun replayEvents() {
         // replay the queued events to the instance of Analytics we're working with.
-        for (event in queuedEvents) {
-            analytics.process(event)
+        while(!queuedEvents.isEmpty()) {
+            analytics.process(queuedEvents.poll())
         }
-        queuedEvents.clear()
     }
 }
