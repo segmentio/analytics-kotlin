@@ -5,7 +5,6 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.utils.*
 import io.mockk.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -90,7 +89,7 @@ class AnalyticsTests {
         }
 
         @Test
-        fun `analytics should respect remote apiHost`() = runTest {
+        fun `analytics should respect remote apiHost`() {
             // need the following block in `init` to inject mock before analytics gets instantiate
             val settingsStream = ByteArrayInputStream(
                 """
@@ -107,7 +106,6 @@ class AnalyticsTests {
                 apiHost = "local"
             )
             analytics = testAnalytics(config, testScope, testDispatcher)
-            delay(1000)
             analytics.track("test")
             analytics.flush()
 
