@@ -159,6 +159,15 @@ class YourJsonSerializable implements JsonSerializable {
 analytics.track("View Product", new YourJsonSerializable());
 ```
 
+For implementations supporting a minimum API version below 24, the `buildJsonObjectFunc` function will need to be used.
+```java
+analytics.track("View Product", Builders.buildJsonObjectFunc(o -> {
+    o.put("productId", 123)
+        .put("productName", "Striped trousers");
+   return Unit.INSTANCE;
+}));
+```
+
 ### identify
 The identify call lets you tie a user to their actions and record traits about them. This includes a unique user ID and any optional traits you know about them like their email, name, etc. The traits option can include any information you might want to tie to the user, but when using any of the reserved user traits, you should make sure to only use them for their intended meaning.
 
