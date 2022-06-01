@@ -58,6 +58,8 @@ Explore more via the [example projects](samples) which showcase analytics instru
 | AppsFlyer | https://github.com/segment-integrations/analytics-kotlin-appsflyer |
 | Firebase | https://github.com/segment-integrations/analytics-kotlin-firebase |
 | Mixpanel | https://github.com/segment-integrations/analytics-kotlin-mixpanel |
+| Intercom | https://github.com/segment-integrations/analytics-kotlin-intercom |
+| ComScore | https://github.com/segment-integrations/analytics-kotlin-comscore |
 
 
 ## Compatibility

@@ -7,7 +7,9 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.destinations.amplitude.AmplitudeSession
 import com.segment.analytics.kotlin.destinations.appsflyer.AppsFlyerDestination
+import com.segment.analytics.kotlin.destinations.comscore.ComscoreDestination
 import com.segment.analytics.kotlin.destinations.firebase.FirebaseDestination
+import com.segment.analytics.kotlin.destinations.intercom.IntercomDestination
 import com.segment.analytics.kotlin.destinations.mixpanel.MixpanelDestination
 import java.util.concurrent.Executors
 
@@ -45,6 +47,8 @@ class MainApplication : Application() {
 
         // Try out Intercom destination
         analytics.add(IntercomDestination(this))
+
+        analytics.add(ComscoreDestination())
 
         val appsflyerDestination = AppsFlyerDestination(applicationContext, true)
         analytics.add(appsflyerDestination)
