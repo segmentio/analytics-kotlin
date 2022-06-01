@@ -40,7 +40,7 @@ android {
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
-    implementation project(':android')
+    implementation 'com.segment.analytics.kotlin:android:1.6.2'
     implementation 'androidx.multidex:multidex:2.0.1'
 
     implementation 'androidx.core:core-ktx:1.7.0'
@@ -58,18 +58,8 @@ dependencies {
     implementation 'com.segment.analytics.kotlin.destinations:appsflyer:1.5.1'
     implementation 'com.segment.analytics.kotlin.destinations:firebase:1.5.2'
     implementation 'com.segment.analytics.kotlin.destinations:mixpanel:1.5.2'
-}
-
-// Partner Dependencies
-dependencies {
-
-    // Comscore
-    api 'com.comscore:android-analytics:6.5.0'
-
-    // Intercom
-    implementation 'io.intercom.android:intercom-sdk-base:10.1.1'
-    implementation 'io.intercom.android:intercom-sdk-fcm:10.1.1'
-
+    implementation 'com.segment.analytics.kotlin.destinations:intercom:1.5.0'
+    implementation 'com.segment.analytics.kotlin.destinations:comscore:1.5.0'
 }
 
 // Test Dependencies
