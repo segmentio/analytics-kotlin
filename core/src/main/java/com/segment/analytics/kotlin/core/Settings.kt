@@ -22,6 +22,7 @@ data class Settings(
     var integrations: JsonObject = emptyJsonObject,
     var plan: JsonObject = emptyJsonObject,
     var edgeFunction: JsonObject = emptyJsonObject,
+    var middlewareSettings: JsonObject = emptyJsonObject,
 ) {
     inline fun <reified T : Any> destinationSettings(
         name: String,

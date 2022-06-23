@@ -9,8 +9,8 @@ import com.segment.analytics.kotlin.core.UserInfo
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.spyStore
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -108,7 +108,8 @@ internal class StorageImplTest {
                                 })
                         },
                         plan = emptyJsonObject,
-                        edgeFunction = emptyJsonObject
+                        edgeFunction = emptyJsonObject,
+                        middlewareSettings = emptyJsonObject
                     ),
                     running = false,
                     initialSettingsDispatched = false
@@ -126,7 +127,8 @@ internal class StorageImplTest {
                         buildJsonObject { put("apiKey", "1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ") })
                 },
                 plan = emptyJsonObject,
-                edgeFunction = emptyJsonObject
+                edgeFunction = emptyJsonObject,
+                middlewareSettings = emptyJsonObject
             ), Json.decodeFromString(Settings.serializer(), settings)
         )
     }

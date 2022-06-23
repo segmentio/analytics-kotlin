@@ -7,8 +7,8 @@ import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
@@ -54,7 +54,8 @@ class SettingsTests {
                         buildJsonObject { put("apiKey", "1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ") })
                 },
                 plan = emptyJsonObject,
-                edgeFunction = emptyJsonObject
+                edgeFunction = emptyJsonObject,
+                middlewareSettings = emptyJsonObject
             ),
             curSettings
         )
@@ -78,7 +79,8 @@ class SettingsTests {
                             })
                     },
                     plan = emptyJsonObject,
-                    edgeFunction = emptyJsonObject
+                    edgeFunction = emptyJsonObject,
+                    middlewareSettings = emptyJsonObject
                 ),
                 Plugin.UpdateType.Initial
             )

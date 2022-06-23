@@ -3,22 +3,33 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
-import com.segment.analytics.kotlin.core.utils.*
-import io.mockk.*
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import com.segment.analytics.kotlin.core.utils.StubPlugin
+import com.segment.analytics.kotlin.core.utils.TestRunPlugin
+import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
+import com.segment.analytics.kotlin.core.utils.testAnalytics
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.assertThrows
 import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
 import java.time.Instant
@@ -469,7 +480,8 @@ class AnalyticsTests {
                 put("int2", false)
             },
             plan = emptyJsonObject,
-            edgeFunction = emptyJsonObject
+            edgeFunction = emptyJsonObject,
+            middlewareSettings = emptyJsonObject
         )
         analytics.store.dispatch(System.UpdateSettingsAction(settings), System::class)
         assertEquals(settings, analytics.settings())
