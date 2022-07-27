@@ -18,7 +18,6 @@ android {
         versionCode VERSION_CODE.toInteger()
         versionName VERSION_NAME
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
 
         buildConfigField("int", "SEGMENT_VERSION_CODE", "${versionCode}")
@@ -41,17 +40,11 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-    testOptions {
-        unitTests {
-            includeAndroidResources = true
-        }
-    }
-
 }
 
 dependencies {
     // MAIN DEPS
-    api project(':core')
+    api project(':analytics-kotlin:core')
     api 'com.segment:sovran-kotlin:1.2.1'
     api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0'
@@ -60,27 +53,5 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.4.0'
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
-
-    // TESTING
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
-    testImplementation 'io.mockk:mockk:1.10.6'
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-
-    // Add JUnit5 dependencies.
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.2'
-
-    // Add JUnit4 legacy dependencies.
-    testImplementation 'junit:junit:4.13.2'
-    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.7.2'
-
-    // Add Roboelectric dependencies.
-    testImplementation 'org.robolectric:robolectric:4.7.3'
-    testImplementation 'androidx.test:core:1.4.0'
 }
 
-apply from: rootProject.file('gradle/artifacts-android.gradle')
-apply from: rootProject.file('gradle/mvn-publish.gradle')
-apply from: rootProject.file('gradle/codecov.gradle')
