@@ -63,12 +63,6 @@ class AndroidContextPlugin : Plugin {
         const val DEVICE_NAME_KEY = "name"
         const val DEVICE_TYPE_KEY = "type"
 
-        // Network
-        const val NETWORK_KEY = "network"
-        const val NETWORK_BLUETOOTH_KEY = "bluetooth"
-        const val NETWORK_CELLULAR_KEY = "cellular"
-        const val NETWORK_WIFI_KEY = "wifi"
-
         // OS
         const val OS_KEY = "os"
         const val OS_NAME_KEY = "name"
@@ -202,48 +196,6 @@ class AndroidContextPlugin : Plugin {
 
             // putScreen
             put(SCREEN_KEY, screen)
-
-            // --> Add dynamic context data
-
-            // putNetwork
-            val network = buildJsonObject {
-                if (hasPermission(context, permission.ACCESS_NETWORK_STATE)) {
-                    val connectivityManager =
-                        getSystemService<ConnectivityManager>(context, Context.CONNECTIVITY_SERVICE)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        var wifiConnected = false
-                        var cellularConnected = false
-                        var bluetoothConnected = false
-                        connectivityManager.allNetworks.forEach {
-                            val capabilities = connectivityManager.getNetworkCapabilities(it)
-                            // we dont know which network is which at this point, so using
-                            // the or-map allows us to capture the value across all networks
-                            wifiConnected = wifiConnected ||
-                                    capabilities?.hasTransport(TRANSPORT_WIFI) ?: false
-                            cellularConnected = cellularConnected ||
-                                    capabilities?.hasTransport(TRANSPORT_CELLULAR) ?: false
-                            bluetoothConnected = bluetoothConnected ||
-                                    capabilities?.hasTransport(TRANSPORT_BLUETOOTH) ?: false
-                        }
-                        put(NETWORK_WIFI_KEY, wifiConnected)
-                        put(NETWORK_BLUETOOTH_KEY, bluetoothConnected)
-                        put(NETWORK_CELLULAR_KEY, cellularConnected)
-                    } else @Suppress("DEPRECATION") {
-                        val wifiInfo =
-                            connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
-                        put(NETWORK_WIFI_KEY, wifiInfo?.isConnected ?: false)
-
-                        val bluetoothInfo =
-                            connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_BLUETOOTH)
-                        put(NETWORK_BLUETOOTH_KEY, bluetoothInfo?.isConnected ?: false)
-
-                        val cellularInfo =
-                            connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE)
-                        put(NETWORK_CELLULAR_KEY, cellularInfo?.isConnected ?: false)
-                    }
-                }
-            }
-            put(NETWORK_KEY, network)
 
             // putLocale
             put(
