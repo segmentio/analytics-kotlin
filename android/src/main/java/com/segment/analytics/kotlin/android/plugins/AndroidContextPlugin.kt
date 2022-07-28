@@ -24,6 +24,7 @@ import java.util.TimeZone
 import java.util.UUID
 import java.lang.System as JavaSystem
 import android.media.MediaDrm
+import com.segment.analytics.BuildConfig
 import com.segment.analytics.kotlin.core.utilities.*
 import kotlinx.coroutines.*
 import java.lang.Exception
@@ -31,7 +32,7 @@ import java.security.MessageDigest
 
 
 // Plugin that applies context related changes. Auto-added to system on build
-class AndroidContextPlugin : Plugin {
+class AndroidContextPlugin(private val repoName: String) : Plugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
     private lateinit var context: Context
@@ -54,6 +55,8 @@ class AndroidContextPlugin : Plugin {
         const val APP_VERSION_KEY = "version"
         const val APP_NAMESPACE_KEY = "namespace"
         const val APP_BUILD_KEY = "build"
+        const val PRODUCTION_BUILD_VALUE = "production"
+        const val STAGING_BUILD_VALUE = "staging"
 
         // Device
         const val DEVICE_KEY = "device"
@@ -61,12 +64,18 @@ class AndroidContextPlugin : Plugin {
         const val DEVICE_MANUFACTURER_KEY = "manufacturer"
         const val DEVICE_MODEL_KEY = "model"
         const val DEVICE_NAME_KEY = "name"
+        const val DEVICE_TYPE_ATV_VALUE = "connected tv"
+        const val DEVICE_TYPE_AMB_VALUE = "mobile"
         const val DEVICE_TYPE_KEY = "type"
 
         // OS
         const val OS_KEY = "os"
         const val OS_NAME_KEY = "name"
         const val OS_VERSION_KEY = "version"
+        const val ATV_REPO_KEY = "android_tv"
+        const val AMB_REPO_KEY = "android_mobile"
+        const val OS_NAME_ATV_VALUE = "Android TV"
+        const val OS_NAME_AMB_VALUE = "Android"
 
         // Screen
         const val SCREEN_KEY = "screen"
@@ -84,8 +93,17 @@ class AndroidContextPlugin : Plugin {
         val collectDeviceId = analytics.configuration.collectDeviceId
 
         os = buildJsonObject {
-            put(OS_NAME_KEY, "Android")
-            put(OS_VERSION_KEY, Build.VERSION.RELEASE)
+            put(OS_NAME_KEY, repoName.let { repoName ->
+                when (repoName) {
+                    ATV_REPO_KEY -> OS_NAME_ATV_VALUE
+                    else -> OS_NAME_AMB_VALUE
+                }})
+            put(OS_VERSION_KEY, BuildConfig.DEBUG.let { isDebug ->
+                if (isDebug)
+                    STAGING_BUILD_VALUE
+                else
+                    PRODUCTION_BUILD_VALUE
+            })
         }
 
         screen = buildJsonObject {
@@ -126,7 +144,12 @@ class AndroidContextPlugin : Plugin {
             put(DEVICE_MANUFACTURER_KEY, Build.MANUFACTURER)
             put(DEVICE_MODEL_KEY, Build.MODEL)
             put(DEVICE_NAME_KEY, Build.DEVICE)
-            put(DEVICE_TYPE_KEY, "android")
+            put(DEVICE_TYPE_KEY, repoName.let { repoName ->
+                when (repoName) {
+                    ATV_REPO_KEY -> DEVICE_TYPE_ATV_VALUE
+                    AMB_REPO_KEY -> DEVICE_TYPE_AMB_VALUE
+                    else -> null
+                }})
         }
 
         if (deviceId.isEmpty()) {
