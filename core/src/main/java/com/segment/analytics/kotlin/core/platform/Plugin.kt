@@ -120,9 +120,6 @@ abstract class DestinationPlugin : EventPlugin {
     // Special function for DestinationPlugin that manages its own timeline execution
     fun process(event: BaseEvent?): BaseEvent? {
         // Skip this destination if it is disabled via settings
-        if (!isDestinationEnabled(event)) {
-            return null
-        }
         val beforeResult = timeline.applyPlugins(Plugin.Type.Before, event)
         val enrichmentResult = timeline.applyPlugins(Plugin.Type.Enrichment, beforeResult)
 

@@ -2,22 +2,27 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import com.segment.analytics.kotlin.core.utilities.encodeToBase64
-import java.io.BufferedReader
-import java.io.Closeable
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.util.zip.GZIPOutputStream
+
 class HTTPClient(private val writeKey: String) {
     internal val authHeader = authorizationHeader(writeKey)
 
     fun settings(cdnHost: String): Connection {
-        val connection: HttpURLConnection =
-            openConnection("https://$cdnHost/projects/$writeKey/settings")
-        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        val keyComponents = splitWriteKey(writeKey)
+        val connection = openConnection(
+            String.format(
+                cdnHost,
+                keyComponents[1], keyComponents[0], writeKey
+            )
+        ).apply {
+            setRequestProperty("X-Api-Key", writeKey)
+            setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        }
+
         val responseCode = connection.responseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
             connection.disconnect()
@@ -27,9 +32,16 @@ class HTTPClient(private val writeKey: String) {
     }
 
     fun upload(apiHost: String): Connection {
-        val connection: HttpURLConnection = openConnection("https://$apiHost/b")
-        connection.setRequestProperty("Content-Type", "text/plain")
-        connection.setRequestProperty("Authorization", authHeader)
+        val keyComponents = splitWriteKey(writeKey)
+        val connection = openConnection(
+            String.format(apiHost,
+                keyComponents[1], keyComponents[0]
+            )
+        ).apply {
+            setRequestProperty("X-Api-Key", writeKey)
+            setRequestProperty("Content-Type", "text/plain")
+            setRequestProperty("Authorization", authHeader)
+        }
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
         return connection.createPostConnection()
@@ -55,6 +67,10 @@ class HTTPClient(private val writeKey: String) {
         )
         connection.doInput = true
         return connection
+    }
+
+    private fun splitWriteKey(writeKey: String): Array<String?> {
+        return writeKey.split("-".toRegex()).toTypedArray()
     }
 
     private fun authorizationHeader(writeKey: String): String {

@@ -79,6 +79,8 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
         // Add DestinationMetadata enrichment plugin
         add(DestinationMetadataPlugin())
 
+        enabled = true
+
         with(analytics) {
             pipeline = EventPipeline(
                 analytics,
