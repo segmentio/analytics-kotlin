@@ -44,7 +44,7 @@ android {
 
 dependencies {
     // MAIN DEPS
-    api project(':analytics-kotlin:core')
+    api project(':kidoodle-android-core:analytics-kotlin:core')
     api 'com.segment:sovran-kotlin:1.2.1'
     api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0'
