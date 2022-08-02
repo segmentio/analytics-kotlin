@@ -39,8 +39,7 @@ class HTTPClient(private val writeKey: String) {
             )
         ).apply {
             setRequestProperty("X-Api-Key", writeKey)
-            setRequestProperty("Content-Type", "text/plain")
-            setRequestProperty("Authorization", authHeader)
+            setRequestProperty("Content-Encoding", "gzip")
         }
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
@@ -60,6 +59,7 @@ class HTTPClient(private val writeKey: String) {
         val connection = requestedURL.openConnection() as HttpURLConnection
         connection.connectTimeout = 15_000 // 15s
         connection.readTimeout = 20_1000 // 20s
+        connection.setRequestProperty("Content-Type", "application/json");
 
         connection.setRequestProperty(
             "User-Agent",

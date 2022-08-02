@@ -22,7 +22,7 @@ internal open class SegmentLog : EventPlugin {
     private var loggingMediator = mutableMapOf<LoggingType, MutableList<LogTarget>>()
 
     companion object {
-        var loggingEnabled = false
+        var loggingEnabled = Analytics.debugLogsEnabled
 
         // For internal use only. Note: This will contain the last created instance
         // of analytics when used in a multi-analytics environment.
@@ -33,12 +33,6 @@ internal open class SegmentLog : EventPlugin {
         super.setup(analytics)
         sharedAnalytics = analytics
         add(target = ConsoleTarget(), loggingType = LoggingType.log)
-    }
-
-    override fun update(settings: Settings, type: Plugin.UpdateType) {
-        super.update(settings, type)
-        val enabled = settings.plan["logging_enabled"]?.jsonPrimitive?.boolean ?: false
-        loggingEnabled = enabled
     }
 
     internal open fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
