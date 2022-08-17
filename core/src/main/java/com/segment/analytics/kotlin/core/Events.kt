@@ -34,13 +34,6 @@ class DateSerializer : KSerializer<Instant> {
 }
 
 @Serializable
-data class DestinationMetadata(
-    var bundled: List<String>? = emptyList(),
-    var unbundled: List<String>? = emptyList(),
-    var bundledIds: List<String>? = emptyList(),
-)
-
-@Serializable
 enum class EventType {
     @SerialName("track")
     Track,
@@ -88,8 +81,6 @@ sealed class BaseEvent {
     // the userId tied to the event
     abstract var userId: String
 
-    abstract var _metadata: DestinationMetadata
-
     companion object {
         internal const val ALL_INTEGRATIONS_KEY = "All"
     }
@@ -133,7 +124,6 @@ sealed class BaseEvent {
             context = original.context
             integrations = original.integrations
             userId = original.userId
-            _metadata = original._metadata
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
@@ -152,7 +142,6 @@ sealed class BaseEvent {
         if (context != other.context) return false
         if (integrations != other.integrations) return false
         if (userId != other.userId) return false
-        if (_metadata != other._metadata) return false
 
         return true
     }
@@ -165,7 +154,6 @@ sealed class BaseEvent {
         result = 31 * result + context.hashCode()
         result = 31 * result + integrations.hashCode()
         result = 31 * result + userId.hashCode()
-        result = 31 * result + _metadata.hashCode()
         return result
     }
 }
@@ -182,7 +170,6 @@ data class TrackEvent(
     override lateinit var integrations: Integrations
     override lateinit var context: AnalyticsContext
     override var userId: String = ""
-    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override lateinit var timestamp: String
 
@@ -221,7 +208,6 @@ data class IdentifyEvent(
     override lateinit var context: AnalyticsContext
 
     override lateinit var timestamp: String
-    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -254,7 +240,6 @@ data class GroupEvent(
     override lateinit var integrations: Integrations
     override lateinit var context: AnalyticsContext
     override var userId: String = ""
-    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override lateinit var timestamp: String
     override fun equals(other: Any?): Boolean {
@@ -291,7 +276,6 @@ data class AliasEvent(
     override lateinit var context: AnalyticsContext
 
     override lateinit var timestamp: String
-    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -327,7 +311,6 @@ data class ScreenEvent(
     override var userId: String = ""
 
     override lateinit var timestamp: String
-    override var _metadata: DestinationMetadata = DestinationMetadata()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

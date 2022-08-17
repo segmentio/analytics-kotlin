@@ -76,9 +76,6 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-        // Add DestinationMetadata enrichment plugin
-        add(DestinationMetadataPlugin())
-
         enabled = true
 
         with(analytics) {
