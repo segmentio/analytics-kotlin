@@ -93,8 +93,18 @@ sealed class BaseEvent {
 
     internal suspend fun applyBaseEventData(store: Store) {
         val userInfo = store.currentState(UserInfo::class) ?: return
+        val json = userInfo.traits?.toMap()
+        if(json != null){
+            for(i in json){
+                if(i.key == "anonymousId"){
+                    this.anonymousId = i.value.toString()
+                }
+            }
+        }
+        else{
+            this.anonymousId = userInfo.anonymousId
+        }
 
-        this.anonymousId = userInfo.anonymousId
         this.integrations = emptyJsonObject
 
         if (this.userId.isBlank()) {
