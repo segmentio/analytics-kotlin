@@ -1,6 +1,22 @@
 package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.kotlin.core.utilities.*
+import com.segment.analytics.kotlin.core.utilities.getBoolean
+import com.segment.analytics.kotlin.core.utilities.getDouble
+import com.segment.analytics.kotlin.core.utilities.getInt
+import com.segment.analytics.kotlin.core.utilities.getLong
+import com.segment.analytics.kotlin.core.utilities.getMapList
+import com.segment.analytics.kotlin.core.utilities.getString
+import com.segment.analytics.kotlin.core.utilities.getStringSet
+import com.segment.analytics.kotlin.core.utilities.mapTransform
+import com.segment.analytics.kotlin.core.utilities.putAll
+import com.segment.analytics.kotlin.core.utilities.putUndefinedIfNull
+import com.segment.analytics.kotlin.core.utilities.set
+import com.segment.analytics.kotlin.core.utilities.toContent
+import com.segment.analytics.kotlin.core.utilities.toJsonElement
+import com.segment.analytics.kotlin.core.utilities.transformKeys
+import com.segment.analytics.kotlin.core.utilities.transformValues
+import com.segment.analytics.kotlin.core.utilities.updateJsonObject
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.boolean
@@ -762,6 +778,80 @@ class JSONTests {
             }
             assertEquals(1, obj.size)
             assertEquals(true, obj.getBoolean("boolean"))
+        }
+    }
+
+    @Nested
+    inner class ToJsonElementTests {
+        @Test
+        fun `serialize loose hashmap object correctly`() {
+            val obj = HashMap<String, Any>().apply {
+                put("key1", "Some String")
+                put("key2", true)
+                put("key3", false)
+                put("key4", 10)
+                put("key5", 10.2)
+                put("key6", 10.3f)
+                put("key7", listOf(1, 2, 3))
+                put("key8", arrayOf(1, 2, 3))
+                put("key9", setOf(1, 2, 3))
+                put("key10", IntArray(3) { x -> x })
+                put("key11", (1 to 2))
+                put("key12", mapOf("1" to 1, "2" to 2))
+                put("key13", Triple(1, 2, 3))
+                put("key14", mapOf("1" to 1, "2" to 2, "3" to mapOf("new" to mapOf("4" to 2))))
+                put("key15", (1 to 2 to 3))
+                put("key16", listOf("1", listOf("1", "2", listOf("1", "2"))))
+            }.toJsonElement()
+            val expected = buildJsonObject {
+                put("key1", "Some String")
+                put("key2", true)
+                put("key3", false)
+                put("key4", 10)
+                put("key5", 10.2)
+                put("key6", 10.3f)
+                put("key7", buildJsonArray { add(1); add(2); add(3) })
+                put("key8", buildJsonArray { add(1); add(2); add(3) })
+                put("key9", buildJsonArray { add(1); add(2); add(3) })
+                put("key10", buildJsonArray { add(1); add(2); add(3) })
+                put("key10", buildJsonArray { add(0); add(1); add(2) })
+                put("key11", buildJsonObject { put("first", 1); put("second", 2) })
+                put("key12", buildJsonObject { put("1", 1); put("2", 2) })
+                put("key13", buildJsonObject { put("first", 1); put("second", 2); put("third", 3) })
+                put("key14",
+                    buildJsonObject {
+                        put("1", 1)
+                        put("2", 2)
+                        put("3",
+                            buildJsonObject { put("new", buildJsonObject { put("4", 2) }) }
+                        )
+                    })
+                put("key15",
+                    buildJsonObject {
+                        put("first", buildJsonObject { put("first", 1); put("second", 2) })
+                        put("second", 3)
+                    })
+                put("key16",
+                    buildJsonArray {
+                        add("1")
+                        add(buildJsonArray {
+                            add("1"); add("2"); add(buildJsonArray { add("1"); add("2") })
+                        })
+                    })
+            }
+            assertEquals(expected, obj)
+        }
+
+        @Test
+        fun `serialize unknown non-primitive object as JsonNull`() {
+            class Color(val hex: String)
+            val obj = HashMap<String, Any>().apply {
+                put("key16", Color("#FFF"))
+            }.toJsonElement()
+            val expected = buildJsonObject {
+                put("key16", JsonNull)
+            }
+            assertEquals(expected, obj)
         }
     }
 }
