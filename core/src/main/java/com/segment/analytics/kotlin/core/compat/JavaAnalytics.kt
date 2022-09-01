@@ -115,6 +115,41 @@ class JavaAnalytics private constructor() {
     fun identify(userId: String, serializable: JsonSerializable) = analytics.identify(userId, serializable.serialize())
 
     /**
+     * Identify lets you record {@code traits} about the user, like their email, name, account type,
+     * etc.
+     *
+     * <p>Traits and userId will be automatically cached and available on future sessions for the
+     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
+     * @param traits [Traits] about the user in JsonObject form. can be built by
+     *          {@link Builder com.segment.analytics.kotlin.core.compat.Builder}
+     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
+     */
+    @JvmOverloads
+    fun identify(traits: JsonObject = emptyJsonObject) = analytics.identify(traits)
+
+    /**
+     * Identify lets you record {@code traits} about the user, like their email, name, account type,
+     * etc.
+     *
+     * <p>Traits and userId will be automatically cached and available on future sessions for the
+     * same user. To update a trait on the server, call identify with the same user id (or null).
+     * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
+     * @param serializable an object that implements {@link JsonSerializable com.segment.analytics.kotlin.core.compat.JsonSerializable}
+     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
+     */
+    fun identify(serializable: JsonSerializable) = analytics.identify(serializable.serialize())
+
+
+    /**
      * The screen methods let your record whenever a user sees a screen of your mobile app, and
      * attach a name, category or properties to the screen. Either category or name must be
      * provided.

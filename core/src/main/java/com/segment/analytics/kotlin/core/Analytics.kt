@@ -7,8 +7,13 @@ import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
-import kotlinx.coroutines.*
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
@@ -32,7 +37,7 @@ import kotlin.reflect.KClass
  */
 open class Analytics protected constructor(
     val configuration: Configuration,
-    coroutineConfig: CoroutineConfiguration
+    coroutineConfig: CoroutineConfiguration,
 ) : Subscriber, CoroutineConfiguration by coroutineConfig {
 
     // use lazy to avoid the instance being leak before fully initialized
@@ -74,13 +79,17 @@ open class Analytics protected constructor(
      * Public constructor of Analytics.
      * @property configuration configuration that analytics can use
      */
-    constructor(configuration: Configuration): this(configuration, object : CoroutineConfiguration{
-        override val store = Store()
-        override val analyticsScope = CoroutineScope(SupervisorJob())
-        override val analyticsDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-        override val networkIODispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-        override val fileIODispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
-    })
+    constructor(configuration: Configuration) : this(configuration,
+        object : CoroutineConfiguration {
+            override val store = Store()
+            override val analyticsScope = CoroutineScope(SupervisorJob())
+            override val analyticsDispatcher =
+                Executors.newCachedThreadPool().asCoroutineDispatcher()
+            override val networkIODispatcher =
+                Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+            override val fileIODispatcher =
+                Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+        })
 
     // This function provides a default state to the store & attaches the storage and store instances
     // Initiates the initial call to settings and adds default system plugins
@@ -89,7 +98,7 @@ open class Analytics protected constructor(
         add(SegmentLog())
         add(StartupQueue())
         add(ContextPlugin())
-        
+
         // Setup store
         analyticsScope.launch(analyticsDispatcher) {
             store.also {
@@ -138,7 +147,7 @@ open class Analytics protected constructor(
     fun <T : Any> track(
         name: String,
         properties: T,
-        serializationStrategy: SerializationStrategy<T>
+        serializationStrategy: SerializationStrategy<T>,
     ) {
         track(name, Json.encodeToJsonElement(serializationStrategy, properties).jsonObject)
     }
@@ -154,7 +163,7 @@ open class Analytics protected constructor(
      */
     inline fun <reified T : Any> track(
         name: String,
-        properties: T
+        properties: T,
     ) {
         track(name, properties, Json.serializersModule.serializer())
     }
@@ -204,9 +213,79 @@ open class Analytics protected constructor(
     fun <T : Any> identify(
         userId: String,
         traits: T,
-        serializationStrategy: SerializationStrategy<T>
+        serializationStrategy: SerializationStrategy<T>,
     ) {
         identify(userId, Json.encodeToJsonElement(serializationStrategy, traits).jsonObject)
+    }
+
+    /**
+     * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
+     * It also lets you record {@code traits} about the user, like their email, name, account type,
+     * etc.
+     *
+     * <p>Traits and userId will be automatically cached and available on future sessions for the
+     * same user. To update a trait on the server, call identify with the same user id.
+     * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
+     * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
+     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
+     */
+    inline fun <reified T : Any> identify(
+        traits: T,
+    ) {
+        identify(traits, Json.serializersModule.serializer())
+    }
+
+    /**
+     * Identify lets you record {@code traits} about the user, like their email, name, account type,
+     * etc.
+     *
+     * <p>Traits and userId will be automatically cached and available on future sessions for the
+     * same user. To update a trait on the server, call identify with the same user id.
+     * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
+     * @param traits [Traits] about the user.
+     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
+     */
+    @JvmOverloads
+    fun identify(traits: JsonObject = emptyJsonObject) {
+        analyticsScope.launch(analyticsDispatcher) {
+            store.dispatch(UserInfo.SetTraitsAction(traits), UserInfo::class)
+        }
+        val event = IdentifyEvent(
+            userId = "", // using "" for userId, which will get filled down the pipe
+            traits = traits
+        )
+        process(event)
+    }
+
+    /**
+     * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
+     * It also lets you record {@code traits} about the user, like their email, name, account type,
+     * etc.
+     *
+     * <p>Traits and userId will be automatically cached and available on future sessions for the
+     * same user. To update a trait on the server, call identify with the same user id.
+     * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
+     * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
+     * @param serializationStrategy strategy to serialize [traits]
+     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
+     */
+    fun <T : Any> identify(
+        traits: T,
+        serializationStrategy: SerializationStrategy<T>,
+    ) {
+        identify(Json.encodeToJsonElement(serializationStrategy, traits).jsonObject)
     }
 
     /**
@@ -246,7 +325,7 @@ open class Analytics protected constructor(
     fun screen(
         title: String,
         properties: JsonObject = emptyJsonObject,
-        category: String = ""
+        category: String = "",
     ) {
         val event = ScreenEvent(name = title, category = category, properties = properties)
         process(event)
@@ -267,7 +346,7 @@ open class Analytics protected constructor(
         title: String,
         properties: T,
         serializationStrategy: SerializationStrategy<T>,
-        category: String = ""
+        category: String = "",
     ) {
         screen(
             title,
@@ -326,7 +405,7 @@ open class Analytics protected constructor(
     fun <T : Any> group(
         groupId: String,
         traits: T,
-        serializationStrategy: SerializationStrategy<T>
+        serializationStrategy: SerializationStrategy<T>,
     ) {
         group(groupId, Json.encodeToJsonElement(serializationStrategy, traits).jsonObject)
     }
@@ -404,7 +483,7 @@ open class Analytics protected constructor(
      *      2. or the first instance of subclass of the given class/interface
      * @param plugin [KClass]
      */
-    fun <T: Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
+    fun <T : Plugin> find(plugin: KClass<T>): T? = this.timeline.find(plugin)
 
     /**
      * Retrieve the first match of registered destination plugin by key. It finds
@@ -418,7 +497,7 @@ open class Analytics protected constructor(
      *      2. and all instances of subclass of the given class/interface
      * @param plugin [KClass]
      */
-    fun <T: Plugin> findAll(plugin: KClass<T>): List<T> = this.timeline.findAll(plugin)
+    fun <T : Plugin> findAll(plugin: KClass<T>): List<T> = this.timeline.findAll(plugin)
 
     /**
      * Remove a plugin from the analytics timeline using its name
@@ -552,7 +631,7 @@ open class Analytics protected constructor(
     /**
      * Retrieve the version of this library in use.
      * - Returns: A string representing the version in "BREAKING.FEATURE.FIX" format.
-    */
+     */
     fun version() = Analytics.version()
 }
 

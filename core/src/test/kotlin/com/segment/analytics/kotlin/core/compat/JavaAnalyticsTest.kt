@@ -10,6 +10,7 @@ import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.TrackEvent
+import com.segment.analytics.kotlin.core.UserInfo
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
@@ -345,6 +346,39 @@ internal class JavaAnalyticsTest {
             verify { mockPlugin.identify(capture(identify)) }
             assertEquals(
                 IdentifyEvent(userId, json).populate().apply {
+                    userId = this@Identify.userId
+                },
+                identify.captured
+            )
+        }
+
+        @Test
+        fun `identify with only serializable traits`() = runTest {
+            analytics.store.dispatch(UserInfo.SetUserIdAction(userId), UserInfo::class)
+
+            analytics.add(mockPlugin)
+            analytics.identify(serializable)
+
+            verify { mockPlugin.identify(capture(identify)) }
+            assertEquals(
+                IdentifyEvent("", json).populate().apply {
+                    userId = this@Identify.userId
+                },
+                identify.captured
+            )
+        }
+
+        @Test
+        fun `identify with only json traits`() = runTest {
+            analytics.store.dispatch(UserInfo.SetUserIdAction(userId), UserInfo::class)
+
+            analytics.add(mockPlugin)
+            analytics.identify(json)
+
+            val identify = slot<IdentifyEvent>()
+            verify { mockPlugin.identify(capture(identify)) }
+            assertEquals(
+                IdentifyEvent("", json).populate().apply {
                     userId = this@Identify.userId
                 },
                 identify.captured

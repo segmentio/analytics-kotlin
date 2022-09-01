@@ -291,6 +291,35 @@ class AnalyticsTests {
                     ), newUserInfo
                 )
             }
+
+            @Test
+            fun `identify() overwrites traits`() = runTest  {
+                analytics.store.dispatch(
+                    UserInfo.SetUserIdAndTraitsAction(
+                        "oldUserId",
+                        buildJsonObject { put("behaviour", "bad") }),
+                    UserInfo::class
+                )
+                val curUserInfo = analytics.store.currentState(UserInfo::class)
+                assertEquals(
+                    UserInfo(
+                        userId = "oldUserId",
+                        traits = buildJsonObject { put("behaviour", "bad") },
+                        anonymousId = "qwerty-qwerty-123"
+                    ), curUserInfo
+                )
+
+                analytics.identify( buildJsonObject { put("behaviour", "good") })
+
+                val newUserInfo = analytics.store.currentState(UserInfo::class)
+                assertEquals(
+                    UserInfo(
+                        userId = "oldUserId",
+                        traits = buildJsonObject { put("behaviour", "good") },
+                        anonymousId = "qwerty-qwerty-123"
+                    ), newUserInfo
+                )
+            }
         }
 
         @Nested
