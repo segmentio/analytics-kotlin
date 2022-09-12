@@ -13,7 +13,7 @@ android {
         // Required when setting minSdkVersion to 20 or lower
         multiDexEnabled true
 
-        minSdkVersion 16
+        minSdkVersion 26
         targetSdkVersion 31
         versionCode VERSION_CODE.toInteger()
         versionName VERSION_NAME
