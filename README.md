@@ -56,6 +56,7 @@ Explore more via the [example projects](samples) which showcase analytics instru
 | --- | --- |
 | Amplitude | https://github.com/segment-integrations/analytics-kotlin-amplitude |
 | AppsFlyer | https://github.com/segment-integrations/analytics-kotlin-appsflyer |
+| Braze    | https://github.com/segment-integrations/analytics-kotlin-braze |
 | Firebase | https://github.com/segment-integrations/analytics-kotlin-firebase |
 | Mixpanel | https://github.com/segment-integrations/analytics-kotlin-mixpanel |
 | Intercom | https://github.com/segment-integrations/analytics-kotlin-intercom |
