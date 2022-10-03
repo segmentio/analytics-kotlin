@@ -31,20 +31,30 @@ class DestinationMetadataPlugin : Plugin {
             ?.filter { it.enabled && it !is SegmentDestination }
         val metadata = DestinationMetadata().apply {
             // Mark all loaded destinations as bundled
-            val bundled = enabledDestinations?.map { it.key } ?: emptyList()
+            val bundled = buildSet { enabledDestinations?.forEach { add(it.key) } }
 
             // All active integrations, not in `bundled` are put in `unbundled`
             // All unbundledIntegrations not in `bundled` are put in `unbundled`
-            val unbundled1 = analyticsSettings.integrations.keys.filter { it != "Segment.io" && !bundled.contains(it) }
-            val unbundled2 = analyticsSettings.integrations["Segment.io"]?.safeJsonObject
-                ?.get("unbundledIntegrations")?.safeJsonArray?.map { (it as JsonPrimitive).content }
-                ?.filter { !bundled.contains(it) }
-                ?: emptyList()
+            val unbundled = buildSet {
+                analyticsSettings.integrations.keys.forEach {
+                    if (it != "Segment.io" && !bundled.contains(it)) {
+                        add(it)
+                    }
+                }
+
+                analyticsSettings.integrations["Segment.io"]?.safeJsonObject
+                    ?.get("unbundledIntegrations")?.safeJsonArray?.map { (it as JsonPrimitive).content }
+                    ?.forEach {
+                        if (!bundled.contains(it)) {
+                            add(it)
+                        }
+                    }
+            }
 
             // `bundledIds` for mobile is empty
             this.bundledIds = emptyList()
-            this.bundled = bundled
-            this.unbundled = unbundled1.union(unbundled2).toList()
+            this.bundled = bundled.toList()
+            this.unbundled = unbundled.toList()
         }
 
         val payload = event.copy<BaseEvent>().apply {
