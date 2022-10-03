@@ -43,10 +43,11 @@ class DestinationMetadataPlugin : Plugin {
                 }
 
                 analyticsSettings.integrations["Segment.io"]?.safeJsonObject
-                    ?.get("unbundledIntegrations")?.safeJsonArray?.map { (it as JsonPrimitive).content }
+                    ?.get("unbundledIntegrations")?.safeJsonArray
                     ?.forEach {
-                        if (!bundled.contains(it)) {
-                            add(it)
+                        val content = (it as JsonPrimitive).content
+                        if (!bundled.contains(content)) {
+                            add(content)
                         }
                     }
             }
