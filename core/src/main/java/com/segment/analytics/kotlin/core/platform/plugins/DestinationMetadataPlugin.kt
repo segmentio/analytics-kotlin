@@ -31,15 +31,20 @@ class DestinationMetadataPlugin : Plugin {
             ?.filter { it.enabled && it !is SegmentDestination }
         val metadata = DestinationMetadata().apply {
             // Mark all loaded destinations as bundled
-            this.bundled = enabledDestinations?.map { it.key }
+            val bundled = enabledDestinations?.map { it.key } ?: emptyList()
 
+            // All active integrations, not in `bundled` are put in `unbundled`
             // All unbundledIntegrations not in `bundled` are put in `unbundled`
-            this.unbundled = analyticsSettings.integrations["Segment.io"]?.safeJsonObject
+            val unbundled1 = analyticsSettings.integrations.keys.filter { it != "Segment.io" && !bundled.contains(it) }
+            val unbundled2 = analyticsSettings.integrations["Segment.io"]?.safeJsonObject
                 ?.get("unbundledIntegrations")?.safeJsonArray?.map { (it as JsonPrimitive).content }
-                ?.filter { !(bundled?.contains(it) ?: false) }
+                ?.filter { !bundled.contains(it) }
+                ?: emptyList()
 
             // `bundledIds` for mobile is empty
             this.bundledIds = emptyList()
+            this.bundled = bundled
+            this.unbundled = unbundled1.union(unbundled2).toList()
         }
 
         val payload = event.copy<BaseEvent>().apply {

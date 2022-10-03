@@ -109,4 +109,51 @@ class DestinationMetadataPluginTests {
         assertEquals(expected, actual)
         assertEquals(emptyJsonObject, actual.integrations)
     }
+
+    @Test
+    fun `plugin respects both integrations list and unbundled list`() {
+        val trackEvent = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = epochTimestamp
+                _metadata = DestinationMetadata()
+            }
+        val mixpanelDest = object : DestinationPlugin() {
+            override val key: String = "Mixpanel"
+        }
+        analytics.add(mixpanelDest)
+        analytics.manuallyEnableDestination(mixpanelDest)
+        plugin.update(Settings(
+            integrations = buildJsonObject {
+                put("Segment.io", buildJsonObject {
+                    put("apiKey", "123")
+                    put("apiHost", "api.segment.io/v1")
+                    put("unbundledIntegrations", buildJsonArray {
+                        add("Customer.io")
+                        add("Mixpanel")
+                        add("Amplitude")
+                        add("dest1")
+                    })
+                })
+                put("dest1", true)
+                put("dest2", true)
+            }
+        ), Plugin.UpdateType.Initial)
+
+        val expected = trackEvent.copy<TrackEvent>().apply {
+            _metadata = DestinationMetadata(
+                unbundled = listOf("dest1", "dest2", "Customer.io","Amplitude"),
+                bundled = listOf("Mixpanel"),
+                bundledIds = emptyList()
+            )
+        }
+        val actual = plugin.execute(trackEvent)
+        assertEquals(expected, actual)
+        assertEquals(emptyJsonObject, actual.integrations)
+    }
 }
