@@ -64,8 +64,16 @@ class StartupQueue : Plugin, Subscriber {
 
     private fun replayEvents() {
         // replay the queued events to the instance of Analytics we're working with.
-        while(!queuedEvents.isEmpty()) {
-            analytics.process(queuedEvents.poll())
+        while (!queuedEvents.isEmpty()) {
+
+            val event = queuedEvents.poll()
+
+            // It is possible that event might actually be null due to time-slicing
+            // after checking if the queue is empty so we only process if the event
+            // if it is indeed not NULL.
+            event?.let {
+                analytics.process(it)
+            }
         }
     }
 }
