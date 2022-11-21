@@ -30,7 +30,7 @@ class StartupFlushPolicyTests {
         assertFalse(startupFlushPolicy.shouldFlush())
 
         // Adding events has no effect and does not cause the policy to flush
-        startupFlushPolicy.updateState(ScreenEvent("foo", "bar", Properties(emptyMap())))
+        startupFlushPolicy.updateState("event 1")
         assertFalse(startupFlushPolicy.shouldFlush())
     }
 }

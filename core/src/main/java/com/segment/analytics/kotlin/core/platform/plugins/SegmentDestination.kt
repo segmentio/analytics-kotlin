@@ -7,6 +7,9 @@ import com.segment.analytics.kotlin.core.platform.EventPipeline
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.VersionedPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
+import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -28,10 +31,10 @@ data class SegmentSettings(
  * - We store events into a file with the batch api format (@link {https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#batch})
  * - We upload events on a dedicated thread using the batch api
  */
-class SegmentDestination : DestinationPlugin(), VersionedPlugin {
+class SegmentDestination: DestinationPlugin(), VersionedPlugin {
 
     private lateinit var pipeline: EventPipeline
-
+    var flushPolicies: Array<FlushPolicy> = emptyArray()
     override val key: String = "Segment.io"
 
     override fun track(payload: TrackEvent): BaseEvent {
@@ -71,10 +74,23 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
         analytics.log("$key running $stringVal")
 
         pipeline.put(stringVal)
+
+        // Update all flush policies
+        //flushPolicies.forEach { flushPolicy -> flushPolicy.updateState(payload) }
     }
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
+
+
+        // convert flushAt and flushIntervals into FlushPolicies
+
+        flushPolicies = arrayOf(
+            CountBasedFlushPolicy(analytics.configuration.flushAt),
+            FrequencyFlushPolicy(analytics.configuration.flushInterval.toLong())
+        )
+
+        // TODO: How to add the reset in analyitcs.configuration.flushPolicies?
 
         // Add DestinationMetadata enrichment plugin
         add(DestinationMetadataPlugin())
@@ -84,8 +100,7 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
                 analytics,
                 key,
                 configuration.writeKey,
-                configuration.flushAt,
-                configuration.flushInterval * 1000L,
+                flushPolicies,
                 configuration.apiHost
             )
             pipeline.start()

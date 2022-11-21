@@ -31,17 +31,17 @@ class CountBasedFlushPolicyTests {
 
         // all the first 19 events should not cause the policy to be flushed
         for( i in 1 until flushAt) {
-            defaultPolicy.updateState(ScreenEvent("foo", "bar", Properties(emptyMap())))
+            defaultPolicy.updateState("event 1")
             assertFalse(defaultPolicy.shouldFlush())
         }
 
         // next event should trigger the flush
-        defaultPolicy.updateState(ScreenEvent("foo", "bar", Properties(emptyMap())))
+        defaultPolicy.updateState("event 1")
         assertTrue(defaultPolicy.shouldFlush())
 
         // Even if we somehow go over the flushAt event limit, the policy should still want to flush
         // events
-        defaultPolicy.updateState(ScreenEvent("foo", "bar", Properties(emptyMap())))
+        defaultPolicy.updateState("event 1")
         assertTrue(defaultPolicy.shouldFlush())
 
         // Only when we reset the policy will it not want to flush
@@ -50,12 +50,12 @@ class CountBasedFlushPolicyTests {
 
         // The policy will then be ready to count another N events
         for( i in 1 until flushAt) {
-            defaultPolicy.updateState(ScreenEvent("foo", "bar", Properties(emptyMap())))
+            defaultPolicy.updateState("event 1")
             assertFalse(defaultPolicy.shouldFlush())
         }
 
         // but once again the next event will trigger a flush request
-        defaultPolicy.updateState(ScreenEvent("foo", "bar", Properties(emptyMap())))
+        defaultPolicy.updateState("event 1")
         assertTrue(defaultPolicy.shouldFlush())
     }
 

@@ -2,6 +2,7 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_CDN_HOST
+import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import kotlinx.coroutines.*
 import sovran.kotlin.Store
@@ -31,6 +32,7 @@ data class Configuration(
     var trackDeepLinks: Boolean = false,
     var flushAt: Int = 20,
     var flushInterval: Int = 30,
+    var flushPolicies: Array<FlushPolicy> = emptyArray<FlushPolicy>(),
     val defaultSettings: Settings = Settings(),
     var autoAddSegmentDestination: Boolean = true,
     var apiHost: String = DEFAULT_API_HOST,
@@ -39,6 +41,49 @@ data class Configuration(
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Configuration
+
+        if (writeKey != other.writeKey) return false
+        if (application != other.application) return false
+        if (storageProvider != other.storageProvider) return false
+        if (collectDeviceId != other.collectDeviceId) return false
+        if (trackApplicationLifecycleEvents != other.trackApplicationLifecycleEvents) return false
+        if (useLifecycleObserver != other.useLifecycleObserver) return false
+        if (trackDeepLinks != other.trackDeepLinks) return false
+        if (flushAt != other.flushAt) return false
+        if (flushInterval != other.flushInterval) return false
+        if (!flushPolicies.contentEquals(other.flushPolicies)) return false
+        if (defaultSettings != other.defaultSettings) return false
+        if (autoAddSegmentDestination != other.autoAddSegmentDestination) return false
+        if (apiHost != other.apiHost) return false
+        if (cdnHost != other.cdnHost) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = writeKey.hashCode()
+        result = 31 * result + (application?.hashCode() ?: 0)
+        result = 31 * result + storageProvider.hashCode()
+        result = 31 * result + collectDeviceId.hashCode()
+        result = 31 * result + trackApplicationLifecycleEvents.hashCode()
+        result = 31 * result + useLifecycleObserver.hashCode()
+        result = 31 * result + trackDeepLinks.hashCode()
+        result = 31 * result + flushAt
+        result = 31 * result + flushInterval
+        result = 31 * result + flushPolicies.contentHashCode()
+        result = 31 * result + defaultSettings.hashCode()
+        result = 31 * result + autoAddSegmentDestination.hashCode()
+        result = 31 * result + apiHost.hashCode()
+        result = 31 * result + cdnHost.hashCode()
+        return result
+    }
+
 }
 
 interface CoroutineConfiguration {

@@ -1,15 +1,16 @@
 package com.segment.analytics.kotlin.core.platform
 
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.HTTPClient
-import com.segment.analytics.kotlin.core.HTTPException
-import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
+import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -46,7 +47,9 @@ internal class EventPipelineTest {
 
         pipeline = EventPipeline(analytics,
             "test",
-            "123", 2, 0)
+            "123",
+            arrayOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(0))
+        )
         pipeline.start()
     }
 
@@ -140,10 +143,11 @@ internal class EventPipelineTest {
         //restart flushScheduler
         pipeline = EventPipeline(analytics,
             "test",
-            "123", 2, 1_000)
+            "123", arrayOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(1000)))
         pipeline.start()
         pipeline.put("event 1")
         delay(2_500)
+
         coVerify(atLeast = 1, atMost = 2) {
             storage.rollover()
             storage.read(Storage.Constants.Events)
