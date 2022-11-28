@@ -89,6 +89,7 @@ internal class EventPipeline(
             if (isPoison || flushPolicies.any { it.shouldFlush() }) {
                 eventCount.set(0)
                 uploadChannel.trySend(UPLOAD_SIG)
+                flushPolicies.forEach { it.reset() }
             }
         }
     }
@@ -96,7 +97,6 @@ internal class EventPipeline(
     private fun upload() = scope.launch(analytics.networkIODispatcher) {
         uploadChannel.consumeEach {
             analytics.log("$logTag performing flush")
-
             withContext(analytics.fileIODispatcher) {
                 storage.rollover()
             }
