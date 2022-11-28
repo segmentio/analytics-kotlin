@@ -107,7 +107,7 @@ internal class ConfigurationBuilderTest {
             trackDeepLinks = true,
             flushAt = 100,
             flushInterval = 200,
-            flushPolicies = emptyArray(),
+            flushPolicies = emptyList(),
             autoAddSegmentDestination = false,
             apiHost = "test",
             cdnHost = "testCdn"

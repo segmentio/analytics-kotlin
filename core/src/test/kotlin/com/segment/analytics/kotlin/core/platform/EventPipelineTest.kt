@@ -48,7 +48,7 @@ internal class EventPipelineTest {
         pipeline = EventPipeline(analytics,
             "test",
             "123",
-            arrayOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(0))
+            listOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(0))
         )
         pipeline.start()
     }
@@ -143,7 +143,7 @@ internal class EventPipelineTest {
         //restart flushScheduler
         pipeline = EventPipeline(analytics,
             "test",
-            "123", arrayOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(1000)))
+            "123", listOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(1000)))
         every { analytics.flush() } answers { pipeline.flush() }
         pipeline.start()
         pipeline.put("event 1")

@@ -34,7 +34,7 @@ data class SegmentSettings(
 class SegmentDestination: DestinationPlugin(), VersionedPlugin {
 
     private lateinit var pipeline: EventPipeline
-    var flushPolicies: Array<FlushPolicy> = emptyArray()
+    var flushPolicies: List<FlushPolicy> = emptyList()
     override val key: String = "Segment.io"
 
     override fun track(payload: TrackEvent): BaseEvent {
@@ -85,7 +85,8 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin {
 
         // convert flushAt and flushIntervals into FlushPolicies
 
-        flushPolicies = arrayOf(
+        if (analytics.configuration.flushPolicies.isEmpty())
+        flushPolicies = listOf(
             CountBasedFlushPolicy(analytics.configuration.flushAt),
             FrequencyFlushPolicy(analytics.configuration.flushInterval.toLong())
         )
