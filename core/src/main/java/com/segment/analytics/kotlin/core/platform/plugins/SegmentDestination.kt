@@ -82,16 +82,15 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin {
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
 
-
         // convert flushAt and flushIntervals into FlushPolicies
-
-        if (analytics.configuration.flushPolicies.isEmpty())
-        flushPolicies = listOf(
-            CountBasedFlushPolicy(analytics.configuration.flushAt),
-            FrequencyFlushPolicy(analytics.configuration.flushInterval.toLong())
-        )
-
-        // TODO: How to add the reset in analyitcs.configuration.flushPolicies?
+        flushPolicies = if (analytics.configuration.flushPolicies.isEmpty()) {
+            listOf(
+                CountBasedFlushPolicy(analytics.configuration.flushAt),
+                FrequencyFlushPolicy(analytics.configuration.flushInterval.toLong())
+            )
+        } else {
+            analytics.configuration.flushPolicies
+        }
 
         // Add DestinationMetadata enrichment plugin
         add(DestinationMetadataPlugin())
