@@ -80,9 +80,4 @@ class HTTPClientTests {
         }
     }
 
-    @Test
-    fun `authHeader is correctly computed`() {
-        assertEquals("Basic MXZOZ1Vxd0plQ0htcWdJOVMxc09tOVVIQ3lmWXFiYVE6", httpClient.authHeader)
-    }
-
 }
