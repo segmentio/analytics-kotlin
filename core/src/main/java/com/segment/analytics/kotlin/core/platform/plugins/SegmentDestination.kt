@@ -1,22 +1,14 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPipeline
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.VersionedPlugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
-import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
 data class SegmentSettings(
@@ -62,21 +54,9 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin {
         return payload
     }
 
-    private inline fun <reified T : BaseEvent> enqueue(payload: T) {
-        // needs to be inline reified for encoding using Json
-        val finalPayload = EncodeDefaultsJson.encodeToJsonElement(payload)
-            .jsonObject.filterNot { (k, v) ->
-                // filter out empty userId and traits values
-                (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
-            }
 
-        val stringVal = Json.encodeToString(finalPayload)
-        analytics.log("$key running $stringVal")
-
-        pipeline.put(stringVal)
-
-        // Update all flush policies
-        //flushPolicies.forEach { flushPolicy -> flushPolicy.updateState(payload) }
+    private fun enqueue(payload: BaseEvent) {
+        pipeline.put(payload)
     }
 
     override fun setup(analytics: Analytics) {

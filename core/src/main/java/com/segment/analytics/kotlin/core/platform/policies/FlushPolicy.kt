@@ -25,7 +25,7 @@ interface FlushPolicy {
     /**
      * Called as events are added to the timeline and JSON Stringified.
      */
-    fun updateState(event: String) = Unit
+    fun updateState(event: BaseEvent) = Unit
 
     /**
      * Called after the events are flushed.

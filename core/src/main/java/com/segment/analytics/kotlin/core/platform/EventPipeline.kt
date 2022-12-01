@@ -1,15 +1,23 @@
 package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
-import kotlinx.coroutines.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.io.FileInputStream
-import java.util.concurrent.atomic.AtomicInteger
 
 internal class EventPipeline(
     private val analytics: Analytics,
@@ -21,11 +29,9 @@ internal class EventPipeline(
     var apiHost: String = Constants.DEFAULT_API_HOST
 ) {
 
-    private val writeChannel: Channel<String>
+    private val writeChannel: Channel<BaseEvent>
 
     private val uploadChannel: Channel<String>
-
-    private val eventCount: AtomicInteger = AtomicInteger(0)
 
     private val httpClient: HTTPClient = HTTPClient(apiKey)
 
@@ -38,6 +44,7 @@ internal class EventPipeline(
 
     companion object {
         internal const val FLUSH_POISON = "#!flush"
+        internal val FLUSH_EVENT = ScreenEvent(FLUSH_POISON, FLUSH_POISON, emptyJsonObject).apply { messageId = FLUSH_POISON }
         internal const val UPLOAD_SIG = "#!upload"
     }
 
@@ -50,12 +57,12 @@ internal class EventPipeline(
         registerShutdownHook()
     }
 
-    fun put(event: String, baseEvent: BaseEvent? = null) {
+    fun put(event: BaseEvent) {
         writeChannel.trySend(event)
     }
 
     fun flush() {
-        writeChannel.trySend(FLUSH_POISON)
+        writeChannel.trySend(FLUSH_EVENT)
     }
 
     fun start() {
@@ -72,12 +79,25 @@ internal class EventPipeline(
         running = false
     }
 
+    fun stringifyBaseEvent(payload: BaseEvent): String {
+        val finalPayload = EncodeDefaultsJson.encodeToJsonElement(payload)
+            .jsonObject.filterNot { (k, v) ->
+                // filter out empty userId and traits values
+                (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
+            }
+
+        val stringVal = Json.encodeToString(finalPayload)
+        return stringVal
+    }
+
     private fun write() = scope.launch(analytics.fileIODispatcher) {
         for (event in writeChannel) {
             // write to storage
-            val isPoison = (event == FLUSH_POISON)
+            val isPoison = (event.messageId == FLUSH_POISON)
             if (!isPoison) try {
-                storage.write(Storage.Constants.Events, event)
+                val stringVal = stringifyBaseEvent(event)
+                analytics.log("$logTag running $stringVal")
+                storage.write(Storage.Constants.Events, stringVal)
 
                 flushPolicies.forEach { flushPolicy -> flushPolicy.updateState(event) }
             }
@@ -87,7 +107,6 @@ internal class EventPipeline(
 
             // if flush condition met, generate paths
             if (isPoison || flushPolicies.any { it.shouldFlush() }) {
-                eventCount.set(0)
                 uploadChannel.trySend(UPLOAD_SIG)
                 flushPolicies.forEach { it.reset() }
             }

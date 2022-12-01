@@ -2,21 +2,20 @@ package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
-import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.util.*
 
 internal class EventPipelineTest {
 
@@ -29,6 +28,25 @@ internal class EventPipelineTest {
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private val testScope = TestScope(testDispatcher)
+
+    companion object {
+        private val event1 = ScreenEvent("event 1", "", emptyJsonObject).apply {
+            messageId = "qwerty-1234"
+            anonymousId = "anonId"
+            integrations = emptyJsonObject
+            context = emptyJsonObject
+            timestamp = Date(0).toInstant().toString()
+        }
+
+        private val event2 = ScreenEvent("event 2", "", emptyJsonObject).apply {
+            messageId = "qwerty-1234"
+            anonymousId = "anonId"
+            integrations = emptyJsonObject
+            context = emptyJsonObject
+            timestamp = Date(0).toInstant().toString()
+        }
+    }
+
 
     @BeforeEach
     internal fun setUp() {
@@ -55,15 +73,14 @@ internal class EventPipelineTest {
 
     @Test
     fun put() {
-        val event = "event 1"
-        pipeline.put(event)
-        coVerify { storage.write(Storage.Constants.Events, event) }
+        pipeline.put(event1)
+        coVerify { storage.write(Storage.Constants.Events, pipeline.stringifyBaseEvent(event1)) }
     }
 
     @Test
     fun flush() {
-        pipeline.put("event 1")
-        pipeline.put(EventPipeline.FLUSH_POISON)
+        pipeline.put(event1)
+        pipeline.flush()
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
@@ -85,8 +102,8 @@ internal class EventPipelineTest {
 
     @Test
     fun `put more than flushCount causes flush`() {
-        pipeline.put("event 1")
-        pipeline.put("event 2")
+        pipeline.put(event1)
+        pipeline.put(event2)
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
@@ -98,8 +115,8 @@ internal class EventPipelineTest {
     @Test
     fun `enqueuing properly handles 400 http exception`() {
         every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "")
-        pipeline.put("event 1")
-        pipeline.put("event 2")
+        pipeline.put(event1)
+        pipeline.put(event2)
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
@@ -111,8 +128,8 @@ internal class EventPipelineTest {
     @Test
     fun `enqueuing properly handles other http exception`() {
         every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(300, "", "")
-        pipeline.put("event 1")
-        pipeline.put("event 2")
+        pipeline.put(event1)
+        pipeline.put(event2)
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
@@ -126,8 +143,8 @@ internal class EventPipelineTest {
     @Test
     fun `enqueuing properly handles other exception`() {
         every { anyConstructed<HTTPClient>().upload(any()) } throws Exception()
-        pipeline.put("event 1")
-        pipeline.put("event 2")
+        pipeline.put(event1)
+        pipeline.put(event2)
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
@@ -146,7 +163,7 @@ internal class EventPipelineTest {
             "123", listOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(1000)))
         every { analytics.flush() } answers { pipeline.flush() }
         pipeline.start()
-        pipeline.put("event 1")
+        pipeline.put(event1)
         delay(2_500)
 
         coVerify(atLeast = 1, atMost = 2) {
@@ -159,7 +176,7 @@ internal class EventPipelineTest {
 
     @Test
     fun `flush interrupted when no event file exist`() = runTest {
-        pipeline.put(EventPipeline.FLUSH_POISON)
+        pipeline.flush()
         coVerify(exactly = 1) {
             storage.rollover()
             storage.read(Storage.Constants.Events)

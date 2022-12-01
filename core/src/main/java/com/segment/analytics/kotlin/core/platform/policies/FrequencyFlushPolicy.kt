@@ -1,9 +1,10 @@
 package com.segment.analytics.kotlin.core.platform.policies
 
 import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
-import kotlinx.coroutines.*
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class FrequencyFlushPolicy(val flushIntervalInMillis: Long = 30_000): FlushPolicy {
 

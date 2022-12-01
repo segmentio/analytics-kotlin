@@ -1,8 +1,7 @@
 package com.segment.analytics.kotlin.core.platform.policies
 
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.Properties
 import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -31,17 +30,17 @@ class CountBasedFlushPolicyTests {
 
         // all the first 19 events should not cause the policy to be flushed
         for( i in 1 until flushAt) {
-            defaultPolicy.updateState("event 1")
+            defaultPolicy.updateState(ScreenEvent("event 1", "", emptyJsonObject))
             assertFalse(defaultPolicy.shouldFlush())
         }
 
         // next event should trigger the flush
-        defaultPolicy.updateState("event 1")
+        defaultPolicy.updateState(ScreenEvent("event 1", "", emptyJsonObject))
         assertTrue(defaultPolicy.shouldFlush())
 
         // Even if we somehow go over the flushAt event limit, the policy should still want to flush
         // events
-        defaultPolicy.updateState("event 1")
+        defaultPolicy.updateState(ScreenEvent("event 1", "", emptyJsonObject))
         assertTrue(defaultPolicy.shouldFlush())
 
         // Only when we reset the policy will it not want to flush
@@ -50,12 +49,12 @@ class CountBasedFlushPolicyTests {
 
         // The policy will then be ready to count another N events
         for( i in 1 until flushAt) {
-            defaultPolicy.updateState("event 1")
+            defaultPolicy.updateState(ScreenEvent("event 1", "", emptyJsonObject))
             assertFalse(defaultPolicy.shouldFlush())
         }
 
         // but once again the next event will trigger a flush request
-        defaultPolicy.updateState("event 1")
+        defaultPolicy.updateState(ScreenEvent("event 1", "", emptyJsonObject))
         assertTrue(defaultPolicy.shouldFlush())
     }
 

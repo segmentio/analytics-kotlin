@@ -1,8 +1,6 @@
 package com.segment.analytics.kotlin.core.platform.policies
 
-import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
-import kotlinx.coroutines.CoroutineScope
 
 /**
  * A Count based Flush Policy that instructs the EventPipeline to flush at the
@@ -27,7 +25,7 @@ class CountBasedFlushPolicy(count: Int = 20): FlushPolicy {
         return count >= flushAt
     }
 
-    override fun updateState(event: String) {
+    override fun updateState(event: BaseEvent) {
         count++
     }
 

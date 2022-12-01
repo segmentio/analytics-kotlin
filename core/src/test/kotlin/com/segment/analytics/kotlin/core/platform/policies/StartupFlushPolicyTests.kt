@@ -1,7 +1,7 @@
 package com.segment.analytics.kotlin.core.platform.policies
 
-import com.segment.analytics.kotlin.core.Properties
 import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.emptyJsonObject
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -30,7 +30,7 @@ class StartupFlushPolicyTests {
         assertFalse(startupFlushPolicy.shouldFlush())
 
         // Adding events has no effect and does not cause the policy to flush
-        startupFlushPolicy.updateState("event 1")
+        startupFlushPolicy.updateState(ScreenEvent("event 1", "", emptyJsonObject))
         assertFalse(startupFlushPolicy.shouldFlush())
     }
 }
