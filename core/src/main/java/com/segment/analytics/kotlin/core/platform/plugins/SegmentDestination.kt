@@ -66,7 +66,7 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin {
         flushPolicies = if (analytics.configuration.flushPolicies.isEmpty()) {
             listOf(
                 CountBasedFlushPolicy(analytics.configuration.flushAt),
-                FrequencyFlushPolicy(analytics.configuration.flushInterval.toLong())
+                FrequencyFlushPolicy(analytics.configuration.flushInterval * 1000L)
             )
         } else {
             analytics.configuration.flushPolicies

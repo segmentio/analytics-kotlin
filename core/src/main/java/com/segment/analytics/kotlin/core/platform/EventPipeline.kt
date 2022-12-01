@@ -23,8 +23,6 @@ internal class EventPipeline(
     private val analytics: Analytics,
     private val logTag: String,
     apiKey: String,
-//    private val flushCount: Int = 20,
-//    private val flushIntervalInMillis: Long = 30_000, // 30s
     private val flushPolicies: List<FlushPolicy>,
     var apiHost: String = Constants.DEFAULT_API_HOST
 ) {
