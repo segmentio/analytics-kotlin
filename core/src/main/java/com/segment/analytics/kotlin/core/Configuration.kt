@@ -2,6 +2,7 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_CDN_HOST
+import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import kotlinx.coroutines.*
 import sovran.kotlin.Store
@@ -31,6 +32,7 @@ data class Configuration(
     var trackDeepLinks: Boolean = false,
     var flushAt: Int = 20,
     var flushInterval: Int = 30,
+    var flushPolicies: List<FlushPolicy> = emptyList<FlushPolicy>(),
     val defaultSettings: Settings = Settings(),
     var autoAddSegmentDestination: Boolean = true,
     var apiHost: String = DEFAULT_API_HOST,

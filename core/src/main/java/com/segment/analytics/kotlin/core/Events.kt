@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core
 
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -7,11 +8,10 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.*
 import sovran.kotlin.Store
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 typealias AnalyticsContext = JsonObject
 typealias Integrations = JsonObject
@@ -66,6 +66,8 @@ enum class EventType {
  * @see GroupEvent
  * @see AliasEvent
  */
+
+@Serializable(with = BaseEventSerializer::class)
 sealed class BaseEvent {
     // The type of event
     abstract var type: EventType
@@ -349,5 +351,18 @@ data class ScreenEvent(
         result = 31 * result + category.hashCode()
         result = 31 * result + properties.hashCode()
         return result
+    }
+}
+
+object BaseEventSerializer : JsonContentPolymorphicSerializer<BaseEvent>(BaseEvent::class) {
+    override fun selectDeserializer(element: JsonElement): DeserializationStrategy<out BaseEvent> {
+        return when (element.jsonObject["type"]?.jsonPrimitive?.content) {
+            "track" -> TrackEvent.serializer()
+            "screen" -> ScreenEvent.serializer()
+            "alias" -> AliasEvent.serializer()
+            "identify" -> IdentifyEvent.serializer()
+            "group" -> GroupEvent.serializer()
+            else -> throw Exception("Unknown Event: key 'type' not found or does not matches any event type")
+        }
     }
 }

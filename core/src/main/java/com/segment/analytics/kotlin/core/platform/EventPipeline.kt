@@ -1,30 +1,35 @@
 package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.plugins.logger.*
-import kotlinx.coroutines.*
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.io.FileInputStream
-import java.lang.Exception
-import java.util.concurrent.atomic.AtomicInteger
 
 internal class EventPipeline(
     private val analytics: Analytics,
     private val logTag: String,
     apiKey: String,
-    private val flushCount: Int = 20,
-    private val flushIntervalInMillis: Long = 30_000, // 30s
+    private val flushPolicies: List<FlushPolicy>,
     var apiHost: String = Constants.DEFAULT_API_HOST
 ) {
 
-    private val writeChannel: Channel<String>
+    private val writeChannel: Channel<BaseEvent>
 
     private val uploadChannel: Channel<String>
-
-    private val eventCount: AtomicInteger = AtomicInteger(0)
 
     private val httpClient: HTTPClient = HTTPClient(apiKey)
 
@@ -37,7 +42,7 @@ internal class EventPipeline(
 
     companion object {
         internal const val FLUSH_POISON = "#!flush"
-
+        internal val FLUSH_EVENT = ScreenEvent(FLUSH_POISON, FLUSH_POISON, emptyJsonObject).apply { messageId = FLUSH_POISON }
         internal const val UPLOAD_SIG = "#!upload"
     }
 
@@ -50,12 +55,12 @@ internal class EventPipeline(
         registerShutdownHook()
     }
 
-    fun put(event: String) {
+    fun put(event: BaseEvent) {
         writeChannel.trySend(event)
     }
 
     fun flush() {
-        writeChannel.trySend(FLUSH_POISON)
+        writeChannel.trySend(FLUSH_EVENT)
     }
 
     fun start() {
@@ -68,24 +73,40 @@ internal class EventPipeline(
     fun stop() {
         uploadChannel.cancel()
         writeChannel.cancel()
+        unschedule()
         running = false
+    }
+
+    fun stringifyBaseEvent(payload: BaseEvent): String {
+        val finalPayload = EncodeDefaultsJson.encodeToJsonElement(payload)
+            .jsonObject.filterNot { (k, v) ->
+                // filter out empty userId and traits values
+                (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
+            }
+
+        val stringVal = Json.encodeToString(finalPayload)
+        return stringVal
     }
 
     private fun write() = scope.launch(analytics.fileIODispatcher) {
         for (event in writeChannel) {
             // write to storage
-            val isPoison = (event == FLUSH_POISON)
+            val isPoison = (event.messageId == FLUSH_POISON)
             if (!isPoison) try {
-                storage.write(Storage.Constants.Events, event)
+                val stringVal = stringifyBaseEvent(event)
+                analytics.log("$logTag running $stringVal")
+                storage.write(Storage.Constants.Events, stringVal)
+
+                flushPolicies.forEach { flushPolicy -> flushPolicy.updateState(event) }
             }
             catch (e : Exception) {
                 Analytics.segmentLog("Error adding payload: $event", kind = LogFilterKind.ERROR)
             }
 
             // if flush condition met, generate paths
-            if (eventCount.incrementAndGet() >= flushCount || isPoison) {
-                eventCount.set(0)
+            if (isPoison || flushPolicies.any { it.shouldFlush() }) {
                 uploadChannel.trySend(UPLOAD_SIG)
+                flushPolicies.forEach { it.reset() }
             }
         }
     }
@@ -93,7 +114,6 @@ internal class EventPipeline(
     private fun upload() = scope.launch(analytics.networkIODispatcher) {
         uploadChannel.consumeEach {
             analytics.log("$logTag performing flush")
-
             withContext(analytics.fileIODispatcher) {
                 storage.rollover()
             }
@@ -130,19 +150,15 @@ internal class EventPipeline(
         }
     }
 
-    private fun schedule() = scope.launch(analytics.fileIODispatcher) {
-        if (flushIntervalInMillis > 0) {
-            while (isActive && running) {
-                flush()
-
-                // use delay to do periodical task
-                // this is doable in coroutine, since delay only suspends, allowing thread to
-                // do other work and then come back. see:
-                // https://github.com/Kotlin/kotlinx.coroutines/issues/1632#issuecomment-545693827
-                delay(flushIntervalInMillis)
-            }
-        }
+    private fun schedule() {
+        flushPolicies.forEach { it.schedule(analytics) }
     }
+
+    private fun unschedule() {
+        flushPolicies.forEach { it.unschedule() }
+    }
+
+
 
     private fun handleUploadException(e: Exception, file: File): Boolean {
         var shouldCleanup = false

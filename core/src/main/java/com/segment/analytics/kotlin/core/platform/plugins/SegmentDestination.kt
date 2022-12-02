@@ -1,19 +1,14 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.EventPipeline
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.VersionedPlugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
-import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
+import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
+import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
 data class SegmentSettings(
@@ -28,10 +23,10 @@ data class SegmentSettings(
  * - We store events into a file with the batch api format (@link {https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#batch})
  * - We upload events on a dedicated thread using the batch api
  */
-class SegmentDestination : DestinationPlugin(), VersionedPlugin {
+class SegmentDestination: DestinationPlugin(), VersionedPlugin {
 
     private lateinit var pipeline: EventPipeline
-
+    var flushPolicies: List<FlushPolicy> = emptyList()
     override val key: String = "Segment.io"
 
     override fun track(payload: TrackEvent): BaseEvent {
@@ -59,22 +54,23 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
         return payload
     }
 
-    private inline fun <reified T : BaseEvent> enqueue(payload: T) {
-        // needs to be inline reified for encoding using Json
-        val finalPayload = EncodeDefaultsJson.encodeToJsonElement(payload)
-            .jsonObject.filterNot { (k, v) ->
-                // filter out empty userId and traits values
-                (k == "userId" && v.jsonPrimitive.content.isBlank()) || (k == "traits" && v == emptyJsonObject)
-            }
 
-        val stringVal = Json.encodeToString(finalPayload)
-        analytics.log("$key running $stringVal")
-
-        pipeline.put(stringVal)
+    private fun enqueue(payload: BaseEvent) {
+        pipeline.put(payload)
     }
 
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
+
+        // convert flushAt and flushIntervals into FlushPolicies
+        flushPolicies = if (analytics.configuration.flushPolicies.isEmpty()) {
+            listOf(
+                CountBasedFlushPolicy(analytics.configuration.flushAt),
+                FrequencyFlushPolicy(analytics.configuration.flushInterval * 1000L)
+            )
+        } else {
+            analytics.configuration.flushPolicies
+        }
 
         // Add DestinationMetadata enrichment plugin
         add(DestinationMetadataPlugin())
@@ -84,8 +80,7 @@ class SegmentDestination : DestinationPlugin(), VersionedPlugin {
                 analytics,
                 key,
                 configuration.writeKey,
-                configuration.flushAt,
-                configuration.flushInterval * 1000L,
+                flushPolicies,
                 configuration.apiHost
             )
             pipeline.start()
