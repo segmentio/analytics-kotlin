@@ -362,7 +362,7 @@ object BaseEventSerializer : JsonContentPolymorphicSerializer<BaseEvent>(BaseEve
             "alias" -> AliasEvent.serializer()
             "identify" -> IdentifyEvent.serializer()
             "group" -> GroupEvent.serializer()
-            else -> throw Exception("Unknown Module: key 'type' not found or does not matches any module type")
+            else -> throw Exception("Unknown Event: key 'type' not found or does not matches any event type")
         }
     }
 }

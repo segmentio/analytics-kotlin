@@ -4,17 +4,16 @@ import com.segment.analytics.kotlin.core.BaseEvent
 
 /**
  * A Count based Flush Policy that instructs the EventPipeline to flush at the
- * given @param[count]. The default value is 20. @param[count] values should
+ * given @param[flushAt]. The default value is 20. @param[flushAt] values should
  * be >= 1 or they'll get the default value.
  */
-class CountBasedFlushPolicy(count: Int = 20): FlushPolicy {
+class CountBasedFlushPolicy(var flushAt: Int = 20): FlushPolicy {
 
-    val flushAt: Int
 
     init {
         // Make sure to only take valid counts or fallback to our default.
         flushAt = when {
-            count >= 1 -> count
+            flushAt >= 1 -> flushAt
             else -> 20
         }
     }
