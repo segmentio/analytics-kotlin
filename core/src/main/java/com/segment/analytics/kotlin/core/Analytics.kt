@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
+import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import kotlinx.coroutines.CoroutineScope
@@ -98,6 +99,7 @@ open class Analytics protected constructor(
         add(SegmentLog())
         add(StartupQueue())
         add(ContextPlugin())
+        add(UserInfoPlugin())
 
         // Setup store
         analyticsScope.launch(analyticsDispatcher) {
