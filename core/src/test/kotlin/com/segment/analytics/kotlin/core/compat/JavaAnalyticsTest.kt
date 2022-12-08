@@ -53,6 +53,7 @@ internal class JavaAnalyticsTest {
             put(ContextPlugin.LIBRARY_VERSION_KEY, Constants.LIBRARY_VERSION)
         }
         put(ContextPlugin.LIBRARY_KEY, lib)
+        put(ContextPlugin.INSTANCE_ID_KEY, "qwerty-qwerty-123")
     }
 
     private val testDispatcher = UnconfinedTestDispatcher()
