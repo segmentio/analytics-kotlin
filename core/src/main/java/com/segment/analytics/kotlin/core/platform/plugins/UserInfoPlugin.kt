@@ -1,11 +1,10 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.EventType
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.JsonObject
+import sovran.kotlin.Store
+
 
 /**
  * Analytics plugin used to populate events with basic UserInfo data.
@@ -14,27 +13,32 @@ import kotlinx.serialization.json.put
 class UserInfoPlugin : Plugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
+    private lateinit var newUser: JsonObject
 
+    lateinit var store: Store
+    lateinit var userId : String
+    lateinit var anonymousId : String
 
-    private fun applyUserInfoData(event: BaseEvent) {
-        val newUserInfo = buildJsonObject {
-            // copy existing context
-            put("anonymousId", event.anonymousId)
-            put("userId", event.userId)
-        }
+    override fun execute(event: BaseEvent): BaseEvent {
+        store = analytics.store
+        userId = newUser.get("userId").toString()
+        anonymousId = newUser.get("anonymousId").toString()
+
+        var injectedEvent: BaseEvent = event
 
         if (event.type == EventType.Identify) {
 
-        } else if (event.type == EventType.Alias) {
+            return injectedEvent as IdentifyEvent
 
-        } else {
-            event.anonymousId =  newUserInfo.get("anonymousId").toString()
-            event.userId =  newUserInfo.get("userId").toString()
+        } else if (event.type === EventType.Alias) {
+
+            return injectedEvent as AliasEvent
         }
+
+        injectedEvent.anonymousId = anonymousId
+        injectedEvent.userId = userId
+        return injectedEvent
     }
 
-    override fun execute(event: BaseEvent): BaseEvent {
-        applyUserInfoData(event)
-        return event
-    }
 }
+
