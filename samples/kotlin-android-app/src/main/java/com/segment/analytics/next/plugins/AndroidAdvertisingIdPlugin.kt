@@ -150,7 +150,7 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
         return payload
     }
 
-    override fun execute(event: BaseEvent): BaseEvent {
+    override suspend fun execute(event: BaseEvent): BaseEvent {
         return attachAdvertisingId(event)
     }
 

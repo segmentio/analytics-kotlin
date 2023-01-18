@@ -24,7 +24,7 @@ class DestinationMetadataPlugin : Plugin {
         analyticsSettings = settings
     }
 
-    override fun execute(event: BaseEvent): BaseEvent {
+    override suspend fun execute(event: BaseEvent): BaseEvent {
         // Using this over `findAll` for that teensy performance benefit
         val enabledDestinations = analytics.timeline.plugins[Plugin.Type.Destination]?.plugins
             ?.map { it as DestinationPlugin }

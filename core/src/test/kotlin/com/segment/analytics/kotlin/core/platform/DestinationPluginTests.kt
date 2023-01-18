@@ -101,21 +101,21 @@ class DestinationPluginTests {
         val beforePlugin = spyk(object: Plugin {
             override lateinit var analytics: Analytics
             override val type: Plugin.Type = Plugin.Type.Before
-            override fun execute(event: BaseEvent): BaseEvent? {
+            override suspend fun execute(event: BaseEvent): BaseEvent? {
                 return event.putInContext("processedBefore", true)
             }
         })
         val enrichmentPlugin = spyk(object: Plugin {
             override lateinit var analytics: Analytics
             override val type: Plugin.Type = Plugin.Type.Enrichment
-            override fun execute(event: BaseEvent): BaseEvent? {
+            override suspend fun execute(event: BaseEvent): BaseEvent? {
                 return event.putInContext("processedEnrichment", true)
             }
         })
         val afterPlugin = spyk(object: Plugin {
             override lateinit var analytics: Analytics
             override val type: Plugin.Type = Plugin.Type.After
-            override fun execute(event: BaseEvent): BaseEvent? {
+            override suspend fun execute(event: BaseEvent): BaseEvent? {
                 return event.putInContext("processedAfter", true)
             }
         })

@@ -32,7 +32,7 @@ class MainApplication : Application() {
             override val type: Plugin.Type = Plugin.Type.Enrichment
             override lateinit var analytics: Analytics
 
-            override fun execute(event: BaseEvent): BaseEvent? {
+            override suspend fun execute(event: BaseEvent): BaseEvent? {
                 event.enableIntegration("AppsFlyer")
                 event.disableIntegration("AppBoy")
                 event.putInContext("foo", "bar")

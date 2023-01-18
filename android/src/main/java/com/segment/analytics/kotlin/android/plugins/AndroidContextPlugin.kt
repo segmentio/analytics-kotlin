@@ -260,7 +260,7 @@ class AndroidContextPlugin : Plugin {
         event.context = newContext
     }
 
-    override fun execute(event: BaseEvent): BaseEvent {
+    override suspend fun execute(event: BaseEvent): BaseEvent {
         applyContextData(event)
         return event
     }

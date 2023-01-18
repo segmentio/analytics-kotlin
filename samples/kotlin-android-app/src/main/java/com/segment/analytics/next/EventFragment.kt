@@ -63,7 +63,7 @@ class EventFragment(val type: EventType, val analytics: Analytics) : Fragment() 
         analytics.add(object : Plugin {
             override val type: Plugin.Type = Plugin.Type.After
             override lateinit var analytics: Analytics
-            override fun execute(event: BaseEvent): BaseEvent? {
+            override suspend fun execute(event: BaseEvent): BaseEvent? {
                 val eventStr = when (event.type) {
                     EventType.Track -> eventStr(event as TrackEvent)
                     EventType.Screen -> eventStr(event as ScreenEvent)

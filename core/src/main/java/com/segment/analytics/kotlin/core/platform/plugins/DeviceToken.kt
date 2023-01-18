@@ -12,7 +12,7 @@ class DeviceToken(var token: String) : Plugin {
     override var type = Plugin.Type.Before
     override lateinit var analytics: Analytics
 
-    override fun execute(event: BaseEvent): BaseEvent {
+    override suspend fun execute(event: BaseEvent): BaseEvent {
         event.putInContextUnderKey("device", "token", token)
         return event
     }
