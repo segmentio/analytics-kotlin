@@ -16,7 +16,7 @@ class TestRunPlugin(var closure: (BaseEvent?) -> Unit): EventPlugin {
         this.ran = ran
     }
 
-    override suspend fun execute(event: BaseEvent): BaseEvent {
+    override fun execute(event: BaseEvent): BaseEvent {
         super.execute(event)
         updateState(true)
         return event

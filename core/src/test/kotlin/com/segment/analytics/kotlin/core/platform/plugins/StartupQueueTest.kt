@@ -27,7 +27,7 @@ internal class StartupQueueTest {
     internal fun setUp() {
         val config = Configuration(
             writeKey = "123",
-            application = "Tetst",
+            application = "Test",
             autoAddSegmentDestination = false
         )
         analytics = testAnalytics(config, testScope, testDispatcher)

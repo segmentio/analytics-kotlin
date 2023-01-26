@@ -45,7 +45,7 @@ class ContextPlugin : Plugin {
         event.context = newContext
     }
 
-    override suspend fun execute(event: BaseEvent): BaseEvent {
+    override fun execute(event: BaseEvent): BaseEvent {
         applyContextData(event)
         return event
     }

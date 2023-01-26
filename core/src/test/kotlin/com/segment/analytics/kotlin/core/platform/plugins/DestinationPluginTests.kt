@@ -1,9 +1,12 @@
-package com.segment.analytics.kotlin.core.platform
+package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.utilities.putInContext
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.spyk
@@ -101,21 +104,21 @@ class DestinationPluginTests {
         val beforePlugin = spyk(object: Plugin {
             override lateinit var analytics: Analytics
             override val type: Plugin.Type = Plugin.Type.Before
-            override suspend fun execute(event: BaseEvent): BaseEvent? {
+            override fun execute(event: BaseEvent): BaseEvent? {
                 return event.putInContext("processedBefore", true)
             }
         })
         val enrichmentPlugin = spyk(object: Plugin {
             override lateinit var analytics: Analytics
             override val type: Plugin.Type = Plugin.Type.Enrichment
-            override suspend fun execute(event: BaseEvent): BaseEvent? {
+            override fun execute(event: BaseEvent): BaseEvent? {
                 return event.putInContext("processedEnrichment", true)
             }
         })
         val afterPlugin = spyk(object: Plugin {
             override lateinit var analytics: Analytics
             override val type: Plugin.Type = Plugin.Type.After
-            override suspend fun execute(event: BaseEvent): BaseEvent? {
+            override fun execute(event: BaseEvent): BaseEvent? {
                 return event.putInContext("processedAfter", true)
             }
         })

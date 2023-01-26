@@ -40,7 +40,7 @@ object ConsentTracking : Plugin {
         return builder
     }
 
-    override suspend fun execute(event: BaseEvent): BaseEvent? {
+    override fun execute(event: BaseEvent): BaseEvent? {
         // if we've been given consent, let the event pass through.
         if (consentGiven) {
             return event

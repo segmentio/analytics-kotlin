@@ -38,7 +38,7 @@ class StartupQueue : Plugin, Subscriber {
         }
     }
 
-    override suspend fun execute(event: BaseEvent): BaseEvent? {
+    override fun execute(event: BaseEvent): BaseEvent? {
         if (!started.get()) {
             analytics.log("SegmentStartupQueue queueing event")
             // timeline hasn't started, so queue it up.

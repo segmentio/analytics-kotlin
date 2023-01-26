@@ -34,7 +34,7 @@ interface Plugin {
         this.analytics = analytics
     }
 
-    suspend fun execute(event: BaseEvent): BaseEvent? {
+    fun execute(event: BaseEvent): BaseEvent? {
         // empty body default
         return event
     }
@@ -70,7 +70,7 @@ interface EventPlugin : Plugin {
         return payload
     }
 
-    override suspend fun execute(event: BaseEvent): BaseEvent? = when (event) {
+    override fun execute(event: BaseEvent): BaseEvent? = when (event) {
         is IdentifyEvent -> identify(event)
         is TrackEvent -> track(event)
         is GroupEvent -> group(event)
@@ -151,7 +151,7 @@ abstract class DestinationPlugin : EventPlugin {
         return afterResult
     }
 
-    final override suspend fun execute(event: BaseEvent): BaseEvent? = process(event)
+    final override fun execute(event: BaseEvent): BaseEvent? = process(event)
 
     internal fun isDestinationEnabled(event: BaseEvent?): Boolean {
         // if event payload has integration marked false then its disabled by customer
