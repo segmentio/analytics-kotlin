@@ -26,9 +26,11 @@ class MainApplication : Application() {
             this.collectDeviceId = true
             this.trackApplicationLifecycleEvents = true
             this.trackDeepLinks = true
-            this.flushAt = 3
-            this.flushInterval = 5
-//            this.flushPolicies = listOf(CountBasedFlushPolicy(3), FrequencyFlushPolicy(5000))
+            this.flushPolicies = listOf(
+                CountBasedFlushPolicy(3), // Flush after 3 events
+                FrequencyFlushPolicy(5000), // Flush after 5 secs
+                UnmeteredFlushPolicy(applicationContext) // Flush if network is not metered
+            )
             this.flushPolicies = listOf(UnmeteredFlushPolicy(applicationContext))
         }
         analytics.add(AndroidRecordScreenPlugin())

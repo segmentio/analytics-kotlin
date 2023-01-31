@@ -9,16 +9,19 @@ import androidx.core.content.ContextCompat.getSystemService
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import java.lang.ref.WeakReference
 
+/**
+ * Flush policy that checks where the Android device is connected to a metered (pay) network or an
+ * unmetered network.
+ *
+ * If the network is NOT metered this Flush policy returns true; false otherwise.
+ */
 class UnmeteredFlushPolicy(context: Context) : FlushPolicy {
 
-
     lateinit var weakContext: WeakReference<Context>
-
 
     init {
         weakContext = WeakReference(context)
     }
-
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun shouldFlush(): Boolean {
