@@ -9,11 +9,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
@@ -83,11 +79,11 @@ open class Analytics protected constructor(
         object : CoroutineConfiguration {
             override val store = Store()
             override val analyticsScope = CoroutineScope(SupervisorJob())
-            override val analyticsDispatcher =
+            override val analyticsDispatcher : CloseableCoroutineDispatcher =
                 Executors.newCachedThreadPool().asCoroutineDispatcher()
-            override val networkIODispatcher =
+            override val networkIODispatcher : CloseableCoroutineDispatcher =
                 Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-            override val fileIODispatcher =
+            override val fileIODispatcher : CloseableCoroutineDispatcher =
                 Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         })
 
@@ -533,6 +529,23 @@ open class Analytics protected constructor(
                 (it as? EventPlugin)?.reset()
             }
         }
+    }
+
+    /**
+     * Shuts down the library by freeing up resources includes queues and Threads. This is a
+     * non-reversible operation. This instance of Analytics will be shutdown and no longer process
+     * events.
+     *
+     * Should only be called in containerized environments where you need to free resources like
+     * CoroutineDispatchers and ExecutorService instances so they allow the container to shutdown
+     * properly.
+     */
+    fun shutdown() {
+        (analyticsDispatcher as CloseableCoroutineDispatcher).close()
+        (networkIODispatcher as CloseableCoroutineDispatcher).close()
+        (fileIODispatcher as CloseableCoroutineDispatcher).close()
+
+        store.shutdown();
     }
 
     /**
