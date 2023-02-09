@@ -57,6 +57,8 @@ open class Analytics protected constructor(
         )
     }
 
+    internal lateinit var userInfo: UserInfo
+
     companion object {
         var debugLogsEnabled: Boolean = false
             set(value) {
@@ -104,7 +106,9 @@ open class Analytics protected constructor(
         // Setup store
         analyticsScope.launch(analyticsDispatcher) {
             store.also {
-                it.provide(UserInfo.defaultState(storage))
+                // load memory with initial value
+                userInfo = UserInfo.defaultState(storage)
+                it.provide(userInfo)
                 it.provide(System.defaultState(configuration, storage))
 
                 // subscribe to store after state is provided
@@ -529,6 +533,10 @@ open class Analytics protected constructor(
      * user logs out
      */
     fun reset() {
+        userInfo.userId = null
+        userInfo.anonymousId = ""
+        userInfo.traits = null
+
         analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.ResetAction(), UserInfo::class)
             timeline.applyClosure {

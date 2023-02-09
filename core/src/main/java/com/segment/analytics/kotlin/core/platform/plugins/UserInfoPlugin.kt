@@ -1,6 +1,8 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.EventType
 import com.segment.analytics.kotlin.core.platform.Plugin
 
 /**
@@ -8,36 +10,27 @@ import com.segment.analytics.kotlin.core.platform.Plugin
  * Auto-added to analytics client on construction
  */
 class UserInfoPlugin : Plugin {
+
     override val type: Plugin.Type = Plugin.Type.Before
-
-    lateinit var userInfo: UserInfo
-
-    override fun setup(analytics: Analytics) {
-        super.setup(analytics)
-    }
-
-    override fun update(settings: Settings, type: Plugin.UpdateType) {
-        // empty body default
-    }
+    override lateinit var analytics: Analytics
 
     override fun execute(event: BaseEvent): BaseEvent {
         val injectedEvent: BaseEvent = event
 
         if (injectedEvent.type == EventType.Identify) {
 
-            userInfo.userId =  injectedEvent.userId
-            userInfo.anonymousId =  injectedEvent.anonymousId
+            analytics.userInfo.userId =  injectedEvent.userId
+            analytics.userInfo.anonymousId =  injectedEvent.anonymousId
 
-            return injectedEvent as IdentifyEvent
         } else if (injectedEvent.type === EventType.Alias) {
 
-            userInfo.anonymousId =  injectedEvent.anonymousId
+            analytics.userInfo.anonymousId =  injectedEvent.anonymousId
 
-            return injectedEvent as AliasEvent
+        } else {
+
+            injectedEvent.userId = analytics.userInfo.userId.toString()
+            injectedEvent.anonymousId = analytics.userInfo.anonymousId
         }
-
-        injectedEvent.userId = userInfo.userId.toString()
-        injectedEvent.anonymousId = userInfo.anonymousId
 
         return injectedEvent
     }

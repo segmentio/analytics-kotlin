@@ -1,12 +1,14 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.platform.Timeline
+
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.*
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -16,84 +18,66 @@ import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class UserInfoPluginTests {
-    private lateinit var analytics: Analytics
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val testDispatcher = UnconfinedTestDispatcher()
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val testScope = TestScope(testDispatcher)
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val config = Configuration(
+        writeKey = "123",
+        application = "Test",
+        autoAddSegmentDestination = false
+    )
+
+    private val testAnalytics = testAnalytics(config, testScope, testDispatcher)
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val timeline: Timeline
 
     init {
+        timeline = Timeline().also { it.analytics = testAnalytics }
         mockkStatic(Instant::class)
         every { Instant.now() } returns Date(0).toInstant()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
-       //CRWCRW mockkConstructor(HTTPClient::class)
     }
 
-    @BeforeEach
-    fun setup() {
-        clearPersistentStorage()
-        val config = Configuration(
-            writeKey = "123",
-            application = "Test",
-            autoAddSegmentDestination = false,
-        )
-        analytics = testAnalytics(config, testScope, testDispatcher)
-    }
 
     @Test
     fun `Test Execute Identify`() {
-
-        assertEquals(null, analytics.find(UserInfoPlugin::class))
-
-        val userInfoPlugin = analytics.find(UserInfoPlugin::class) as UserInfoPlugin
-        userInfoPlugin.userInfo.userId = "glug"
-        userInfoPlugin.userInfo.anonymousId = "glugo"
-        val identifyEvent: BaseEvent
-        identifyEvent.userId = "bob"
-        identifyEvent.anonymousId = "bobo"
+        var identifyEvent: IdentifyEvent = IdentifyEvent("MrUser", emptyJsonObject)
+        identifyEvent.anonymousId = "MrAnonymous"
+        val userInfoPlugin = UserInfoPlugin()
+        userInfoPlugin.setup(testAnalytics)
         userInfoPlugin.execute(identifyEvent)
-
-        assertNotEquals(null, userInfoPlugin)
-        assertEquals("bob", userInfoPlugin.userInfo.userId)
-        assertEquals("bobo", userInfoPlugin.userInfo.anonymousId)
-
+        assertEquals("MrUser", testAnalytics.userInfo.userId)
+        assertEquals("MrAnonymous", testAnalytics.userInfo.anonymousId)
     }
+
 
     @Test
     fun `Test Execute Alias`() {
-
-        assertEquals(null, analytics.find(UserInfoPlugin::class))
-
-        val userInfoPlugin = analytics.find(UserInfoPlugin::class) as UserInfoPlugin
-        userInfoPlugin.userInfo.userId = "glug"
-        userInfoPlugin.userInfo.anonymousId = "glugo"
-        val identifyEvent: BaseEvent
-        identifyEvent.userId = null
-        identifyEvent.anonymousId = "bobo"
-        userInfoPlugin.execute(identifyEvent)
-
-        assertNotEquals(null, userInfoPlugin)
-        assertEquals("bobo", userInfoPlugin.userInfo.anonymousId)
-
+        testAnalytics.userInfo.userId = "MrBefore"
+        testAnalytics.userInfo.anonymousId = "MrAnonBefore"
+        var aliasEvent: AliasEvent = AliasEvent("MrNewUser","MrPrevious")
+        aliasEvent.anonymousId = "MrAnonNew"
+        val userInfoPlugin = UserInfoPlugin()
+        userInfoPlugin.setup(testAnalytics)
+        userInfoPlugin.execute(aliasEvent)
+        assertEquals("MrBefore", testAnalytics.userInfo.userId)
+        assertEquals("MrAnonNew", testAnalytics.userInfo.anonymousId)
     }
 
     @Test
     fun `Test Execute Other`() {
-
-        assertEquals(null, analytics.find(UserInfoPlugin::class))
-
-        val userInfoPlugin = analytics.find(UserInfoPlugin::class) as UserInfoPlugin
-        userInfoPlugin.userInfo.userId = "glug"
-        userInfoPlugin.userInfo.anonymousId = "glugo"
-        val identifyEvent: BaseEvent
-        identifyEvent.userId = "bob"
-        identifyEvent.anonymousId = "bobo"
-        userInfoPlugin.execute(identifyEvent)
-
-        assertNotEquals(null, userInfoPlugin)
-        assertEquals("glug", userInfoPlugin.userInfo.userId)
-        assertEquals("glugo", userInfoPlugin.userInfo.anonymousId)
-
+        testAnalytics.userInfo.userId = "MrBefore"
+        testAnalytics.userInfo.anonymousId = "MrAnonBefore"
+        var groupEvent: GroupEvent = GroupEvent("MrGroup", emptyJsonObject)
+        val userInfoPlugin = UserInfoPlugin()
+        userInfoPlugin.setup(testAnalytics)
+        groupEvent = userInfoPlugin.execute(groupEvent) as GroupEvent
+        assertEquals("MrBefore", groupEvent.userId)
+        assertEquals("MrAnonBefore", groupEvent.anonymousId)
     }
 
 }
