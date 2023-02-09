@@ -1,9 +1,6 @@
 package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.platform.DestinationPlugin
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlin.reflect.KClass
 
 // Platform abstraction for managing plugins' execution (of a specific type)
@@ -18,7 +15,7 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         plugins.removeAll { it === plugin } // remove only if reference is the same
     }
 
-    fun execute(event: BaseEvent): BaseEvent? {
+    fun execute(event: BaseEvent): BaseEvent? = synchronized(plugins) {
         var result: BaseEvent? = event
 
         plugins.forEach { plugin ->
