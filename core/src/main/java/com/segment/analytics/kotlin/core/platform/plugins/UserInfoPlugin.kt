@@ -13,26 +13,30 @@ class UserInfoPlugin : Plugin {
 
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
+    var savedUserId: String? = null
+    var savedAnonymousId: String? = null
 
     override fun execute(event: BaseEvent): BaseEvent {
-        val injectedEvent: BaseEvent = event
 
-        if (injectedEvent.type == EventType.Identify) {
+        if (event.type == EventType.Identify) {
 
-            analytics.userInfo.userId =  injectedEvent.userId
-            analytics.userInfo.anonymousId =  injectedEvent.anonymousId
+            savedUserId =  event.userId
+            savedAnonymousId =  event.anonymousId
 
-        } else if (injectedEvent.type === EventType.Alias) {
+        } else if (event.type === EventType.Alias) {
 
-            analytics.userInfo.anonymousId =  injectedEvent.anonymousId
+            savedAnonymousId =  event.anonymousId
 
         } else {
-
-            injectedEvent.userId = analytics.userInfo.userId.toString()
-            injectedEvent.anonymousId = analytics.userInfo.anonymousId
+            savedUserId?.let {
+                event.userId = savedUserId.toString()
+            }
+            savedAnonymousId?.let {
+                event.anonymousId = savedAnonymousId.toString()
+            }
         }
 
-        return injectedEvent
+        return event
     }
 
 }

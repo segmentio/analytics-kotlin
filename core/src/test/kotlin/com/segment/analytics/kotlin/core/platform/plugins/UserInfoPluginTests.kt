@@ -50,30 +50,30 @@ class UserInfoPluginTests {
         val userInfoPlugin = UserInfoPlugin()
         userInfoPlugin.setup(testAnalytics)
         userInfoPlugin.execute(identifyEvent)
-        assertEquals("MrUser", testAnalytics.userInfo.userId)
-        assertEquals("MrAnonymous", testAnalytics.userInfo.anonymousId)
+        assertEquals("MrUser", userInfoPlugin.savedUserId)
+        assertEquals("MrAnonymous", userInfoPlugin.savedAnonymousId)
     }
 
 
     @Test
     fun `Test Execute Alias`() {
-        testAnalytics.userInfo.userId = "MrBefore"
-        testAnalytics.userInfo.anonymousId = "MrAnonBefore"
         var aliasEvent: AliasEvent = AliasEvent("MrNewUser","MrPrevious")
         aliasEvent.anonymousId = "MrAnonNew"
         val userInfoPlugin = UserInfoPlugin()
+        userInfoPlugin.savedUserId = "MrBefore"
+        userInfoPlugin.savedAnonymousId = "MrAnonBefore"
         userInfoPlugin.setup(testAnalytics)
         userInfoPlugin.execute(aliasEvent)
-        assertEquals("MrBefore", testAnalytics.userInfo.userId)
-        assertEquals("MrAnonNew", testAnalytics.userInfo.anonymousId)
+        assertEquals("MrBefore", userInfoPlugin.savedUserId)
+        assertEquals("MrAnonNew", userInfoPlugin.savedAnonymousId)
     }
 
     @Test
     fun `Test Execute Other`() {
-        testAnalytics.userInfo.userId = "MrBefore"
-        testAnalytics.userInfo.anonymousId = "MrAnonBefore"
         var groupEvent: GroupEvent = GroupEvent("MrGroup", emptyJsonObject)
         val userInfoPlugin = UserInfoPlugin()
+        userInfoPlugin.savedUserId = "MrBefore"
+        userInfoPlugin.savedAnonymousId = "MrAnonBefore"
         userInfoPlugin.setup(testAnalytics)
         groupEvent = userInfoPlugin.execute(groupEvent) as GroupEvent
         assertEquals("MrBefore", groupEvent.userId)
