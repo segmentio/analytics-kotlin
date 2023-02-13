@@ -32,12 +32,4 @@ class DeepLinkUtils(val analytics: Analytics) {
         }
         analytics.track("Deep Link Opened", properties)
     }
-
-    /**
-     * Manually track Deep Links.
-     */
-    fun trackDeepLinkManually(analytics: Analytics, referrer: String?, intent: Intent?) {
-        DeepLinkUtils(analytics).trackDeepLinkFrom(referrer, intent)
-    }
-
 }

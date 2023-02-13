@@ -71,7 +71,7 @@ private fun Analytics.startup() {
 }
 
 fun Analytics.Companion.addDeepLinkOpen(analytics: Analytics, referrer: String?, intent: Intent?) {
-    DeepLinkUtils(analytics).trackDeepLinkManually(analytics, referrer, intent)
+    DeepLinkUtils(analytics).trackDeepLinkFrom(referrer, intent)
 }
 
 class AndroidLogTarget: LogTarget {
