@@ -1,9 +1,11 @@
 package com.segment.analytics.kotlin.android
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
+import com.segment.analytics.kotlin.android.utilities.DeepLinkUtils
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
@@ -66,6 +68,10 @@ private fun Analytics.startup() {
     add(AndroidLifecyclePlugin())
     add(AndroidLogTarget(), LoggingType.log)
     remove(targetType = ConsoleTarget::class)
+}
+
+fun Analytics.Companion.addDeepLinkOpen(analytics: Analytics, referrer: String?, intent: Intent?) {
+    DeepLinkUtils(analytics).trackDeepLinkManually(analytics, referrer, intent)
 }
 
 class AndroidLogTarget: LogTarget {
