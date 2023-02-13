@@ -14,6 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.segment.analytics.kotlin.android.utilities.DeepLinkUtils
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.platform.Plugin
@@ -211,27 +212,11 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
 
     private fun trackDeepLink(activity: Activity?) {
         val intent = activity?.intent
-        if (intent == null || intent.data == null) {
-            return
-        }
-        val properties = buildJsonObject {
 
-            getReferrer(activity)?.let {
-                put("referrer", it.toString())
-            }
-
-            val uri = intent.data
-            uri?.let {
-                for (parameter in uri.queryParameterNames) {
-                    val value = uri.getQueryParameter(parameter)
-                    if (value != null && value.trim().isNotEmpty()) {
-                        put(parameter, value)
-                    }
-                }
-                put("url", uri.toString())
-            }
+        intent?.let {
+            val referrer = getReferrer(activity)?.toString()
+            DeepLinkUtils(analytics).trackDeepLinkFrom(referrer, it)
         }
-        analytics.track("Deep Link Opened", properties)
     }
 
     internal fun trackApplicationLifecycleEvents() {
