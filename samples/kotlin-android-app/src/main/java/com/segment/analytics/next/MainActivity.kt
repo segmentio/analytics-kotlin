@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
-import com.segment.analytics.kotlin.android.addDeepLinkOpen
+import com.segment.analytics.kotlin.android.trackDeepLinkOpen
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.EventType
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
@@ -58,14 +58,13 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
 
-        // Add a manual deep-link opened event.
+        // Add a deep-link opened event manually.
         // This is necessary when your Activity has a android:launchMode of
         // 'singleInstance', 'singleInstancePerTask', 'singleTop', or any other mode
         // that will re-use an existing Activity instead of creating a new instance.
         // The Analytics SDK automatically identifies when you app is started from a deep link
         // if the Activity is created, but not if it is re-used. Therefore we have to add this
         // code to manually capture the Deep Link info.
-
-        Analytics.addDeepLinkOpen(analytics, "deep-link", intent)
+        analytics.trackDeepLinkOpen("deep-link", intent)
     }
 }

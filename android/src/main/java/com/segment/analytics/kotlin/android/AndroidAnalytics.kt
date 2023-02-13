@@ -70,8 +70,18 @@ private fun Analytics.startup() {
     remove(targetType = ConsoleTarget::class)
 }
 
-fun Analytics.Companion.addDeepLinkOpen(analytics: Analytics, referrer: String?, intent: Intent?) {
-    DeepLinkUtils(analytics).trackDeepLinkFrom(referrer, intent)
+/**
+ * Track a deep link manually.
+ *
+ * This function is meant to be called by the user in places were we need to manually track a
+ * deep link opened event. For example, in the cause of an Activity being sent a new intent in it's
+ * onNewIntent() function. The URI that triggered the intent will be in the Intent.data property.
+ *
+ * @param referrer: The string representing the app or url that caused the deep link to be activated.
+ * @param intent: The intent received by the Activity's onNewIntent() function.
+ */
+fun Analytics.trackDeepLinkOpen(referrer: String?, intent: Intent?) {
+    DeepLinkUtils(this).trackDeepLinkFrom(referrer, intent)
 }
 
 class AndroidLogTarget: LogTarget {
