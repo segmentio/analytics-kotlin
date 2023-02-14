@@ -548,7 +548,6 @@ open class Analytics protected constructor(
     /**
      * Retrieve the userId registered by a previous `identify` call.
      */
-    @BlockingApi
     fun userId(): String? {
         return userInfo.userId
     }
@@ -560,14 +559,13 @@ open class Analytics protected constructor(
         "This function no longer serves a purpose and internally calls `userId()`.",
         ReplaceWith("userId()")
     )
-    suspend fun userIdAsync(): String? {
+    fun userIdAsync(): String? {
         return userId()
     }
 
     /**
      * Retrieve the traits registered by a previous `identify` call.
      */
-    @BlockingApi
     fun traits(): JsonObject? {
         return userInfo.traits
     }
@@ -579,16 +577,13 @@ open class Analytics protected constructor(
         "This function no longer serves a purpose and internally calls `traits()`.",
         ReplaceWith("traits()")
     )
-    suspend fun traitsAsync(): JsonObject? {
+    fun traitsAsync(): JsonObject? {
         return traits()
     }
 
     /**
      * Retrieve the traits registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
      */
-    @BlockingApi
     inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
@@ -598,10 +593,12 @@ open class Analytics protected constructor(
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    suspend inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
-        return traitsAsync()?.let {
-            decodeFromJsonElement(deserializationStrategy, it)
-        }
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `traits(deserializationStrategy: DeserializationStrategy<T>)`.",
+        ReplaceWith("traits(deserializationStrategy: DeserializationStrategy<T>)")
+    )
+    inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+        return traits(deserializationStrategy)
     }
 
     /**
@@ -623,21 +620,21 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Retrieve the anonymousId  in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the anonymousId.
      */
-    @BlockingApi
-    fun anonymousId(): String = runBlocking {
-        anonymousIdAsync()
+    fun anonymousId(): String {
+        return userInfo.anonymousId
     }
 
     /**
      * Retrieve the anonymousId
      */
-    suspend fun anonymousIdAsync(): String {
-        val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.anonymousId ?: ""
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `anonymousId()`.",
+        ReplaceWith("anonymousId()")
+    )
+    fun anonymousIdAsync(): String {
+        return anonymousId()
     }
 
     /**
