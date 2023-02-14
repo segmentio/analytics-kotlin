@@ -24,6 +24,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
+import java.util.*
 import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 
@@ -533,12 +534,11 @@ open class Analytics protected constructor(
      * user logs out
      */
     fun reset() {
-        userInfo.userId = null
-        userInfo.anonymousId = ""
-        userInfo.traits = null
+        val newAnonymousId = UUID.randomUUID().toString()
+        userInfo = UserInfo(newAnonymousId, null, null)
 
         analyticsScope.launch(analyticsDispatcher) {
-            store.dispatch(UserInfo.ResetAction(), UserInfo::class)
+            store.dispatch(UserInfo.ResetAction(newAnonymousId), UserInfo::class)
             timeline.applyClosure {
                 (it as? EventPlugin)?.reset()
             }
