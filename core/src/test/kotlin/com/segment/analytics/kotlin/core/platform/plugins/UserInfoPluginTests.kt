@@ -42,7 +42,6 @@ class UserInfoPluginTests {
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
     }
 
-
     @Test
     fun `Test Execute Identify`() {
         var identifyEvent: IdentifyEvent = IdentifyEvent("MrUser", emptyJsonObject)
@@ -50,8 +49,8 @@ class UserInfoPluginTests {
         val userInfoPlugin = UserInfoPlugin()
         userInfoPlugin.setup(testAnalytics)
         userInfoPlugin.execute(identifyEvent)
-        assertEquals("MrUser", userInfoPlugin.savedUserId)
-        assertEquals("MrAnonymous", userInfoPlugin.savedAnonymousId)
+        assertEquals("MrUser", testAnalytics.userInfo.userId)
+        assertEquals("MrAnonymous", testAnalytics.userInfo.anonymousId)
     }
 
 
@@ -60,20 +59,20 @@ class UserInfoPluginTests {
         var aliasEvent: AliasEvent = AliasEvent("MrNewUser","MrPrevious")
         aliasEvent.anonymousId = "MrAnonNew"
         val userInfoPlugin = UserInfoPlugin()
-        userInfoPlugin.savedUserId = "MrBefore"
-        userInfoPlugin.savedAnonymousId = "MrAnonBefore"
+        testAnalytics.userInfo.userId = "MrBefore"
+        testAnalytics.userInfo.anonymousId = "MrAnonBefore"
         userInfoPlugin.setup(testAnalytics)
         userInfoPlugin.execute(aliasEvent)
-        assertEquals("MrBefore", userInfoPlugin.savedUserId)
-        assertEquals("MrAnonNew", userInfoPlugin.savedAnonymousId)
+        assertEquals("MrBefore", testAnalytics.userInfo.userId)
+        assertEquals("MrAnonNew", testAnalytics.userInfo.anonymousId)
     }
 
     @Test
     fun `Test Execute Other`() {
         var groupEvent: GroupEvent = GroupEvent("MrGroup", emptyJsonObject)
         val userInfoPlugin = UserInfoPlugin()
-        userInfoPlugin.savedUserId = "MrBefore"
-        userInfoPlugin.savedAnonymousId = "MrAnonBefore"
+        testAnalytics.userInfo.userId = "MrBefore"
+        testAnalytics.userInfo.anonymousId = "MrAnonBefore"
         userInfoPlugin.setup(testAnalytics)
         groupEvent = userInfoPlugin.execute(groupEvent) as GroupEvent
         assertEquals("MrBefore", groupEvent.userId)

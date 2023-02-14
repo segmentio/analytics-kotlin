@@ -546,39 +546,41 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Retrieve the userId registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the userId registered by a previous `identify` call.
      */
     @BlockingApi
-    fun userId(): String? = runBlocking {
-        userIdAsync()
+    fun userId(): String? {
+        return userInfo.userId
     }
 
     /**
      * Retrieve the userId registered by a previous `identify` call
      */
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `userId()`.",
+        ReplaceWith("userId()")
+    )
     suspend fun userIdAsync(): String? {
-        val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.userId
+        return userId()
     }
 
     /**
-     * Retrieve the traits registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the traits registered by a previous `identify` call.
      */
     @BlockingApi
-    fun traits(): JsonObject? = runBlocking {
-        traitsAsync()
+    fun traits(): JsonObject? {
+        return userInfo.traits
     }
 
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `traits()`.",
+        ReplaceWith("traits()")
+    )
     suspend fun traitsAsync(): JsonObject? {
-        val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.traits
+        return traits()
     }
 
     /**

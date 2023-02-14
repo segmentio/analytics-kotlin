@@ -49,21 +49,21 @@ internal class StateTest {
                 UserInfo::class
             )
 
-            assertEquals("oldUserId", analytics.userId())
-            assertEquals(traits, analytics.traits())
+            assertEquals("oldUserId", (analytics.store.currentState(UserInfo::class))?.userId)
+            assertEquals(traits, (analytics.store.currentState(UserInfo::class))?.traits)
 
             analytics.store.dispatch(UserInfo.ResetAction(), UserInfo::class)
-            assertNull(analytics.userId())
-            assertNull(analytics.traits())
+            assertNull((analytics.store.currentState(UserInfo::class))?.userId)
+            assertNull((analytics.store.currentState(UserInfo::class))?.userId)
         }
 
         @Test
         fun setUserIdAction() = runTest  {
             analytics.store.dispatch(UserInfo.SetUserIdAction("oldUserId"), UserInfo::class)
-            assertEquals("oldUserId", analytics.userId())
+            assertEquals("oldUserId", (analytics.store.currentState(UserInfo::class))?.userId)
 
             analytics.store.dispatch(UserInfo.SetUserIdAction("newUserId"), UserInfo::class)
-            assertEquals("newUserId", analytics.userId())
+            assertEquals("newUserId", (analytics.store.currentState(UserInfo::class))?.userId)
         }
 
         @Test
@@ -77,11 +77,11 @@ internal class StateTest {
             val traits = buildJsonObject { put("behaviour", "bad") }
 
             analytics.store.dispatch(UserInfo.SetUserIdAction("oldUserId"), UserInfo::class)
-            assertEquals("oldUserId", analytics.userId())
-            assertEquals(emptyJsonObject, analytics.traits())
+            assertEquals("oldUserId", (analytics.store.currentState(UserInfo::class))?.userId)
+            assertEquals(emptyJsonObject, (analytics.store.currentState(UserInfo::class))?.traits)
 
             analytics.store.dispatch(UserInfo.SetTraitsAction(traits), UserInfo::class)
-            assertEquals(traits, analytics.traits())
+            assertEquals(traits, (analytics.store.currentState(UserInfo::class))?.traits)
         }
 
         @Test
@@ -94,8 +94,8 @@ internal class StateTest {
                 UserInfo::class
             )
 
-            assertEquals("oldUserId", analytics.userId())
-            assertEquals(traits, analytics.traits())
+            assertEquals("oldUserId", (analytics.store.currentState(UserInfo::class))?.userId)
+            assertEquals(traits, (analytics.store.currentState(UserInfo::class))?.traits)
         }
     }
 }

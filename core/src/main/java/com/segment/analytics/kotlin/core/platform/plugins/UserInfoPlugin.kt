@@ -1,8 +1,6 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.EventType
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.Plugin
 
 /**
@@ -13,26 +11,25 @@ class UserInfoPlugin : Plugin {
 
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
-    var savedUserId: String? = null
-    var savedAnonymousId: String? = null
 
     override fun execute(event: BaseEvent): BaseEvent {
 
         if (event.type == EventType.Identify) {
 
-            savedUserId =  event.userId
-            savedAnonymousId =  event.anonymousId
+            analytics.userInfo.userId = event.userId
+            analytics.userInfo.anonymousId = event.anonymousId
+            analytics.userInfo.traits = (event as IdentifyEvent).traits
 
         } else if (event.type === EventType.Alias) {
 
-            savedAnonymousId =  event.anonymousId
-
+            analytics.userInfo.anonymousId = event.anonymousId
         } else {
-            savedUserId?.let {
-                event.userId = savedUserId.toString()
+
+            analytics.userInfo.userId?.let {
+                event.userId = analytics.userInfo.userId.toString()
             }
-            savedAnonymousId?.let {
-                event.anonymousId = savedAnonymousId.toString()
+            analytics.userInfo.anonymousId?.let {
+                event.anonymousId = analytics.userInfo.anonymousId.toString()
             }
         }
 
