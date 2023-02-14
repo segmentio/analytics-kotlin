@@ -26,6 +26,7 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
         <activity android:name=".MainActivity"
+            android:launchMode="singleInstance"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -38,9 +39,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
+                <!-- Trigger Deep-link from cmd line:
+                adb shell am start -a android.intent.action.VIEW -c android.intent.category.DEFAULT -d "seg://segment-sample.com"
+                -->
                 <data
                     android:host="segment-sample.com"
-                    android:scheme="https" />
+                    android:scheme="seg" />
             </intent-filter>
         </activity>
         <service

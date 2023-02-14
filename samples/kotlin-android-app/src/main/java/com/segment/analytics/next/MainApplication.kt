@@ -10,6 +10,8 @@ import com.segment.analytics.next.plugins.AndroidAdvertisingIdPlugin
 import com.segment.analytics.next.plugins.AndroidRecordScreenPlugin
 import com.segment.analytics.next.plugins.PushNotificationTracking
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
+import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.utilities.*
 
 class MainApplication : Application() {
@@ -24,8 +26,12 @@ class MainApplication : Application() {
             this.collectDeviceId = true
             this.trackApplicationLifecycleEvents = true
             this.trackDeepLinks = true
-            this.flushAt = 1
-            this.flushInterval = 0
+            this.flushPolicies = listOf(
+                CountBasedFlushPolicy(3), // Flush after 3 events
+                FrequencyFlushPolicy(5000), // Flush after 5 secs
+                UnmeteredFlushPolicy(applicationContext) // Flush if network is not metered
+            )
+            this.flushPolicies = listOf(UnmeteredFlushPolicy(applicationContext))
         }
         analytics.add(AndroidRecordScreenPlugin())
         analytics.add(object : Plugin {
