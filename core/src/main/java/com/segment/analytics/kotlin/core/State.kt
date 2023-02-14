@@ -122,9 +122,9 @@ data class UserInfo(
         }
     }
 
-    class ResetAction : Action<UserInfo> {
+    class ResetAction(var anonymousId: String = UUID.randomUUID().toString()) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(UUID.randomUUID().toString(), null, null)
+            return UserInfo(anonymousId, null, null)
         }
     }
 

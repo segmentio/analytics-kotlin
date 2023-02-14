@@ -494,12 +494,6 @@ class AnalyticsTests {
         fun `anonymousId fetches current Analytics anonymousId`() = runTest {
             assertEquals("qwerty-qwerty-123", analytics.anonymousIdAsync())
         }
-
-        @Test
-        fun `anonymousId returns empty string when null`() = runTest {
-            coEvery { analytics.store.currentState(UserInfo::class) } returns null
-            assertEquals("", analytics.anonymousIdAsync())
-        }
     }
 
     @Test

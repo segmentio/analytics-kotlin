@@ -1,11 +1,6 @@
 package com.segment.analytics.kotlin.core.platform
 
-import com.segment.analytics.kotlin.core.AliasEvent
 import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.GroupEvent
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.TrackEvent
 import kotlin.reflect.KClass
 
 // Platform abstraction for managing plugins' execution (of a specific type)
@@ -35,6 +30,7 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
                 }
             }
         }
+
         return result
     }
 

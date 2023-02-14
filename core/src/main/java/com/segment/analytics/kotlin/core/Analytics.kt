@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.core.platform.Timeline
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
+import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import kotlinx.coroutines.*
@@ -19,6 +20,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
+import java.util.*
 import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 
@@ -52,6 +54,8 @@ open class Analytics protected constructor(
         )
     }
 
+    internal lateinit var userInfo: UserInfo
+
     companion object {
         var debugLogsEnabled: Boolean = false
             set(value) {
@@ -75,6 +79,7 @@ open class Analytics protected constructor(
      * Public constructor of Analytics.
      * @property configuration configuration that analytics can use
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     constructor(configuration: Configuration) : this(configuration,
         object : CoroutineConfiguration {
             override val store = Store()
@@ -94,11 +99,14 @@ open class Analytics protected constructor(
         add(SegmentLog())
         add(StartupQueue())
         add(ContextPlugin())
+        add(UserInfoPlugin())
 
         // Setup store
         analyticsScope.launch(analyticsDispatcher) {
             store.also {
-                it.provide(UserInfo.defaultState(storage))
+                // load memory with initial value
+                userInfo = UserInfo.defaultState(storage)
+                it.provide(userInfo)
                 it.provide(System.defaultState(configuration, storage))
 
                 // subscribe to store after state is provided
@@ -523,8 +531,11 @@ open class Analytics protected constructor(
      * user logs out
      */
     fun reset() {
+        val newAnonymousId = UUID.randomUUID().toString()
+        userInfo = UserInfo(newAnonymousId, null, null)
+
         analyticsScope.launch(analyticsDispatcher) {
-            store.dispatch(UserInfo.ResetAction(), UserInfo::class)
+            store.dispatch(UserInfo.ResetAction(newAnonymousId), UserInfo::class)
             timeline.applyClosure {
                 (it as? EventPlugin)?.reset()
             }
@@ -540,6 +551,7 @@ open class Analytics protected constructor(
      * CoroutineDispatchers and ExecutorService instances so they allow the container to shutdown
      * properly.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun shutdown() {
         (analyticsDispatcher as CloseableCoroutineDispatcher).close()
         (networkIODispatcher as CloseableCoroutineDispatcher).close()
@@ -549,47 +561,44 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Retrieve the userId registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the userId registered by a previous `identify` call.
      */
-    @BlockingApi
-    fun userId(): String? = runBlocking {
-        userIdAsync()
+    fun userId(): String? {
+        return userInfo.userId
     }
 
     /**
      * Retrieve the userId registered by a previous `identify` call
      */
-    suspend fun userIdAsync(): String? {
-        val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.userId
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `userId()`.",
+        ReplaceWith("userId()")
+    )
+    fun userIdAsync(): String? {
+        return userId()
     }
 
     /**
-     * Retrieve the traits registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the traits registered by a previous `identify` call.
      */
-    @BlockingApi
-    fun traits(): JsonObject? = runBlocking {
-        traitsAsync()
+    fun traits(): JsonObject? {
+        return userInfo.traits
     }
 
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    suspend fun traitsAsync(): JsonObject? {
-        val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.traits
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `traits()`.",
+        ReplaceWith("traits()")
+    )
+    fun traitsAsync(): JsonObject? {
+        return traits()
     }
 
     /**
      * Retrieve the traits registered by a previous `identify` call in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
      */
-    @BlockingApi
     inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
@@ -599,10 +608,12 @@ open class Analytics protected constructor(
     /**
      * Retrieve the traits registered by a previous `identify` call
      */
-    suspend inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
-        return traitsAsync()?.let {
-            decodeFromJsonElement(deserializationStrategy, it)
-        }
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `traits(deserializationStrategy: DeserializationStrategy<T>)`.",
+        ReplaceWith("traits(deserializationStrategy: DeserializationStrategy<T>)")
+    )
+    inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+        return traits(deserializationStrategy)
     }
 
     /**
@@ -624,21 +635,21 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Retrieve the anonymousId  in a blocking way.
-     * Note: this method invokes `runBlocking` internal, it's not recommended to be used
-     * in coroutines.
+     * Retrieve the anonymousId.
      */
-    @BlockingApi
-    fun anonymousId(): String = runBlocking {
-        anonymousIdAsync()
+    fun anonymousId(): String {
+        return userInfo.anonymousId
     }
 
     /**
      * Retrieve the anonymousId
      */
-    suspend fun anonymousIdAsync(): String {
-        val userInfo = store.currentState(UserInfo::class)
-        return userInfo?.anonymousId ?: ""
+    @Deprecated(
+        "This function no longer serves a purpose and internally calls `anonymousId()`.",
+        ReplaceWith("anonymousId()")
+    )
+    fun anonymousIdAsync(): String {
+        return anonymousId()
     }
 
     /**

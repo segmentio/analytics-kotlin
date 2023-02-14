@@ -9,6 +9,14 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+compileKotlin {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xopt-in=kotlin.RequiresOptIn"
+        ]
+    }
+}
+
 test {
     useJUnitPlatform()
 }
