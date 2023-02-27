@@ -80,7 +80,7 @@ private fun Analytics.startup() {
  * @param referrer: The string representing the app or url that caused the deep link to be activated.
  * @param intent: The intent received by the Activity's onNewIntent() function.
  */
-fun Analytics.trackDeepLinkOpen(referrer: String?, intent: Intent?) {
+fun Analytics.openUrl(referrer: String?, intent: Intent?) {
     DeepLinkUtils(this).trackDeepLinkFrom(referrer, intent)
 }
 
