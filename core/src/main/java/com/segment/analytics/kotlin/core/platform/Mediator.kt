@@ -1,6 +1,9 @@
 package com.segment.analytics.kotlin.core.platform
 
+import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import kotlin.reflect.KClass
 
 // Platform abstraction for managing plugins' execution (of a specific type)
@@ -20,13 +23,18 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
 
         plugins.forEach { plugin ->
             result?.let {
-                when (plugin) {
-                    is DestinationPlugin -> {
-                        plugin.execute(it)
+                try {
+                    when (plugin) {
+                        is DestinationPlugin -> {
+                            plugin.execute(it)
+                        }
+                        else -> {
+                            result = plugin.execute(it)
+                        }
                     }
-                    else -> {
-                        result = plugin.execute(it)
-                    }
+                } catch (t: Throwable) {
+                    Analytics.segmentLog("Caught Exception in plugin: $t", kind = LogFilterKind.ERROR)
+                    Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogFilterKind.WARNING)
                 }
             }
         }
@@ -40,7 +48,7 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         }
     }
 
-    fun <T: Plugin> find(pluginClass: KClass<T>): T? = synchronized(plugins) {
+    fun <T : Plugin> find(pluginClass: KClass<T>): T? = synchronized(plugins) {
         plugins.forEach {
             if (pluginClass.isInstance(it)) {
                 return it as T
@@ -49,7 +57,7 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         return null
     }
 
-    fun <T: Plugin> findAll(pluginClass: KClass<T>): List<T> = synchronized(plugins) {
+    fun <T : Plugin> findAll(pluginClass: KClass<T>): List<T> = synchronized(plugins) {
         return plugins.filter { pluginClass.isInstance(it) } as List<T>
     }
 }
