@@ -86,19 +86,7 @@ suspend fun Analytics.checkSettings() {
 
     withContext(networkIODispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
-        val settingsObj: Settings? = try {
-            val connection = HTTPClient(writeKey).settings(cdnHost)
-            val settingsString =
-                connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-            log("Fetched Settings: $settingsString")
-            LenientJson.decodeFromString(settingsString)
-        } catch (ex: Exception) {
-            Analytics.segmentLog(
-                "${ex.message}: failed to fetch settings",
-                kind = LogFilterKind.ERROR
-            )
-            null
-        }
+        val settingsObj: Settings? = fetchSettings(writeKey, cdnHost)
 
         withContext(analyticsDispatcher) {
             settingsObj?.let {
@@ -112,4 +100,21 @@ suspend fun Analytics.checkSettings() {
             store.dispatch(System.ToggleRunningAction(running = true), System::class)
         }
     }
+}
+
+internal fun Analytics.fetchSettings(
+    writeKey: String,
+    cdnHost: String
+): Settings? = try {
+    val connection = HTTPClient(writeKey).settings(cdnHost)
+    val settingsString =
+        connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+    log("Fetched Settings: $settingsString")
+    LenientJson.decodeFromString(settingsString)
+} catch (ex: Exception) {
+    Analytics.segmentLog(
+        "${ex.message}: failed to fetch settings",
+        kind = LogFilterKind.ERROR
+    )
+    null
 }
