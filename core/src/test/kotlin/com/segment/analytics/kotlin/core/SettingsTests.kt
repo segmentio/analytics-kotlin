@@ -225,6 +225,23 @@ class SettingsTests {
     }
 
     @Test
+    fun `fetchSettings returns null when parameters are invalid`() {
+        mockHTTPClient("{\"integrations\":{}, \"plan\":{}, \"edgeFunction\": {}, \"middlewareSettings\": {}}")
+
+        // empty host
+        var settings = analytics.fetchSettings("foo", "")
+        assertNull(settings)
+
+        // not a host name
+        settings = analytics.fetchSettings("foo", "http://blah")
+        assertNull(settings)
+
+        // emoji
+        settings = analytics.fetchSettings("foo", "😃")
+        assertNull(settings)
+    }
+
+    @Test
     fun `fetchSettings returns null when Settings string is null for known properties`() {
         // Null if integrations is null
         mockHTTPClient("{\"integrations\":null}")
