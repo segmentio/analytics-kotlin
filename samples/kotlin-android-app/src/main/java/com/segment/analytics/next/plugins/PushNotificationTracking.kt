@@ -16,7 +16,7 @@ import kotlinx.serialization.json.put
  * opening of that notification and fire the Push Notification Tapped event.
  */
 
-object PushNotificationTracking: Plugin, AndroidLifecycle {
+object PushNotificationTracking : Plugin, AndroidLifecycle {
     override val type: Plugin.Type = Plugin.Type.Utility
     override lateinit var analytics: Analytics
 
@@ -25,8 +25,12 @@ object PushNotificationTracking: Plugin, AndroidLifecycle {
             activity?.intent?.extras
         } else {
             Bundle().apply {
-                putAll(savedInstanceState)
-                putAll(activity?.intent?.extras)
+                if (savedInstanceState != null) {
+                    putAll(savedInstanceState)
+                }
+                if (activity?.intent?.extras != null) {
+                    putAll(activity?.intent?.extras)
+                }
             }
         }
         checkPushNotification(bundle)
