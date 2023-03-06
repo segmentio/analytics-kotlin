@@ -42,13 +42,14 @@ fun spyStore(scope: TestScope, dispatcher: TestDispatcher): Store {
     every { store getProperty "updateQueue" } propertyType CoroutineContext::class returns dispatcher
     return store
 }
+val settingsDefault = """
+                {"integrations":{"Segment.io":{"apiKey":"1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ"}},"plan":{},"edgeFunction":{}}
+            """.trimIndent()
 
-fun mockHTTPClient() {
+fun mockHTTPClient(settings: String = settingsDefault) {
     mockkConstructor(HTTPClient::class)
     val settingsStream = ByteArrayInputStream(
-        """
-                {"integrations":{"Segment.io":{"apiKey":"1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ"}},"plan":{},"edgeFunction":{}}
-            """.trimIndent().toByteArray()
+        settings.toByteArray()
     )
     val httpConnection: HttpURLConnection = mockk()
     val connection = object : Connection(httpConnection, settingsStream, null) {}
