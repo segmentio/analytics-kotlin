@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
 import kotlinx.coroutines.launch
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
 // Platform abstraction for managing all plugins and their execution
@@ -11,11 +12,11 @@ import kotlin.reflect.KClass
 //      Before -> Enrichment -> Destination -> After
 internal class Timeline {
     internal val plugins: Map<Plugin.Type, Mediator> = mapOf(
-        Plugin.Type.Before to Mediator(mutableListOf()),
-        Plugin.Type.Enrichment to Mediator(mutableListOf()),
-        Plugin.Type.Destination to Mediator(mutableListOf()),
-        Plugin.Type.After to Mediator(mutableListOf()),
-        Plugin.Type.Utility to Mediator(mutableListOf())
+        Plugin.Type.Before to Mediator(CopyOnWriteArrayList()),
+        Plugin.Type.Enrichment to Mediator(CopyOnWriteArrayList()),
+        Plugin.Type.Destination to Mediator(CopyOnWriteArrayList()),
+        Plugin.Type.After to Mediator(CopyOnWriteArrayList()),
+        Plugin.Type.Utility to Mediator(CopyOnWriteArrayList())
     )
     lateinit var analytics: Analytics
 

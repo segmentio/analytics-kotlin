@@ -4,21 +4,25 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
 // Platform abstraction for managing plugins' execution (of a specific type)
-// All operations are thread safe via the `synchronized` function
-internal class Mediator(internal val plugins: MutableList<Plugin>) {
+// All operations are thread safe via the CopyOnWriteArrayList. Which allows multiple
+// threads to read the list but when a modification is made the modifier is given a new copy of
+// list and that becomes the new version of the list.
+// More info: https://developer.android.com/reference/kotlin/java/util/concurrent/CopyOnWriteArrayList
+internal class Mediator(internal val plugins: CopyOnWriteArrayList<Plugin>) {
 
-    fun add(plugin: Plugin) = synchronized(plugins) {
+    fun add(plugin: Plugin) {
         plugins.add(plugin)
     }
 
-    fun remove(plugin: Plugin) = synchronized(plugins) {
+    fun remove(plugin: Plugin) {
         plugins.removeAll { it === plugin } // remove only if reference is the same
     }
 
-    fun execute(event: BaseEvent): BaseEvent? = synchronized(plugins) {
+    fun execute(event: BaseEvent): BaseEvent?  {
         var result: BaseEvent? = event
 
         plugins.forEach { plugin ->
@@ -42,13 +46,13 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         return result
     }
 
-    fun applyClosure(closure: (Plugin) -> Unit) = synchronized(plugins) {
+    fun applyClosure(closure: (Plugin) -> Unit) {
         plugins.forEach {
             closure(it)
         }
     }
 
-    fun <T : Plugin> find(pluginClass: KClass<T>): T? = synchronized(plugins) {
+    fun <T : Plugin> find(pluginClass: KClass<T>): T? {
         plugins.forEach {
             if (pluginClass.isInstance(it)) {
                 return it as T
@@ -57,7 +61,7 @@ internal class Mediator(internal val plugins: MutableList<Plugin>) {
         return null
     }
 
-    fun <T : Plugin> findAll(pluginClass: KClass<T>): List<T> = synchronized(plugins) {
+    fun <T : Plugin> findAll(pluginClass: KClass<T>): List<T>  {
         return plugins.filter { pluginClass.isInstance(it) } as List<T>
     }
 }
