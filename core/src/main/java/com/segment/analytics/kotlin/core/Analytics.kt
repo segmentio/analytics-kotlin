@@ -54,7 +54,7 @@ open class Analytics protected constructor(
         )
     }
 
-    internal lateinit var userInfo: UserInfo
+    internal var userInfo: UserInfo = UserInfo.defaultState(storage)
 
     companion object {
         var debugLogsEnabled: Boolean = false
@@ -105,7 +105,6 @@ open class Analytics protected constructor(
         analyticsScope.launch(analyticsDispatcher) {
             store.also {
                 // load memory with initial value
-                userInfo = UserInfo.defaultState(storage)
                 it.provide(userInfo)
                 it.provide(System.defaultState(configuration, storage))
 
