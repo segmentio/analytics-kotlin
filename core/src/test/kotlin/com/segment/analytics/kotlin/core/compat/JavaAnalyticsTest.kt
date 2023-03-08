@@ -406,7 +406,7 @@ internal class JavaAnalyticsTest {
             analytics.add(middleware)
             analytics.analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
                 assertEquals(
-                    2, // SegmentLog is the other added at startup
+                    1,
                     it.size
                 )
             } ?: fail()
@@ -424,7 +424,7 @@ internal class JavaAnalyticsTest {
             analytics.remove(middleware)
             analytics.analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
                 assertEquals(
-                    1, // LogTarget is added at startup
+                    0,
                     it.size
                 )
             } ?: fail()

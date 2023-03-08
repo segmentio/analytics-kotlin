@@ -66,8 +66,7 @@ public fun Analytics(
 private fun Analytics.startup() {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
-    add(AndroidLogTarget(), LoggingType.log)
-    remove(targetType = ConsoleTarget::class)
+    // TODO: Remove console logger and replace with android logger
 }
 
 /**

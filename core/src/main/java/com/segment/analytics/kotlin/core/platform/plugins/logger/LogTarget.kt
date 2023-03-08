@@ -91,23 +91,6 @@ interface LogMessage {
     val dateTime: Date
 }
 
-enum class MetricType {
-    Counter, // Not Verbose
-    Gauge;   // Semi-verbose
-
-    override fun toString() = this.name
-
-    companion object {
-        fun from(string: String): MetricType {
-            var returnType = Counter
-            if (string == "Gauge") {
-                returnType = Gauge
-            }
-            return returnType
-        }
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  * The public logging method for capturing all general types of log messages related to Segment.
@@ -120,17 +103,7 @@ enum class MetricType {
  */
 @JvmOverloads
 fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = -1) {
-
-    // Check if we should send the event
-    if (!SegmentLog.loggingEnabled) {
-        return
-    }
-
-    val plugins = findAll(SegmentLog::class)
-    plugins.forEach {
-        val log = LogFactory.buildLog(LoggingType.Filter.LOG, "", message, kind ?: it.filterKind, function, line)
-        it.log(log, LoggingType.Filter.LOG)
-    }
+    println("SEGMENT: Analytics.log($kind): $message")
 }
 
 /**
@@ -144,93 +117,5 @@ fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String
  */
 @JvmOverloads
 fun Analytics.metric(type: String, name: String, value: Double, tags: List<String>? = null) {
-
-    // Check if we should send the event
-    if (!SegmentLog.loggingEnabled) {
-        return
-    }
-
-    val log = LogFactory.buildLog(LoggingType.Filter.METRIC, type, name, value = value, tags = tags)
-    val plugins = findAll(SegmentLog::class)
-    plugins.forEach {
-        it.log(log, LoggingType.Filter.METRIC)
-    }
-}
-
-/**
- * Used to track the history of events as the event data travels through the Segment Event Timeline. As
- * plugins manipulate the data at the `before`, `enrichment`, `destination`,
- * `destination timeline`, and `after` states, an event can be tracked. Starting with the first one
- *
- * @property event The timeline event that is to be processed.
- * @property sender Where the event came from.
- * @property function The name of the function the log came from. This will be captured automatically.
- * @property line The line number in the function the log came from. This will be captured automatically.
- */
-@JvmOverloads
-fun Analytics.history(event: BaseEvent, sender: Any, function: String = "", line: Int = -1) {
-
-    // Check if we should send the event
-    if (!SegmentLog.loggingEnabled) {
-        return
-    }
-
-    val methodInfo = Analytics.callingMethodDetails(function, line)
-    var updatedFunction = function
-    var updatedLine = line
-    if (function.isEmpty() && line == -1) {
-        updatedFunction = methodInfo.first
-        updatedLine = methodInfo.second
-    }
-
-    val log = LogFactory.buildLog(LoggingType.Filter.HISTORY,
-        title = event.toString(),
-        message = "",
-        function = updatedFunction,
-        line = updatedLine,
-        event = event,
-        sender = sender)
-    val plugins = findAll(SegmentLog::class)
-    plugins.forEach {
-        it.log(log, LoggingType.Filter.HISTORY)
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * Add a logging target to the system. These `targets` can handle logs in various ways. Consider
- * sending logs to the console, the OS and a web service. Three targets can handle these scenarios.
- *
- * @property target A `LogTarget` that has logic to parse and handle log messages.
- * @property type The type consists of `log`, `metric` or `history`. These correspond to the
- * public API on Analytics.
- */
-fun Analytics.add(target: LogTarget, type: LoggingType) {
-    val plugins = findAll(SegmentLog::class)
-    plugins.forEach {
-        it.add(target, type)
-    }
-}
-
-/**
- * Removes a logging target based on the class type. Since only one type can be added, we don't need to worry about
- * removing duplicates.
- *
- * @property targetType A `LogTarget` class type that should be removed from the system.
- */
-fun <T: LogTarget> Analytics.remove(targetType: KClass<T>) {
-    val plugins = findAll(SegmentLog::class)
-    plugins.forEach {
-        it.remove(targetType)
-    }
-}
-
-/**
- * Expunge all cached logs that have been captured.
- */
-fun Analytics.logFlush() {
-    val plugins = findAll(SegmentLog::class)
-    plugins.forEach {
-        it.flush()
-    }
+    println("SEGMENT: Analytics.metric($type): $name - $value")
 }
