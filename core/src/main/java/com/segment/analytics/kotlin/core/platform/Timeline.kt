@@ -12,11 +12,11 @@ import kotlin.reflect.KClass
 //      Before -> Enrichment -> Destination -> After
 internal class Timeline {
     internal val plugins: Map<Plugin.Type, Mediator> = mapOf(
-        Plugin.Type.Before to Mediator(CopyOnWriteArrayList()),
-        Plugin.Type.Enrichment to Mediator(CopyOnWriteArrayList()),
-        Plugin.Type.Destination to Mediator(CopyOnWriteArrayList()),
-        Plugin.Type.After to Mediator(CopyOnWriteArrayList()),
-        Plugin.Type.Utility to Mediator(CopyOnWriteArrayList())
+        Plugin.Type.Before to Mediator(),
+        Plugin.Type.Enrichment to Mediator(),
+        Plugin.Type.Destination to Mediator(),
+        Plugin.Type.After to Mediator(),
+        Plugin.Type.Utility to Mediator()
     )
     lateinit var analytics: Analytics
 
