@@ -11,5 +11,4 @@ class ConsoleTarget: LogTarget {
         println("[Segment ${log.kind.toString()}${metadata}\n${log.message}")
     }
 
-    override fun flush() { }
 }

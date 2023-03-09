@@ -8,6 +8,8 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.logger.ConsoleTarget
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogTarget
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
@@ -54,6 +56,9 @@ open class Analytics protected constructor(
     }
 
     internal var userInfo: UserInfo = UserInfo.defaultState(storage)
+
+    // logTarget defines how the library logs. The default `ConsoleTarget` logs to the console.
+    internal var logTarget: LogTarget = ConsoleTarget()
 
     companion object {
         var debugLogsEnabled: Boolean = false
@@ -464,6 +469,14 @@ open class Analytics protected constructor(
     }
 
     // Platform specific APIs
+
+    /**
+     * Set the log target for the library. Default is ConsoleTarget which logs to the
+     * console.
+     */
+    fun setLogTarget(target: LogTarget) {
+        this.logTarget = target
+    }
 
     /**
      * Register a plugin to the analytics timeline

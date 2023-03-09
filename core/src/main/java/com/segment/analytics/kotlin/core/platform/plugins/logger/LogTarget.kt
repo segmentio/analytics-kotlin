@@ -19,13 +19,6 @@ interface LogTarget {
      * - important: Use the Segment Network stack for Segment library compatibility and simplicity.
      */
     fun parseLog(log: LogMessage)
-
-    /**
-     * Optional method to implement. This helps respond to potential queueing events being flushed out.
-     * Perhaps responding to backgrounding or networking events, this gives a chance to empty a queue
-     * or pump a firehose of logs.
-     */
-    fun flush() {}
 }
 
 /**
@@ -80,30 +73,37 @@ class LoggingType(private val types: Set<Filter>) {
 /**
  * The interface to the message being returned to `LogTarget` -> `parseLog()`.
  */
-interface LogMessage {
-    val kind: LogFilterKind
-    val title: String?
-    val message: String
-    val event: BaseEvent?
-    val function: String?
-    val line: Int?
-    val logType: LoggingType.Filter
-    val dateTime: Date
-}
+data class LogMessage(
+    val kind: LogFilterKind,
+    val title: String? = null,
+    val message: String,
+    val event: BaseEvent? = null,
+    val function: String? = null,
+    val line: Int? = null,
+    val dateTime: Date = Date())
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  * The public logging method for capturing all general types of log messages related to Segment.
  *
- * @property  message The main message of the log to be captured.
+ * @property message The main message of the log to be captured.
  * @property kind Usually .error, .warning or .debug, in order of severity. This helps filter logs based on
  * this added metadata.
  * @property function The name of the function the log came from. This will be captured automatically.
  * @property line The line number in the function the log came from. This will be captured automatically.
  */
 @JvmOverloads
-fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String = "", line: Int = -1) {
-    println("SEGMENT: Analytics.log($kind): $message")
+fun Analytics.log(message: String, kind: LogFilterKind = LogFilterKind.DEBUG, function: String = "", line: Int = -1) {
+    val logTarget = this.logTarget
+    val logMessage = LogMessage(kind, message=message)
+    when (kind){
+        LogFilterKind.DEBUG -> {
+            if (Analytics.debugLogsEnabled) {
+                logTarget.parseLog(logMessage)
+            }
+        }
+        else -> logTarget.parseLog(logMessage)
+    }
 }
 
 /**
@@ -117,5 +117,11 @@ fun Analytics.log(message: String, kind: LogFilterKind? = null, function: String
  */
 @JvmOverloads
 fun Analytics.metric(type: String, name: String, value: Double, tags: List<String>? = null) {
-    println("SEGMENT: Analytics.metric($type): $name - $value")
+    val logTarget = this.logTarget
+    val message = "metric: $name($type)= $value, tags= ${tags?.toString()}"
+    val logMessage = LogMessage(kind=LogFilterKind.DEBUG, message=message)
+
+    if (Analytics.debugLogsEnabled) {
+        logTarget.parseLog(logMessage)
+    }
 }
