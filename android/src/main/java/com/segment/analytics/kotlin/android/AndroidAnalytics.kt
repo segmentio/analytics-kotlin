@@ -85,27 +85,16 @@ fun Analytics.openUrl(referrer: String?, intent: Intent?) {
 
 class AndroidLogTarget: LogTarget {
     override fun parseLog(log: LogMessage) {
-        var metadata = ""
-        val function = log.function
-        val line = log.line
-        if (function != null && line != null) {
-            metadata = " - $function:$line"
-        }
-
-        var eventString = ""
-        log.event.let {
-            eventString = ", event=$it"
-        }
 
         when (log.kind) {
             LogFilterKind.ERROR -> {
-                Log.e("AndroidLog", "message=${log.message}$eventString")
+                Log.e("AndroidLog", "message=${log.message}")
             }
             LogFilterKind.WARNING -> {
-                Log.w("AndroidLog", "message=${log.message}$eventString")
+                Log.w("AndroidLog", "message=${log.message}")
             }
             LogFilterKind.DEBUG -> {
-                Log.d("AndroidLog", "message=${log.message}$eventString")
+                Log.d("AndroidLog", "message=${log.message}")
             }
         }
     }
