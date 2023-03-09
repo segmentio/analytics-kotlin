@@ -66,7 +66,7 @@ public fun Analytics(
 private fun Analytics.startup() {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
-    // TODO: Remove console logger and replace with android logger
+    setLogTarget(AndroidLogTarget())
 }
 
 /**
@@ -109,6 +109,4 @@ class AndroidLogTarget: LogTarget {
             }
         }
     }
-
-    override fun flush() { }
 }
