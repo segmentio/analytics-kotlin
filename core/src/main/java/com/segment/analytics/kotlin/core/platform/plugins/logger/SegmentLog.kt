@@ -12,7 +12,7 @@ import java.util.*
 import kotlin.reflect.KClass
 
 // Internal log usage
-fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind = LogFilterKind.ERROR, function: String? = null, line: Int? = null) {
+fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind = LogFilterKind.ERROR) {
    val logTarget = staticLogTarget
    val logMessage = LogMessage(kind, message=message)
    when (kind){

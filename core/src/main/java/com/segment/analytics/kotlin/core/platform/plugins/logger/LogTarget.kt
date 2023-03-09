@@ -75,11 +75,7 @@ class LoggingType(private val types: Set<Filter>) {
  */
 data class LogMessage(
     val kind: LogFilterKind,
-    val title: String? = null,
     val message: String,
-    val event: BaseEvent? = null,
-    val function: String? = null,
-    val line: Int? = null,
     val dateTime: Date = Date())
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,7 +89,7 @@ data class LogMessage(
  * @property line The line number in the function the log came from. This will be captured automatically.
  */
 @JvmOverloads
-fun Analytics.log(message: String, kind: LogFilterKind = LogFilterKind.DEBUG, function: String = "", line: Int = -1) {
+fun Analytics.log(message: String, kind: LogFilterKind = LogFilterKind.DEBUG) {
     val logTarget = this.logTarget
     val logMessage = LogMessage(kind, message=message)
     when (kind){
