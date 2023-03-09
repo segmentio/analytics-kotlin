@@ -13,11 +13,11 @@ import kotlin.reflect.KClass
 
 // Internal log usage
 fun Analytics.Companion.segmentLog(message: String, kind: LogFilterKind = LogFilterKind.ERROR, function: String? = null, line: Int? = null) {
-   val logTarget = Analytics.staticLogTarget
+   val logTarget = staticLogTarget
    val logMessage = LogMessage(kind, message=message)
    when (kind){
       LogFilterKind.DEBUG -> {
-         if (Analytics.debugLogsEnabled) {
+         if (debugLogsEnabled) {
             logTarget.parseLog(logMessage)
          }
       }
