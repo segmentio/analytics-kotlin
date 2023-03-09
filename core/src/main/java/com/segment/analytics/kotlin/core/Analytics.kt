@@ -63,6 +63,9 @@ open class Analytics protected constructor(
     companion object {
         var debugLogsEnabled: Boolean = false
 
+        // A Static Log Target that can be used from anywhere without an analytics reference.
+        internal var staticLogTarget: LogTarget = ConsoleTarget()
+
         /**
          * Retrieve the version of this library in use.
          * - Returns: A string representing the version in "BREAKING.FEATURE.FIX" format.
