@@ -7,10 +7,9 @@ import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.HTTPException
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogMessage
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LoggingType
-import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.Logger
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
@@ -30,11 +29,9 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
@@ -132,15 +129,16 @@ class SegmentDestinationTests {
             }
 
         val errorAddingPayload = spyk(AtomicBoolean(false))
-        val testLogger = object : SegmentLog() {
-            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
-                super.log(logMessage, destination)
-                if (logMessage.message.contains("Error adding payload") && logMessage.kind == LogFilterKind.ERROR) {
+        val testLogger = object : Logger {
+            override fun parseLog(logMessage: LogMessage) {
+                if (logMessage.message.contains("Error adding payload") && logMessage.kind == LogKind.ERROR) {
                     errorAddingPayload.set(true)
                 }
             }
+
         }
-        analytics.add(testLogger)
+
+        Analytics.logger = testLogger
         val destSpy = spyk(segmentDestination)
         assertEquals(trackEvent, destSpy.track(trackEvent))
         verify { errorAddingPayload.set(true) }
@@ -202,15 +200,14 @@ class SegmentDestinationTests {
             }
 
         var payloadsRejected = spyk(AtomicBoolean(false))
-        val testLogger = object : SegmentLog() {
-            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
-                super.log(logMessage, destination)
-                if (logMessage.message == "Payloads were rejected by server. Marked for removal." && logMessage.kind == LogFilterKind.ERROR) {
+        val testLogger = object : Logger {
+            override fun parseLog(logMessage: LogMessage) {
+                if (logMessage.message == "Payloads were rejected by server. Marked for removal." && logMessage.kind == LogKind.ERROR) {
                     payloadsRejected.set(true)
                 }
             }
         }
-        analytics.add(testLogger)
+        Analytics.logger = testLogger
         val destSpy = spyk(segmentDestination)
 
         val httpConnection: HttpURLConnection = mockk()
@@ -239,16 +236,14 @@ class SegmentDestinationTests {
                 timestamp = epochTimestamp
             }
         var errorUploading = spyk(AtomicBoolean(false))
-        val testLogger = object : SegmentLog() {
-            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
-                super.log(logMessage, destination)
-                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
+        val testLogger = object : Logger {
+            override fun parseLog(logMessage: LogMessage) {
+                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogKind.ERROR) {
                     errorUploading.set(true)
                 }
             }
         }
-        analytics.add(testLogger)
-        val destSpy = spyk(segmentDestination)
+        Analytics.logger = testLogger
 
         val httpConnection: HttpURLConnection = mockk()
         val connection = object : Connection(httpConnection, null, ByteArrayOutputStream()) {
@@ -258,8 +253,10 @@ class SegmentDestinationTests {
         }
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-        destSpy.flush()
+        assertEquals(trackEvent, segmentDestination.track(trackEvent))
+        assertDoesNotThrow {
+            segmentDestination.flush()
+        }
         verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
@@ -282,16 +279,14 @@ class SegmentDestinationTests {
             }
 
         var errorUploading = spyk(AtomicBoolean(false))
-        val testLogger = object : SegmentLog() {
-            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
-                super.log(logMessage, destination)
-                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogFilterKind.ERROR) {
+        val testLogger = object : Logger {
+            override fun parseLog(logMessage: LogMessage) {
+                if (logMessage.message == "Error while uploading payloads" && logMessage.kind == LogKind.ERROR) {
                     errorUploading.set(true)
                 }
             }
         }
-        analytics.add(testLogger)
-        val destSpy = spyk(segmentDestination)
+        Analytics.logger = testLogger
 
         val httpConnection: HttpURLConnection = mockk()
         val connection = object : Connection(httpConnection, null, ByteArrayOutputStream()) {
@@ -301,8 +296,10 @@ class SegmentDestinationTests {
         }
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
 
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-        destSpy.flush()
+        assertEquals(trackEvent, segmentDestination.track(trackEvent))
+        assertDoesNotThrow {
+            segmentDestination.flush()
+        }
         verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
@@ -325,22 +322,21 @@ class SegmentDestinationTests {
             }
 
         val exceptionUploading = spyk(AtomicBoolean(false))
-        val testLogger = object : SegmentLog() {
-            override fun log(logMessage: LogMessage, destination: LoggingType.Filter) {
-                super.log(logMessage, destination)
-                if (logMessage.message.contains("test") && logMessage.kind == LogFilterKind.ERROR) {
+        val testLogger = object : Logger {
+            override fun parseLog(logMessage: LogMessage) {
+                println("Checking: ${logMessage.message}")
+                if (logMessage.message.contains("test") && logMessage.kind == LogKind.ERROR) {
                     exceptionUploading.set(true)
                 }
             }
         }
-        analytics.add(testLogger)
-        val destSpy = spyk(segmentDestination)
+        Analytics.logger = testLogger
 
         every { anyConstructed<HTTPClient>().upload(any()) } throws Exception("test")
-
-        assertEquals(trackEvent, destSpy.track(trackEvent))
-        destSpy.flush()
-
+        assertEquals(trackEvent, segmentDestination.track(trackEvent))
+        assertDoesNotThrow {
+            segmentDestination.flush()
+        }
         verify { exceptionUploading.set(true) }
     }
 }

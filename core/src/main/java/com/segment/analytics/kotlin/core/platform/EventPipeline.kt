@@ -1,7 +1,7 @@
 package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
@@ -100,7 +100,7 @@ internal class EventPipeline(
                 flushPolicies.forEach { flushPolicy -> flushPolicy.updateState(event) }
             }
             catch (e : Exception) {
-                Analytics.segmentLog("Error adding payload: $event", kind = LogFilterKind.ERROR)
+                Analytics.segmentLog("Error adding payload: $event", kind = LogKind.ERROR)
             }
 
             // if flush condition met, generate paths
@@ -168,13 +168,13 @@ internal class EventPipeline(
                 // Simply log and proceed to remove the rejected payloads from the queue.
                 Analytics.segmentLog(
                     message = "Payloads were rejected by server. Marked for removal.",
-                    kind = LogFilterKind.ERROR
+                    kind = LogKind.ERROR
                 )
                 shouldCleanup = true
             } else {
                 Analytics.segmentLog(
                     message = "Error while uploading payloads",
-                    kind = LogFilterKind.ERROR
+                    kind = LogKind.ERROR
                 )
             }
         }
@@ -184,7 +184,7 @@ internal class EventPipeline(
                     | Error uploading events from batch file
                     | fileUrl="${file.path}"
                     | msg=${e.message}
-                """.trimMargin(), kind = LogFilterKind.ERROR
+                """.trimMargin(), kind = LogKind.ERROR
             )
             e.printStackTrace()
         }

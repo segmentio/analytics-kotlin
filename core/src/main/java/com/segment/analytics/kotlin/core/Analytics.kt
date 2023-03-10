@@ -8,7 +8,8 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
+import com.segment.analytics.kotlin.core.platform.plugins.logger.ConsoleLogger
+import com.segment.analytics.kotlin.core.platform.plugins.logger.Logger
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
@@ -58,10 +59,13 @@ open class Analytics protected constructor(
 
     companion object {
         var debugLogsEnabled: Boolean = false
-            set(value) {
-                SegmentLog.loggingEnabled = value
-                field = value
-            }
+
+        // A Static Log Target that can be used from anywhere without an analytics reference.
+        internal var logger: Logger = ConsoleLogger()
+
+        fun setLogger(logger: Logger) {
+            Analytics.logger = logger
+        }
 
         /**
          * Retrieve the version of this library in use.
@@ -96,7 +100,6 @@ open class Analytics protected constructor(
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
         // because startup queue doesn't depend on a state, we can add it first
-        add(SegmentLog())
         add(StartupQueue())
         add(ContextPlugin())
         add(UserInfoPlugin())
@@ -470,7 +473,6 @@ open class Analytics protected constructor(
     }
 
     // Platform specific APIs
-
     /**
      * Register a plugin to the analytics timeline
      * @param plugin [Plugin] to be added

@@ -157,7 +157,7 @@ class AnalyticsTests {
             analytics.add(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
                 assertEquals(
-                    2, // SegmentLog is the other added at startup
+                    1,
                     it.size
                 )
             } ?: Assertions.fail()
@@ -173,7 +173,7 @@ class AnalyticsTests {
             analytics.remove(middleware)
             analytics.timeline.plugins[Plugin.Type.Utility]?.plugins?.let {
                 assertEquals(
-                    1, // SegmentLog is the other added at startup
+                    0,
                     it.size
                 )
             } ?: Assertions.fail()

@@ -66,8 +66,7 @@ public fun Analytics(
 private fun Analytics.startup() {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
-    add(AndroidLogTarget(), LoggingType.log)
-    remove(targetType = ConsoleTarget::class)
+    Analytics.setLogger(AndroidLogger())
 }
 
 /**
@@ -84,32 +83,19 @@ fun Analytics.openUrl(referrer: String?, intent: Intent?) {
     DeepLinkUtils(this).trackDeepLinkFrom(referrer, intent)
 }
 
-class AndroidLogTarget: LogTarget {
+class AndroidLogger: Logger {
     override fun parseLog(log: LogMessage) {
-        var metadata = ""
-        val function = log.function
-        val line = log.line
-        if (function != null && line != null) {
-            metadata = " - $function:$line"
-        }
-
-        var eventString = ""
-        log.event.let {
-            eventString = ", event=$it"
-        }
 
         when (log.kind) {
-            LogFilterKind.ERROR -> {
-                Log.e("AndroidLog", "message=${log.message}$eventString")
+            LogKind.ERROR -> {
+                Log.e("AndroidLog", "message=${log.message}")
             }
-            LogFilterKind.WARNING -> {
-                Log.w("AndroidLog", "message=${log.message}$eventString")
+            LogKind.WARNING -> {
+                Log.w("AndroidLog", "message=${log.message}")
             }
-            LogFilterKind.DEBUG -> {
-                Log.d("AndroidLog", "message=${log.message}$eventString")
+            LogKind.DEBUG -> {
+                Log.d("AndroidLog", "message=${log.message}")
             }
         }
     }
-
-    override fun flush() { }
 }
