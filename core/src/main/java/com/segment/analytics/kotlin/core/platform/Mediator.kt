@@ -51,7 +51,11 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
 
     fun applyClosure(closure: (Plugin) -> Unit) {
         plugins.forEach {
-            closure(it)
+            try {
+                closure(it)
+            } catch (t: Throwable) {
+                Analytics.segmentLog("Caught Exception applying closure to plugin: $it: $t")
+            }
         }
     }
 

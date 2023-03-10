@@ -8,9 +8,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.ConsoleLogger
-import com.segment.analytics.kotlin.core.platform.plugins.logger.Logger
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -87,7 +85,12 @@ open class Analytics protected constructor(
     constructor(configuration: Configuration) : this(configuration,
         object : CoroutineConfiguration {
             override val store = Store()
-            override val analyticsScope = CoroutineScope(SupervisorJob())
+            val exceptionHandler = CoroutineExceptionHandler { _, t ->
+                Analytics.segmentLog(
+                    "Caught Exception in Analytics Scope: ${t}"
+                )
+            }
+            override val analyticsScope = CoroutineScope(SupervisorJob() + exceptionHandler)
             override val analyticsDispatcher : CloseableCoroutineDispatcher =
                 Executors.newCachedThreadPool().asCoroutineDispatcher()
             override val networkIODispatcher : CloseableCoroutineDispatcher =
@@ -99,27 +102,31 @@ open class Analytics protected constructor(
     // This function provides a default state to the store & attaches the storage and store instances
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
-        // because startup queue doesn't depend on a state, we can add it first
-        add(StartupQueue())
-        add(ContextPlugin())
-        add(UserInfoPlugin())
+        try {
+            // because startup queue doesn't depend on a state, we can add it first
+            add(StartupQueue())
+            add(ContextPlugin())
+            add(UserInfoPlugin())
 
-        // Setup store
-        analyticsScope.launch(analyticsDispatcher) {
-            store.also {
-                // load memory with initial value
-                it.provide(userInfo)
-                it.provide(System.defaultState(configuration, storage))
+            // Setup store
+            analyticsScope.launch(analyticsDispatcher) {
+                store.also {
+                    // load memory with initial value
+                    it.provide(userInfo)
+                    it.provide(System.defaultState(configuration, storage))
 
-                // subscribe to store after state is provided
-                storage.subscribeToStore()
+                    // subscribe to store after state is provided
+                    storage.subscribeToStore()
+                }
+
+                if (configuration.autoAddSegmentDestination) {
+                    add(SegmentDestination())
+                }
+
+                checkSettings()
             }
-
-            if (configuration.autoAddSegmentDestination) {
-                add(SegmentDestination())
-            }
-
-            checkSettings()
+        } catch (t: Throwable) {
+            Analytics.segmentLog("Caught Exception in build(): $t")
         }
     }
 

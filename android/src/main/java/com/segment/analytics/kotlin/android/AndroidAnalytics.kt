@@ -50,6 +50,7 @@ public fun Analytics(
     context: Context,
     configs: Configuration.() -> Unit
 ): Analytics {
+    Analytics.setLogger(AndroidLogger())
     require(writeKey.isNotBlank()) { "writeKey cannot be blank " }
     val conf = Configuration(
         writeKey = writeKey,
@@ -66,7 +67,6 @@ public fun Analytics(
 private fun Analytics.startup() {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
-    Analytics.setLogger(AndroidLogger())
 }
 
 /**
