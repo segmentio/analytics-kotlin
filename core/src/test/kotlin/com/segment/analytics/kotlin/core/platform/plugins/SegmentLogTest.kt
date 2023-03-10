@@ -1,20 +1,8 @@
 package com.segment.analytics.kotlin.core.platform.plugins
 
 import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.Configuration
-import com.segment.analytics.kotlin.core.Settings
-import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
-import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.core.utils.testAnalytics
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicBoolean
@@ -22,16 +10,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class SegmentLogTest {
 
     @Test
-    fun `can call segmentLog() without an analytics reference`() {
+    fun `can call segmentLog() `() {
         val parseLogCalled = AtomicBoolean(false)
-        val testLogger = object : LogTarget {
+        val testLogger = object : Logger {
             override fun parseLog(log: LogMessage) {
-                if (log.message.contains("test") && log.kind == LogFilterKind.ERROR) {
+                if (log.message.contains("test") && log.kind == LogKind.ERROR) {
                     parseLogCalled.set(true)
                 }
             }
         }
-        Analytics.staticLogTarget = testLogger
+        Analytics.logger = testLogger
 
         Analytics.segmentLog("test")
 
@@ -44,18 +32,18 @@ internal class SegmentLogTest {
         val parseLogWarnCalled = AtomicBoolean(false)
         val parseLogDebugCalled = AtomicBoolean(false)
 
-        val testLogger = object: LogTarget {
+        val testLogger = object: Logger {
             override fun parseLog(log: LogMessage) {
 
                 if (log.message.contains("test")) {
                     when (log.kind) {
-                        LogFilterKind.ERROR -> {
+                        LogKind.ERROR -> {
                             parseLogErrorCalled.set(true)
                         }
-                        LogFilterKind.WARNING -> {
+                        LogKind.WARNING -> {
                             parseLogWarnCalled.set(true)
                         }
-                        LogFilterKind.DEBUG -> {
+                        LogKind.DEBUG -> {
                             parseLogDebugCalled.set(true)
                         }
                     }
@@ -63,12 +51,12 @@ internal class SegmentLogTest {
             }
         }
 
-        Analytics.staticLogTarget = testLogger
+        Analytics.logger = testLogger
         Analytics.debugLogsEnabled = true
 
         Analytics.segmentLog("test") // Default LogFilterKind is ERROR
-        Analytics.segmentLog("test", kind = LogFilterKind.WARNING)
-        Analytics.segmentLog("test", kind = LogFilterKind.DEBUG)
+        Analytics.segmentLog("test", kind = LogKind.WARNING)
+        Analytics.segmentLog("test", kind = LogKind.DEBUG)
 
         assertTrue(parseLogErrorCalled.get())
         assertTrue(parseLogWarnCalled.get())
@@ -80,17 +68,17 @@ internal class SegmentLogTest {
 
         var logSent = AtomicBoolean(false)
 
-        val testLogger = object : LogTarget {
+        val testLogger = object : Logger {
             override fun parseLog(log: LogMessage) {
                 logSent.set(true)
             }
         }
 
-        Analytics.staticLogTarget = testLogger
+        Analytics.logger = testLogger
 
         // Turn ON debug logs
         Analytics.debugLogsEnabled = true
-        Analytics.segmentLog("test", kind = LogFilterKind.DEBUG)
+        Analytics.segmentLog("test", kind = LogKind.DEBUG)
 
         assertTrue(logSent.get())
 
@@ -98,7 +86,7 @@ internal class SegmentLogTest {
         Analytics.debugLogsEnabled = false
         logSent.set(false)
 
-        Analytics.segmentLog("test", kind = LogFilterKind.DEBUG)
+        Analytics.segmentLog("test", kind = LogKind.DEBUG)
         assertFalse(logSent.get())
     }
 }

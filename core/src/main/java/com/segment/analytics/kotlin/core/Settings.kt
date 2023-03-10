@@ -2,7 +2,7 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.utilities.LenientJson
@@ -114,7 +114,7 @@ internal fun Analytics.fetchSettings(
 } catch (ex: Exception) {
     Analytics.segmentLog(
         "${ex.message}: failed to fetch settings",
-        kind = LogFilterKind.ERROR
+        kind = LogKind.ERROR
     )
     null
 }

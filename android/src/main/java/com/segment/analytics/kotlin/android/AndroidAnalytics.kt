@@ -66,7 +66,7 @@ public fun Analytics(
 private fun Analytics.startup() {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
-    setLogTarget(AndroidLogTarget())
+    Analytics.setLogger(AndroidLogger())
 }
 
 /**
@@ -83,17 +83,17 @@ fun Analytics.openUrl(referrer: String?, intent: Intent?) {
     DeepLinkUtils(this).trackDeepLinkFrom(referrer, intent)
 }
 
-class AndroidLogTarget: LogTarget {
+class AndroidLogger: Logger {
     override fun parseLog(log: LogMessage) {
 
         when (log.kind) {
-            LogFilterKind.ERROR -> {
+            LogKind.ERROR -> {
                 Log.e("AndroidLog", "message=${log.message}")
             }
-            LogFilterKind.WARNING -> {
+            LogKind.WARNING -> {
                 Log.w("AndroidLog", "message=${log.message}")
             }
-            LogFilterKind.DEBUG -> {
+            LogKind.DEBUG -> {
                 Log.d("AndroidLog", "message=${log.message}")
             }
         }
