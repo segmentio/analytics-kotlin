@@ -8,9 +8,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.ConsoleLogger
-import com.segment.analytics.kotlin.core.platform.plugins.logger.Logger
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -87,7 +85,12 @@ open class Analytics protected constructor(
     constructor(configuration: Configuration) : this(configuration,
         object : CoroutineConfiguration {
             override val store = Store()
-            override val analyticsScope = CoroutineScope(SupervisorJob())
+            val exceptionHandler = CoroutineExceptionHandler { _, t ->
+                Analytics.segmentLog(
+                    "Caught Exception in Analytics Scope: ${t}"
+                )
+            }
+            override val analyticsScope = CoroutineScope(SupervisorJob() + exceptionHandler)
             override val analyticsDispatcher : CloseableCoroutineDispatcher =
                 Executors.newCachedThreadPool().asCoroutineDispatcher()
             override val networkIODispatcher : CloseableCoroutineDispatcher =
