@@ -12,6 +12,7 @@ import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.assertDoesNotThrow
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -58,5 +59,23 @@ class PluginTests {
         val result = timeline.process(trackEvent)
         Assertions.assertEquals(trackEvent, result)
         verify(exactly = 1) { plugin.execute(trackEvent) }
+    }
+
+    @Test
+    fun `throwing exception in setup() is handled in timeline`() {
+        val plugin = object : Plugin {
+            override val type: Plugin.Type = Plugin.Type.Before
+            override lateinit var analytics: Analytics
+            override fun setup(analytics: Analytics) {
+                super.setup(analytics)
+                throw Exception("Boom!")
+            }
+        }
+        val spy = spyk(plugin)
+        assertDoesNotThrow {
+            timeline.add(spy)
+        }
+        verify(exactly = 1) { spy.setup(mockAnalytics) }
+        Assertions.assertTrue(spy.analytics === mockAnalytics)
     }
 }

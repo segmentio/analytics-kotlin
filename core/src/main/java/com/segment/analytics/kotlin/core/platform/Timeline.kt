@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.platform
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
@@ -60,7 +61,11 @@ internal class Timeline {
 
     // Register a new plugin
     fun add(plugin: Plugin) {
-        plugin.setup(analytics)
+        try {
+            plugin.setup(analytics)
+        } catch (t: Throwable) {
+            Analytics.segmentLog("Caught Exception while setting up plugin $plugin: $t")
+        }
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {

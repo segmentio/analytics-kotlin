@@ -102,31 +102,27 @@ open class Analytics protected constructor(
     // This function provides a default state to the store & attaches the storage and store instances
     // Initiates the initial call to settings and adds default system plugins
     internal fun build() {
-        try {
-            // because startup queue doesn't depend on a state, we can add it first
-            add(StartupQueue())
-            add(ContextPlugin())
-            add(UserInfoPlugin())
+        // because startup queue doesn't depend on a state, we can add it first
+        add(StartupQueue())
+        add(ContextPlugin())
+        add(UserInfoPlugin())
 
-            // Setup store
-            analyticsScope.launch(analyticsDispatcher) {
-                store.also {
-                    // load memory with initial value
-                    it.provide(userInfo)
-                    it.provide(System.defaultState(configuration, storage))
+        // Setup store
+        analyticsScope.launch(analyticsDispatcher) {
+            store.also {
+                // load memory with initial value
+                it.provide(userInfo)
+                it.provide(System.defaultState(configuration, storage))
 
-                    // subscribe to store after state is provided
-                    storage.subscribeToStore()
-                }
-
-                if (configuration.autoAddSegmentDestination) {
-                    add(SegmentDestination())
-                }
-
-                checkSettings()
+                // subscribe to store after state is provided
+                storage.subscribeToStore()
             }
-        } catch (t: Throwable) {
-            Analytics.segmentLog("Caught Exception in build(): $t")
+
+            if (configuration.autoAddSegmentDestination) {
+                add(SegmentDestination())
+            }
+
+            checkSettings()
         }
     }
 
