@@ -54,6 +54,7 @@ class EventFragment(val type: EventType, val analytics: Analytics) : Fragment() 
                 EventType.Identify -> sendIdentify(userId = input, traits = properties)
                 EventType.Screen -> sendScreen(screenName = input, props = properties)
                 EventType.Group -> sendGroup(groupId = input, traits = properties)
+                else -> println("Type not supported: $type")
             }
         }
 
