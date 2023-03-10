@@ -26,7 +26,7 @@ class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {
         } catch (e: Exception) {
             Analytics.segmentLog(
                 "Unable to track screen view for ${activity.toString()}",
-                kind = LogFilterKind.ERROR
+                kind = LogKind.ERROR
             )
         }
     }
