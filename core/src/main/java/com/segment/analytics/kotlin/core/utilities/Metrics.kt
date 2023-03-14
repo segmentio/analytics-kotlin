@@ -1,26 +1,19 @@
 package com.segment.analytics.kotlin.core.utilities
 
 import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Constants
 import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.compat.Builders
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
+import java.io.BufferedInputStream
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
-
-/*
-export interface MetricsOptions {
-  host: string;
-  flushTimer: number;
-  maxQueueSize: number;
-  sampleRate: number;
-}
- */
 
 data class MetricsOptions(
     val host: String,
@@ -31,11 +24,9 @@ data class MetricsOptions(
 )
 
 
-
-
 data class Metric(
-    val metric: String,
-    val value: String,
+    val metric: MetricName,
+    val value: Int,
     val type: MetricsType = MetricsType.Counter,
     val tags: JsonObject = emptyJsonObject
 )
@@ -45,19 +36,30 @@ enum class MetricsType() {
     Counter
 }
 
+enum class MetricName(val value: String) {
+    Invoke("invoke"),
+    InvokeError("invoke.error"),
+    IntegrationInvoke("integration.invoke"),
+    IntegrationInvokeError("integration.invoke.error")
+}
+
 
 fun Metric.toJson(): JsonElement {
     val result = Builders.JsonObjectBuilder()
 
-    result.put("metric", metric)
+    result.put("metric", "analytics_mobile." + metric.value)
     result.put("value", value)
     result.put("type", type.name)
-    result.putJsonObject("tags") { tags }
+    result.putJsonObject("tags") { builder ->
+        tags.forEach {
+            builder.put(it.key, it.value)
+        }
+    }
 
     return result.build()
 }
 
-fun List<Metric>.toMetricsJson(): JsonArray {
+fun CopyOnWriteArrayList<Metric>.toMetricsJson(): JsonArray {
     val content = mutableListOf<JsonElement>()
     forEach {
         content.add(it.toJson())
@@ -69,7 +71,7 @@ fun List<Metric>.toMetricsJson(): JsonArray {
 class Metrics(options: MetricsOptions) {
 
     companion object {
-        val defaultOptions = MetricsOptions("api.segment.com", "m", 5000, 5, 0.10)
+        val defaultOptions = MetricsOptions( Constants.DEFAULT_API_HOST, "m", 30000, 5, 0.10)
     }
 
     private val metricsDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
@@ -121,7 +123,10 @@ class Metrics(options: MetricsOptions) {
                 flushJob = launch {
                     println("METRIC: Starting flush job..")
                     while (isActive) {
-                        flush()
+                        println("METRIC: Checking for queued up metrics...")
+                        if (queue.size > 0) {
+                            flush()
+                        }
                         delay(flushAt)
                     }
                     println("METRIC: Flush job finishing..")
@@ -132,41 +137,60 @@ class Metrics(options: MetricsOptions) {
         }
     }
 
-    fun flush() {
-        metricsScope.launch {
-            if (queue.size >= maxQueueSize) {
-                println("METRIC: flushing at: ${Date()}...")
-                upload(queue)
-            } else {
-                println("METRIC: Nothing to flush at ${Date()}...")
-            }
+    suspend fun flush() {
+        withContext(metricsScope.coroutineContext) {
+            println("METRIC: trying to flush at ${Date()}...")
+            println("METRIC: queue size before flush: ${queue.size}")
+            upload(queue)
+            println("METRIC: queue size after flush: ${queue.size}")
         }
     }
 
     // HMMM... metrics list could be VERY long...what to do?
-    internal suspend fun upload(metrics: List<Metric>) {
+    internal suspend fun upload(metrics: CopyOnWriteArrayList<Metric>) {
         withContext(metricsScope.coroutineContext) {
 
+            println("METRIC: uploading ${metrics.size} metric(s) at ${Date()}...")
 
-            val requestProperties = mapOf<String, String>()
+            val requestProperties = mutableMapOf<String, String>()
+            requestProperties.put("Content-Type","text/plain")
+//            requestProperties.put("Content-Type","application/json")
 
-            // TODO: Refactor need for writekey??
-            val conn = HTTPClient("foo").upload(host, path, requestProperties)
+            val conn = HTTPClient.upload(host, path, requestProperties)
 
-            val metricsString = metrics.toMetricsJson().toString()
+            val metricJsonArray = metrics.toMetricsJson()
+            println("METRIC: metricJsonArray.isEmpty(): ${metricJsonArray.isEmpty()}")
 
-            println("METRIC: uploading metricsString:\n$metricsString")
+            if (metricJsonArray.isNotEmpty()) {
+                val metricsString = "{ \"series\": $metricJsonArray }"
 
-            try {
-                conn.outputStream?.let {
-                    metricsString.byteInputStream().copyTo(it)
-                    it.close()
+                println("METRIC: uploading metricsString:\n$metricsString")
 
-                    // Delete metrics
-                    metrics.dropLast(metrics.size)
+                try {
+                    conn.outputStream?.let {
+                        metricsString.byteInputStream().copyTo(it)
+                        it.close()
+
+                        println("METRIC: ${conn.connection.requestMethod}")
+                        println("METRIC: ${conn.connection.url}")
+                        println("METRIC: ${conn.connection.headerFields}")
+                        println("METRIC: ${conn.connection.responseMessage}")
+                        println("METRIC: response code: ${conn.connection.responseCode}")
+
+                        conn.inputStream?.let { inputStream ->
+                             val bin = BufferedInputStream(inputStream)
+                             println("METRIC: response: ${bin}")
+                        }
+
+                        it.close()
+                        // Delete metrics
+                        metrics.clear()
+                    }
+                } catch (t: Throwable) {
+                    println("METRIC: Caught Exception in metric upload: $t")
                 }
-            } catch (t: Throwable) {
-                println("METRIC: Caught Exception in metric upload: $t")
+            } else {
+                println("METRIC: Skipping empty upload")
             }
         }
     }
@@ -174,10 +198,13 @@ class Metrics(options: MetricsOptions) {
     fun add(metric: Metric) {
         metricsScope.launch {
             queue.add(metric)
-
-            if (metric.type == MetricsType.Error) {
+            println("METRIC: ADD $metric")
+            if (metric.metric.value.contains("error")) {
                 println("METRIC: metric was error! flush it now!")
                 // we need flush now!
+                flush()
+            } else if (queue.size >= maxQueueSize) {
+                println("METRIC: reached max queue size. let's flush!")
                 flush()
             }
         }
