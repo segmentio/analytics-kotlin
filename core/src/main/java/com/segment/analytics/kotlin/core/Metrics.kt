@@ -1,15 +1,10 @@
-package com.segment.analytics.kotlin.core.utilities
+package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.Constants
-import com.segment.analytics.kotlin.core.HTTPClient
 import com.segment.analytics.kotlin.core.compat.Builders
-import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import java.io.BufferedInputStream
-import java.io.InputStream
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
@@ -74,7 +69,7 @@ class Metrics(options: MetricsOptions) {
         val defaultOptions = MetricsOptions( Constants.DEFAULT_API_HOST, "m", 30000, 5, 0.10)
     }
 
-    private val metricsDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
+    private val metricsDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         Analytics.segmentLog("METRIC: Caught Exception in metrics scope: $throwable")
     }

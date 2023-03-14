@@ -2,8 +2,12 @@ package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.compat.Builders
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.Metric
+import com.segment.analytics.kotlin.core.MetricName
+import com.segment.analytics.kotlin.core.MetricsType
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
@@ -42,6 +46,8 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                 } catch (t: Throwable) {
                     Analytics.segmentLog("Caught Exception in plugin: $t", kind = LogKind.ERROR)
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
+                    val tags = Builders.buildJsonObjectFunc { put("test", "foo") }
+                    Analytics.metrics.add(Metric(MetricName.InvokeError, 1, MetricsType.Counter, tags))
                 }
             }
         }
