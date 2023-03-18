@@ -3,11 +3,17 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.compat.Builders
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.json.*
 import java.io.BufferedInputStream
 import java.util.*
+import java.util.concurrent.BlockingDeque
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 
 data class MetricsOptions(
@@ -17,7 +23,6 @@ data class MetricsOptions(
     val maxQueueSize: Int = 5,
     val sampleRate: Double = 0.1
 )
-
 
 data class Metric(
     val metric: MetricName,
@@ -31,6 +36,8 @@ enum class MetricsType() {
     Counter
 }
 
+private val metricNamePrefix = "analytics_mobile."
+
 enum class MetricName(val value: String) {
     Invoke("invoke"),
     InvokeError("invoke.error"),
@@ -38,11 +45,10 @@ enum class MetricName(val value: String) {
     IntegrationInvokeError("integration.invoke.error")
 }
 
-
 fun Metric.toJson(): JsonElement {
     val result = Builders.JsonObjectBuilder()
 
-    result.put("metric", "analytics_mobile." + metric.value)
+    result.put("metric", metricNamePrefix + metric.value)
     result.put("value", value)
     result.put("type", type.name)
     result.putJsonObject("tags") { builder ->
@@ -54,7 +60,7 @@ fun Metric.toJson(): JsonElement {
     return result.build()
 }
 
-fun CopyOnWriteArrayList<Metric>.toMetricsJson(): JsonArray {
+fun List<Metric>.toMetricsJson(): JsonArray {
     val content = mutableListOf<JsonElement>()
     forEach {
         content.add(it.toJson())
@@ -66,16 +72,15 @@ fun CopyOnWriteArrayList<Metric>.toMetricsJson(): JsonArray {
 class Metrics(options: MetricsOptions) {
 
     companion object {
-        val defaultOptions = MetricsOptions( Constants.DEFAULT_API_HOST, "m", 30000, 5, 0.10)
+        val defaultOptions = MetricsOptions(Constants.DEFAULT_API_HOST, "m", 30000, 5, 0.10)
     }
 
-    private val metricsDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
+    private var flushJob: Job? = null
+    private val metricsDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         Analytics.segmentLog("METRIC: Caught Exception in metrics scope: $throwable")
     }
     private val metricsScope = CoroutineScope(Job() + exceptionHandler + metricsDispatcher)
-
-    private var flushJob: Job? = null
 
     lateinit var host: String
     lateinit var path: String
@@ -83,11 +88,13 @@ class Metrics(options: MetricsOptions) {
     var maxQueueSize: Int = 5
     var sampleRate: Double = 0.10
 
-    var queue = CopyOnWriteArrayList<Metric>()
+    val uploadChannel = Channel<Metric>()
+    var queueSize = AtomicInteger(0)
 
     init {
         configure(options)
         scheduleFlush(this.flushAt)
+        collect(uploadChannel)
     }
 
     private fun configure(options: MetricsOptions) {
@@ -119,9 +126,9 @@ class Metrics(options: MetricsOptions) {
                     println("METRIC: Starting flush job..")
                     while (isActive) {
                         println("METRIC: Checking for queued up metrics...")
-                        if (queue.size > 0) {
-                            flush()
-                        }
+
+                        flush()
+
                         delay(flushAt)
                     }
                     println("METRIC: Flush job finishing..")
@@ -135,73 +142,83 @@ class Metrics(options: MetricsOptions) {
     suspend fun flush() {
         withContext(metricsScope.coroutineContext) {
             println("METRIC: trying to flush at ${Date()}...")
-            println("METRIC: queue size before flush: ${queue.size}")
-            upload(queue)
-            println("METRIC: queue size after flush: ${queue.size}")
+            upload(metricList, queueSize)
         }
     }
 
-    // HMMM... metrics list could be VERY long...what to do?
-    internal suspend fun upload(metrics: CopyOnWriteArrayList<Metric>) {
-        withContext(metricsScope.coroutineContext) {
+    private val metricList = CopyOnWriteArrayList<Metric>()
+    internal fun collect(metricsChannel: Channel<Metric>) {
+        metricsScope.launch {
+            metricsChannel.consumeEach {
+                metricList.add(it)
 
-            println("METRIC: uploading ${metrics.size} metric(s) at ${Date()}...")
+                val currentQueueSize = queueSize.incrementAndGet()
+                if (currentQueueSize >= maxQueueSize) {
+                    upload(metricList, queueSize)
+                } else if (it.metric.value.contains("error")) {
+                    upload(metricList, queueSize)
+                }
+            }
+        }
+    }
+
+
+    // HMMM... metrics list could be VERY long...what to do?
+    internal fun upload(metricList: CopyOnWriteArrayList<Metric>, queueSize: AtomicInteger) = synchronized(metricList) {
+
+        println("METRIC: trying upload...")
+        println("METRIC: metricList.size: ${metricList.size}")
+
+        if (metricList.size > 0) {
+            println("METRIC: uploading ${metricList.size} metric(s) at ${Date()}...")
 
             val requestProperties = mutableMapOf<String, String>()
-            requestProperties.put("Content-Type","text/plain")
-//            requestProperties.put("Content-Type","application/json")
+            requestProperties.put("Content-Type", "text/plain")
 
             val conn = HTTPClient.upload(host, path, requestProperties)
 
-            val metricJsonArray = metrics.toMetricsJson()
+            val metricJsonArray = metricList.toMetricsJson()
             println("METRIC: metricJsonArray.isEmpty(): ${metricJsonArray.isEmpty()}")
 
-            if (metricJsonArray.isNotEmpty()) {
-                val metricsString = "{ \"series\": $metricJsonArray }"
 
-                println("METRIC: uploading metricsString:\n$metricsString")
+            val metricsString = "{ \"series\": $metricJsonArray }"
 
-                try {
-                    conn.outputStream?.let {
-                        metricsString.byteInputStream().copyTo(it)
-                        it.close()
+            println("METRIC: uploading metricsString:\n$metricsString")
 
-                        println("METRIC: ${conn.connection.requestMethod}")
-                        println("METRIC: ${conn.connection.url}")
-                        println("METRIC: ${conn.connection.headerFields}")
-                        println("METRIC: ${conn.connection.responseMessage}")
-                        println("METRIC: response code: ${conn.connection.responseCode}")
+            try {
+                conn.outputStream?.let {
+                    metricsString.byteInputStream().copyTo(it)
+                    it.close()
 
-                        conn.inputStream?.let { inputStream ->
-                             val bin = BufferedInputStream(inputStream)
-                             println("METRIC: response: ${bin}")
-                        }
+                    println("METRIC: ${conn.connection.requestMethod}")
+                    println("METRIC: ${conn.connection.url}")
+                    println("METRIC: ${conn.connection.headerFields}")
+                    println("METRIC: ${conn.connection.responseMessage}")
+                    println("METRIC: response code: ${conn.connection.responseCode}")
 
-                        it.close()
-                        // Delete metrics
-                        metrics.clear()
+                    conn.inputStream?.let { inputStream ->
+                        val bin = BufferedInputStream(inputStream)
+                        println("METRIC: response: ${bin}")
                     }
-                } catch (t: Throwable) {
-                    println("METRIC: Caught Exception in metric upload: $t")
+
+                    it.close()
+
+
+                    metricList.clear()
+                    queueSize.set(0)
                 }
-            } else {
-                println("METRIC: Skipping empty upload")
+            } catch (t: Throwable) {
+                println("METRIC: Caught Exception in metric upload: $t")
             }
+        } else {
+            println("METRIC: Skipping empty upload")
         }
     }
 
     fun add(metric: Metric) {
+        println("METRIC: trying to add($metric)")
         metricsScope.launch {
-            queue.add(metric)
-            println("METRIC: ADD $metric")
-            if (metric.metric.value.contains("error")) {
-                println("METRIC: metric was error! flush it now!")
-                // we need flush now!
-                flush()
-            } else if (queue.size >= maxQueueSize) {
-                println("METRIC: reached max queue size. let's flush!")
-                flush()
-            }
+            uploadChannel.send(metric)
         }
     }
 

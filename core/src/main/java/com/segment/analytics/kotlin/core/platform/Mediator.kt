@@ -47,6 +47,8 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                     Analytics.segmentLog("Caught Exception in plugin: $t", kind = LogKind.ERROR)
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
                     val tags = Builders.buildJsonObjectFunc { put("test", "foo") }
+                    Analytics.metrics.add(Metric(MetricName.Invoke, 1, MetricsType.Counter, tags))
+                    Analytics.metrics.add(Metric(MetricName.Invoke, 1, MetricsType.Counter, tags))
                     Analytics.metrics.add(Metric(MetricName.InvokeError, 1, MetricsType.Counter, tags))
                 }
             }
