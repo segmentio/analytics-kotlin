@@ -37,6 +37,7 @@ interface Storage {
         Events("segment.events"),
         AppVersion("segment.app.version"),
         AppBuild("segment.app.build"),
+        LegacyAppBuild("build"),
         DeviceId("segment.device.id")
     }
 
