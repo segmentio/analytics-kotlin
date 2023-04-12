@@ -228,9 +228,10 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         // Get the previous recorded version.
         val previousVersion = storage.read(Storage.Constants.AppVersion)
         val previousBuild = storage.read(Storage.Constants.AppBuild)
+        val legacyPreviousBuild = storage.read(Storage.Constants.LegacyAppBuild)
 
         // Check and track Application Installed or Application Updated.
-        if (previousBuild == null) {
+        if (previousBuild == null && legacyPreviousBuild == null) {
             analytics.track(
                 "Application Installed",
                 buildJsonObject {
