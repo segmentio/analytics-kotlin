@@ -89,6 +89,7 @@ open class Analytics protected constructor(
                 Analytics.segmentLog(
                     "Caught Exception in Analytics Scope: ${t}"
                 )
+                t.printStackTrace()
             }
             override val analyticsScope = CoroutineScope(SupervisorJob() + exceptionHandler)
             override val analyticsDispatcher : CloseableCoroutineDispatcher =

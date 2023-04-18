@@ -3,7 +3,8 @@ package com.segment.analytics.kotlin.core.utilities
 import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import java.io.FileOutputStream
-import java.time.Instant
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * Responsible for storing events in a batch payload style
@@ -134,7 +135,9 @@ class EventsFileManager(
             return
         }
         // close events array and batch object
-        val contents = """],"sentAt":"${Instant.now()}","writeKey":"$writeKey"}"""
+
+
+        val contents = """],"sentAt":"${dateTimeNowString()}","writeKey":"$writeKey"}"""
         writeToFile(contents.toByteArray(), file)
         file.renameTo(File(directory, file.nameWithoutExtension))
         os?.close()

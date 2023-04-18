@@ -26,6 +26,9 @@ internal class EventsFileManagerTest{
     init {
         mockkStatic(Instant::class)
         every { Instant.now() } returns Date(0).toInstant()
+
+        mockkStatic(::dateTimeNowString)
+        every { dateTimeNowString() } returns Date(0).toInstant().toString()
     }
 
     @BeforeEach
