@@ -1,14 +1,11 @@
 package com.segment.analytics.kotlin.core
 
-//import kotlinx.datetime.Instant
-//import kotlinx.datetime.LocalDate
 import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import sovran.kotlin.Store
-import java.text.SimpleDateFormat
 import java.util.*
 
 typealias AnalyticsContext = JsonObject
