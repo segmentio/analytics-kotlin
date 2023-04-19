@@ -6,6 +6,7 @@ import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.EventsFileManager
+import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
 import io.mockk.every
 import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
@@ -32,6 +33,8 @@ class EventsFileTests {
 
     init {
         mockkStatic(Instant::class)
+        mockkStatic(::dateTimeNowString)
+        every { dateTimeNowString() } returns Date(0).toInstant().toString()
         every { Instant.now() } returns Date(0).toInstant()
     }
 
