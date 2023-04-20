@@ -1,16 +1,11 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import sovran.kotlin.Store
-import java.time.Instant
 import java.util.*
 
 typealias AnalyticsContext = JsonObject
@@ -20,18 +15,6 @@ typealias Traits = JsonObject
 
 val emptyJsonObject = JsonObject(emptyMap())
 val emptyJsonArray = JsonArray(emptyList())
-
-class DateSerializer : KSerializer<Instant> {
-    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
-
-    override fun deserialize(decoder: Decoder): Instant {
-        return Instant.parse(decoder.decodeString())
-    }
-
-    override fun serialize(encoder: Encoder, value: Instant) {
-        encoder.encodeString(value.toString())
-    }
-}
 
 @Serializable
 data class DestinationMetadata(
@@ -97,7 +80,7 @@ sealed class BaseEvent {
     }
 
     internal fun applyBaseData() {
-        this.timestamp = Instant.now().toString()
+        this.timestamp = dateTimeNowString()
         this.context = emptyJsonObject
         this.messageId = UUID.randomUUID().toString()
     }
