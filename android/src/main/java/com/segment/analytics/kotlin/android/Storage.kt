@@ -71,6 +71,17 @@ class AndroidStorage(
             Storage.Constants.Events -> {
                 eventsFile.read().joinToString()
             }
+            Storage.Constants.LegacyAppBuild -> {
+                // The legacy app build number was stored as an integer so we have to get it
+                // as an integer and convert it to a String.
+                val noBuild = -1
+                val build = sharedPreferences.getInt(key.rawVal, noBuild)
+                if (build != noBuild) {
+                    return build.toString()
+                } else {
+                    return null
+                }
+            }
             else -> {
                 sharedPreferences.getString(key.rawVal, null)
             }
