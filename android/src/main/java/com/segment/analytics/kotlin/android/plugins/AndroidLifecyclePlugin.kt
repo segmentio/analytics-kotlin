@@ -7,8 +7,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.ParseException
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
+import android.os.*
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
@@ -69,7 +68,12 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         application.registerActivityLifecycleCallbacks(this)
         if (useLifecycleObserver) {
             lifecycle = ProcessLifecycleOwner.get().lifecycle
-            lifecycle.addObserver(this)
+            // NOTE: addObserver is required to run on UI thread,
+            // though we made it compatible to run from background thread,
+            // there is a chance that lifecycle events get lost if init
+            // analytics from background (i.e. analytics is init, but
+            // lifecycle hook is yet to be registered.
+            run(Runnable { lifecycle.addObserver(this) })
         }
     }
 
@@ -260,14 +264,25 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         application.unregisterActivityLifecycleCallbacks(this)
         if (useLifecycleObserver) {
             // only unregister if feature is enabled
-            lifecycle.removeObserver(this)
+            run(Runnable { lifecycle.removeObserver(this) })
+        }
+    }
+    private fun run(runnable: Runnable) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            runnable.run()
+        } else {
+            HANDLER.post(runnable)
         }
     }
 
     companion object {
         private const val VERSION_KEY = "version"
         private const val BUILD_KEY = "build"
-
+        val HANDLER: Handler = object : Handler(Looper.getMainLooper()) {
+            override fun handleMessage(msg: Message) {
+                throw AssertionError("Handler message received: ${msg.what}")
+            }
+        }
         // This is just a stub LifecycleOwner which is used when we need to call some lifecycle
         // methods without going through the actual lifecycle callbacks
         private val stubOwner: LifecycleOwner = object : LifecycleOwner {
