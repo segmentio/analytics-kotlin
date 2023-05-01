@@ -66,9 +66,10 @@ Explore more via the [example projects](samples) which showcase analytics instru
 ## Compatibility
 
 * If you use pure Java codebase, please refer to [Java Compatibility](JAVA_COMPAT.md) for sample usages.
-* The SDK internally uses a number of Java 8 language API through desugaring (see [Java 8+ API desugaring support](https://developer.android.com/studio/write/java8-support#library-desugaring)). Please make sure your project:
+* If you use the SDK version prior to `1.10.4`, the SDK internally uses a number of Java 8 language API through desugaring (see [Java 8+ API desugaring support](https://developer.android.com/studio/write/java8-support#library-desugaring)). Please make sure your project:
   * either using Android Gradle plugin 4.0.0 or higher
   * or requiring a minimum API level of 26.
+  * or upgrade the SDK version to latest
 
 
 ## Contributing
