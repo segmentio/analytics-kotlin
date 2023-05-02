@@ -7,7 +7,8 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.ParseException
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
@@ -17,6 +18,7 @@ import com.segment.analytics.kotlin.android.utilities.DeepLinkUtils
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.platform.Plugin
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -73,7 +75,9 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
             // there is a chance that lifecycle events get lost if init
             // analytics from background (i.e. analytics is init, but
             // lifecycle hook is yet to be registered.
-            run(Runnable { lifecycle.addObserver(this) })
+            runOnMainThread {
+                lifecycle.addObserver(this)
+            }
         }
     }
 
@@ -264,25 +268,21 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         application.unregisterActivityLifecycleCallbacks(this)
         if (useLifecycleObserver) {
             // only unregister if feature is enabled
-            run(Runnable { lifecycle.removeObserver(this) })
+            runOnMainThread {
+                lifecycle.removeObserver(this)
+            }
         }
     }
-    private fun run(runnable: Runnable) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            runnable.run()
-        } else {
-            HANDLER.post(runnable)
+    private fun runOnMainThread(closure: () -> Unit) {
+        analytics.analyticsScope.launch(Dispatchers.Main) {
+            closure()
         }
     }
 
     companion object {
         private const val VERSION_KEY = "version"
         private const val BUILD_KEY = "build"
-        val HANDLER: Handler = object : Handler(Looper.getMainLooper()) {
-            override fun handleMessage(msg: Message) {
-                throw AssertionError("Handler message received: ${msg.what}")
-            }
-        }
+
         // This is just a stub LifecycleOwner which is used when we need to call some lifecycle
         // methods without going through the actual lifecycle callbacks
         private val stubOwner: LifecycleOwner = object : LifecycleOwner {
