@@ -18,6 +18,7 @@ import com.segment.analytics.kotlin.android.utilities.DeepLinkUtils
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.platform.Plugin
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -69,7 +70,14 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         application.registerActivityLifecycleCallbacks(this)
         if (useLifecycleObserver) {
             lifecycle = ProcessLifecycleOwner.get().lifecycle
-            lifecycle.addObserver(this)
+            // NOTE: addObserver is required to run on UI thread,
+            // though we made it compatible to run from background thread,
+            // there is a chance that lifecycle events get lost if init
+            // analytics from background (i.e. analytics is init, but
+            // lifecycle hook is yet to be registered.
+            runOnMainThread {
+                lifecycle.addObserver(this)
+            }
         }
     }
 
@@ -260,7 +268,14 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         application.unregisterActivityLifecycleCallbacks(this)
         if (useLifecycleObserver) {
             // only unregister if feature is enabled
-            lifecycle.removeObserver(this)
+            runOnMainThread {
+                lifecycle.removeObserver(this)
+            }
+        }
+    }
+    private fun runOnMainThread(closure: () -> Unit) {
+        analytics.analyticsScope.launch(Dispatchers.Main) {
+            closure()
         }
     }
 
