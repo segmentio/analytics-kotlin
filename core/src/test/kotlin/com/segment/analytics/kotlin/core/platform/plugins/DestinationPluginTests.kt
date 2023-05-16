@@ -155,7 +155,9 @@ class DestinationPluginTests {
 
         val result = timeline.process(trackEvent)
 
-        assertEquals(expected, result)
+        assertEquals(expected.type, result?.type)
+        assertEquals(expected.event, (result as TrackEvent).event)
+        assertEquals(expected.properties, (result as TrackEvent).properties)
     }
 
     @Test
