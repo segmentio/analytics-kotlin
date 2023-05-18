@@ -30,14 +30,13 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
 
         plugins.forEach { plugin ->
             result?.let {
-                val copy = it.copy<BaseEvent>()
                 try {
                     when (plugin) {
                         is DestinationPlugin -> {
-                            plugin.execute(copy)
+                            plugin.execute(it)
                         }
                         else -> {
-                            result = plugin.execute(copy)
+                            result = plugin.execute(it)
                         }
                     }
                 } catch (t: Throwable) {
