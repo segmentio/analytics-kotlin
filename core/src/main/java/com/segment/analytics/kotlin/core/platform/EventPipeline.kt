@@ -186,7 +186,6 @@ internal class EventPipeline(
                     | msg=${e.message}
                 """.trimMargin(), kind = LogKind.ERROR
             )
-            e.printStackTrace()
         }
 
         return shouldCleanup
