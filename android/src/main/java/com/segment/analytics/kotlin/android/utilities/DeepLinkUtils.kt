@@ -21,10 +21,12 @@ class DeepLinkUtils(val analytics: Analytics) {
 
             val uri = intent.data
             uri?.let {
-                for (parameter in uri.queryParameterNames) {
-                    val value = uri.getQueryParameter(parameter)
-                    if (value != null && value.trim().isNotEmpty()) {
-                        put(parameter, value)
+                if (it.isHierarchical) {
+                    for (parameter in uri.queryParameterNames) {
+                        val value = uri.getQueryParameter(parameter)
+                        if (value != null && value.trim().isNotEmpty()) {
+                            put(parameter, value)
+                        }
                     }
                 }
                 put("url", uri.toString())
