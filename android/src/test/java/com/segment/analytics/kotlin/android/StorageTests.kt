@@ -59,7 +59,8 @@ class StorageTests {
                     configuration = Configuration("123"),
                     settings = Settings(),
                     running = false,
-                    initialSettingsDispatched = false
+                    initialSettingsDispatched = false,
+                    enabled = true
                 )
             )
 
@@ -115,7 +116,8 @@ class StorageTests {
                             edgeFunction = emptyJsonObject
                         ),
                         running = false,
-                        initialSettingsDispatched = false
+                        initialSettingsDispatched = false,
+                        enabled = true
                     )
                 }
             }
