@@ -19,9 +19,8 @@ class DeepLinkUtils(val analytics: Analytics) {
                 put("referrer", it)
             }
 
-            val uri = intent.data
-            uri?.let {
-                if (it.isHierarchical) {
+            intent.data?.let { uri ->
+                if (uri.isHierarchical) {
                     for (parameter in uri.queryParameterNames) {
                         val value = uri.getQueryParameter(parameter)
                         if (value != null && value.trim().isNotEmpty()) {
