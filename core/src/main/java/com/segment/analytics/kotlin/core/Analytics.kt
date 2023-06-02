@@ -55,6 +55,14 @@ open class Analytics protected constructor(
 
     internal var userInfo: UserInfo = UserInfo.defaultState(storage)
 
+    var enabled = true
+        set(value) {
+            field = value
+            analyticsScope.launch(analyticsDispatcher) {
+                store.dispatch(System.ToggleEnabledAction(value), System::class)
+            }
+        }
+
     companion object {
         var debugLogsEnabled: Boolean = false
 
@@ -465,6 +473,8 @@ open class Analytics protected constructor(
     }
 
     fun process(event: BaseEvent) {
+        if (!enabled) return
+
         event.applyBaseData()
 
         log("applying base attributes on ${Thread.currentThread().name}")

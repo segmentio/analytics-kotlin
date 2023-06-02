@@ -27,9 +27,9 @@ internal class EventPipeline(
     var apiHost: String = Constants.DEFAULT_API_HOST
 ) {
 
-    private val writeChannel: Channel<BaseEvent>
+    private var writeChannel: Channel<BaseEvent>
 
-    private val uploadChannel: Channel<String>
+    private var uploadChannel: Channel<String>
 
     private val httpClient: HTTPClient = HTTPClient(apiKey)
 
@@ -64,20 +64,30 @@ internal class EventPipeline(
     }
 
     fun start() {
+        if (running) return
         running = true
+
+        // avoid to re-establish a channel if the pipeline just gets created
+        if (writeChannel.isClosedForSend || writeChannel.isClosedForReceive) {
+            writeChannel = Channel(UNLIMITED)
+            uploadChannel = Channel(UNLIMITED)
+        }
+
         schedule()
         write()
         upload()
     }
 
     fun stop() {
+        if (!running) return
+        running = false
+
         uploadChannel.cancel()
         writeChannel.cancel()
         unschedule()
-        running = false
     }
 
-    fun stringifyBaseEvent(payload: BaseEvent): String {
+    internal fun stringifyBaseEvent(payload: BaseEvent): String {
         val finalPayload = EncodeDefaultsJson.encodeToJsonElement(payload)
             .jsonObject.filterNot { (k, v) ->
                 // filter out empty userId and traits values
