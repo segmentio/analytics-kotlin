@@ -1,14 +1,15 @@
 package com.segment.analytics.kotlin.core.utilities
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
+import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 
 class DateTimeUtilsTest {
 
     @Test
-    fun `dateTimeNowString() produces a string in the correct format`() {
+    fun `dateTimeNowString() produces a string in the correct ISO8601 format`() {
         val dateTimeNowString = dateTimeNowString()
-        val regex = Regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:\\d{2}\\.\\d{3}Z$")
-        assertTrue(regex.matches(dateTimeNowString))
+        val date = ISO_DATE_TIME.parse(dateTimeNowString)
+        assertNotNull(date)
     }
 }
