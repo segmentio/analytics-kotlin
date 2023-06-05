@@ -20,7 +20,8 @@ data class System(
     var configuration: Configuration = Configuration(""),
     var settings: Settings?,
     var running: Boolean,
-    var initialSettingsDispatched: Boolean
+    var initialSettingsDispatched: Boolean,
+    var enabled: Boolean
 ) : State {
 
     companion object {
@@ -37,7 +38,8 @@ data class System(
                 configuration = configuration,
                 settings = settings,
                 running = false,
-                initialSettingsDispatched = false
+                initialSettingsDispatched = false,
+                enabled = true
             )
         }
     }
@@ -48,7 +50,8 @@ data class System(
                 state.configuration,
                 settings,
                 state.running,
-                state.initialSettingsDispatched
+                state.initialSettingsDispatched,
+                state.enabled
             )
         }
     }
@@ -59,7 +62,8 @@ data class System(
                 state.configuration,
                 state.settings,
                 running,
-                state.initialSettingsDispatched
+                state.initialSettingsDispatched,
+                state.enabled
             )
         }
     }
@@ -77,7 +81,8 @@ data class System(
                 state.configuration,
                 newSettings,
                 state.running,
-                state.initialSettingsDispatched
+                state.initialSettingsDispatched,
+                state.enabled
             )
         }
     }
@@ -90,7 +95,20 @@ data class System(
                 state.configuration,
                 state.settings,
                 state.running,
-                dispatched
+                dispatched,
+                state.enabled
+            )
+        }
+    }
+
+    class ToggleEnabledAction(val enabled: Boolean): Action<System> {
+        override fun reduce(state: System): System {
+            return System(
+                state.configuration,
+                state.settings,
+                state.running,
+                state.initialSettingsDispatched,
+                enabled
             )
         }
     }

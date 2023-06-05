@@ -56,7 +56,8 @@ internal class StorageImplTest {
                 configuration = Configuration("123"),
                 settings = Settings(),
                 running = false,
-                initialSettingsDispatched = false
+                initialSettingsDispatched = false,
+                enabled = true
             )
         )
 
@@ -112,7 +113,8 @@ internal class StorageImplTest {
                         middlewareSettings = emptyJsonObject
                     ),
                     running = false,
-                    initialSettingsDispatched = false
+                    initialSettingsDispatched = false,
+                    enabled = true
                 )
             }
         }

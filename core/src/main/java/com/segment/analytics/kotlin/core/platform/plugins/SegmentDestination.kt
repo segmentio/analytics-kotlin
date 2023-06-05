@@ -8,7 +8,9 @@ import com.segment.analytics.kotlin.core.platform.VersionedPlugin
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import sovran.kotlin.Subscriber
 
 @Serializable
 data class SegmentSettings(
@@ -23,9 +25,9 @@ data class SegmentSettings(
  * - We store events into a file with the batch api format (@link {https://segment.com/docs/connections/sources/catalog/libraries/server/http-api/#batch})
  * - We upload events on a dedicated thread using the batch api
  */
-class SegmentDestination: DestinationPlugin(), VersionedPlugin {
+class SegmentDestination: DestinationPlugin(), VersionedPlugin, Subscriber {
 
-    private lateinit var pipeline: EventPipeline
+    private var pipeline: EventPipeline? = null
     var flushPolicies: List<FlushPolicy> = emptyList()
     override val key: String = "Segment.io"
 
@@ -56,7 +58,7 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin {
 
 
     private fun enqueue(payload: BaseEvent) {
-        pipeline.put(payload)
+        pipeline?.put(payload)
     }
 
     override fun setup(analytics: Analytics) {
@@ -83,7 +85,15 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin {
                 flushPolicies,
                 configuration.apiHost
             )
-            pipeline.start()
+
+            analyticsScope.launch(analyticsDispatcher) {
+                store.subscribe(
+                    subscriber = this@SegmentDestination,
+                    stateClazz = System::class,
+                    initialState = true,
+                    handler = this@SegmentDestination::onEnableToggled
+                )
+            }
         }
     }
 
@@ -92,16 +102,25 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin {
         if (settings.hasIntegrationSettings(this)) {
             // only populate the apiHost value if it exists
             settings.destinationSettings<SegmentSettings>(key)?.apiHost?.let {
-                pipeline.apiHost = it
+                pipeline?.apiHost = it
             }
         }
     }
 
     override fun flush() {
-        pipeline.flush()
+        pipeline?.flush()
     }
 
     override fun version(): String {
         return Constants.LIBRARY_VERSION
+    }
+
+    internal fun onEnableToggled(state: System) {
+        if (state.enabled) {
+            pipeline?.start()
+        }
+        else {
+            pipeline?.stop()
+        }
     }
 }
