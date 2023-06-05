@@ -16,15 +16,15 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
@@ -192,6 +192,29 @@ class AnalyticsTests {
                 .process(TrackEvent(event = "track", properties = emptyJsonObject))
             assertTrue(testPlugin1.ran)
             assertTrue(testPlugin2.ran)
+        }
+
+
+
+        @Test
+        fun `Can manually enable DestinationPlugin`() = runBlocking{
+            val plugin = object : DestinationPlugin() {
+                override val type: Plugin.Type = Plugin.Type.Destination
+                override lateinit var analytics: Analytics
+                override val key: String = "MyDestPlugin"
+            }
+
+            analytics.add(plugin)
+            assertFalse(plugin.enabled)
+            analytics.manuallyEnableDestination(plugin)
+
+            val destinationPlugin = analytics.find(plugin.key)
+
+            assertNotNull(destinationPlugin)
+            assertEquals(true, destinationPlugin?.enabled)
+            assertEquals(plugin.enabled, destinationPlugin?.enabled)
+            println("DestinationPlugin.enabled: ${destinationPlugin?.enabled}")
+            println("plugin.enabled: ${plugin.enabled}")
         }
     }
 

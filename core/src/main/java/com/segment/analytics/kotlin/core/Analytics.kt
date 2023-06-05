@@ -179,19 +179,6 @@ open class Analytics protected constructor(
     }
 
     /**
-     * The track method is how you record any actions your users perform. Each action is known by a
-     * name, like 'Purchased a T-Shirt'. You can also record properties specific to those actions.
-     * For example a 'Purchased a Shirt' event might have properties like revenue or size.
-     *
-     * @param name Name of the action
-     * @param properties to describe the action. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
-     * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
-     */
-    fun track(name: String, properties: Map<String, Any>) {
-        track(name, properties.toJsonElement())
-    }
-
-    /**
      * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
      * It also lets you record {@code traits} about the user, like their email, name, account type,
      * etc.
@@ -287,24 +274,6 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Identify lets you record {@code traits} about the user, like their email, name, account type,
-     * etc.
-     *
-     * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id.
-     * You can also use {@link #identify(Traits)} for this purpose.
-     *
-     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
-     * info.
-     *
-     * @param traits [Traits] about the user.
-     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
-     */
-    fun identify(traits: Map<String, Any>) {
-        identify(traits.toJsonElement())
-    }
-
-    /**
      * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
      * It also lets you record {@code traits} about the user, like their email, name, account type,
      * etc.
@@ -351,26 +320,6 @@ open class Analytics protected constructor(
     }
 
     /**
-     * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
-     * It also lets you record {@code traits} about the user, like their email, name, account type,
-     * etc.
-     *
-     * <p>Traits and userId will be automatically cached and available on future sessions for the
-     * same user. To update a trait on the server, call identify with the same user id.
-     * You can also use {@link #identify(Traits)} for this purpose.
-     *
-     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
-     * info.
-     *
-     * @param userId Unique identifier which you recognize a user by in your own database
-     * @param traits [Traits] about the user.
-     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
-     */
-    fun identify(userId: String, traits: Map<String, Any>) {
-        identify(userId, traits.toJsonElement())
-    }
-
-    /**
      * The screen methods let your record whenever a user sees a screen of your mobile app, and
      * attach a name, category or properties to the screen. Either category or name must be
      * provided.
@@ -389,23 +338,6 @@ open class Analytics protected constructor(
         val event = ScreenEvent(name = title, category = category, properties = properties)
         process(event)
     }
-
-    /**
-     * The screen methods let your record whenever a user sees a screen of your mobile app, and
-     * attach a name, category or properties to the screen. Either category or name must be
-     * provided.
-     *
-     * @param title A name for the screen.
-     * @param category A category to describe the screen.
-     * @param properties [Properties] to add extra information to this call.
-     * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
-     */
-    fun screen(title: String,
-               properties: Map<String, Any>,
-               category: String = "") {
-        screen(title, properties.toJsonElement(), category)
-    }
-
 
     /**
      * The screen methods let your record whenever a user sees a screen of your mobile app, and
@@ -464,21 +396,6 @@ open class Analytics protected constructor(
     fun group(groupId: String, traits: JsonObject = emptyJsonObject) {
         val event = GroupEvent(groupId = groupId, traits = traits)
         process(event)
-    }
-
-    /**
-     * The group method lets you associate a user with a group. It also lets you record custom
-     * traits about the group, like industry or number of employees.
-     *
-     * <p>If you've called {@link #identify(String, Traits, Options)} before, this will
-     * automatically remember the userId. If not, it will fall back to use the anonymousId instead.
-     *
-     * @param groupId Unique identifier which you recognize a group by in your own database
-     * @param traits [Traits] about the group
-     * @see <a href="https://segment.com/docs/spec/group/">Group Documentation</a>
-     */
-    fun group(groupId: String, traits: Map<String, Any>) {
-        group(groupId, traits.toJsonElement())
     }
 
     /**
