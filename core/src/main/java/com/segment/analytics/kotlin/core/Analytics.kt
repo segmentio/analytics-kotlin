@@ -9,7 +9,6 @@ import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
-import com.segment.analytics.kotlin.core.utilities.toJsonElement
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -194,6 +193,7 @@ open class Analytics protected constructor(
      * @param traits [Traits] about the user.
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
+    @JvmOverloads
     fun identify(userId: String, traits: JsonObject = emptyJsonObject) {
         analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.SetUserIdAndTraitsAction(userId, traits), UserInfo::class)
@@ -262,6 +262,7 @@ open class Analytics protected constructor(
      * @param traits [Traits] about the user.
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
+    @JvmOverloads
     fun identify(traits: JsonObject = emptyJsonObject) {
         analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.SetTraitsAction(traits), UserInfo::class)
