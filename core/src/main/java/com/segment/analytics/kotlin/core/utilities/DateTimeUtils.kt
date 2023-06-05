@@ -12,7 +12,7 @@ import java.util.*
  * dateTimeNowString(): 2023-04-19T04:03:46.880Z
  */
 fun dateTimeNowString(): String {
-    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.'Szzz")
+    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'.'Szzz", Locale.ROOT)
     val utc = TimeZone.getTimeZone("UTC");
     sdf.timeZone = utc;
     return sdf.format(Date()).replace("UTC", "Z")
