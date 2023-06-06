@@ -197,7 +197,7 @@ class AnalyticsTests {
 
 
         @Test
-        fun `Can manually enable DestinationPlugin`() = runBlocking{
+        fun `Can manually enable DestinationPlugin`() = runBlocking {
             val plugin = object : DestinationPlugin() {
                 override val type: Plugin.Type = Plugin.Type.Destination
                 override lateinit var analytics: Analytics
@@ -237,6 +237,54 @@ class AnalyticsTests {
         }
 
         @Test
+        fun `event defaults get populated with mapOf properties`() {
+            val mockPlugin = spyk(StubPlugin())
+            analytics.add(mockPlugin)
+            analytics.track("track", mapOf("foo" to "bar"))
+            val track = slot<TrackEvent>()
+            verify { mockPlugin.track(capture(track)) }
+            track.captured.let {
+                assertTrue(it.anonymousId.isNotBlank())
+                assertTrue(it.messageId.isNotBlank())
+                assertEquals(epochTimestamp, it.timestamp)
+                assertEquals(baseContext, it.context)
+                assertEquals(emptyJsonObject, it.integrations)
+            }
+        }
+
+        @Test
+        fun `event defaults get populated with mutableMapOf properties`() {
+            val mockPlugin = spyk(StubPlugin())
+            analytics.add(mockPlugin)
+            analytics.track("track", mutableMapOf("foo" to "bar"))
+            val track = slot<TrackEvent>()
+            verify { mockPlugin.track(capture(track)) }
+            track.captured.let {
+                assertTrue(it.anonymousId.isNotBlank())
+                assertTrue(it.messageId.isNotBlank())
+                assertEquals(epochTimestamp, it.timestamp)
+                assertEquals(baseContext, it.context)
+                assertEquals(emptyJsonObject, it.integrations)
+            }
+        }
+
+        @Test
+        fun `event defaults get populated with HashMap properties`() {
+            val mockPlugin = spyk(StubPlugin())
+            analytics.add(mockPlugin)
+            analytics.track("track", HashMap<String, Any>().apply { put("foo", "bar") })
+            val track = slot<TrackEvent>()
+            verify { mockPlugin.track(capture(track)) }
+            track.captured.let {
+                assertTrue(it.anonymousId.isNotBlank())
+                assertTrue(it.messageId.isNotBlank())
+                assertEquals(epochTimestamp, it.timestamp)
+                assertEquals(baseContext, it.context)
+                assertEquals(emptyJsonObject, it.integrations)
+            }
+        }
+
+        @Test
         fun `event gets populated with empty context`() {
             val mockPlugin = spyk(StubPlugin())
             analytics.add(mockPlugin)
@@ -255,10 +303,58 @@ class AnalyticsTests {
         @Nested
         inner class Track {
             @Test
-            fun `track event runs through analytics`() {
+            fun `track event with JSON properties runs through analytics`() {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.track("track", buildJsonObject { put("foo", "bar") })
+                val track = slot<TrackEvent>()
+                verify { mockPlugin.track(capture(track)) }
+                assertEquals(
+                    TrackEvent(
+                        properties = buildJsonObject { put("foo", "bar") },
+                        event = "track"
+                    ).populate(),
+                    track.captured
+                )
+            }
+
+            @Test
+            fun `track event with mapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.track("track", mapOf<String, Any>("foo" to "bar") )
+                val track = slot<TrackEvent>()
+                verify { mockPlugin.track(capture(track)) }
+                assertEquals(
+                    TrackEvent(
+                        properties = buildJsonObject { put("foo", "bar") },
+                        event = "track"
+                    ).populate(),
+                    track.captured
+                )
+            }
+
+            @Test
+            fun `track event with mutableMapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.track("track", mutableMapOf<String, Any>("foo" to "bar") )
+                val track = slot<TrackEvent>()
+                verify { mockPlugin.track(capture(track)) }
+                assertEquals(
+                    TrackEvent(
+                        properties = buildJsonObject { put("foo", "bar") },
+                        event = "track"
+                    ).populate(),
+                    track.captured
+                )
+            }
+
+            @Test
+            fun `track event with HashMap properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.track("track", HashMap<String, Any>().apply {  put("foo", "bar") })
                 val track = slot<TrackEvent>()
                 verify { mockPlugin.track(capture(track)) }
                 assertEquals(
@@ -274,11 +370,62 @@ class AnalyticsTests {
         @Nested
         inner class Identify {
             @Test
-            fun `identify event runs through analytics`() {
+            fun `identify event with JSON properties runs through analytics`() {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
 
                 analytics.identify("foobar", buildJsonObject { put("name", "bar") })
+                val identify = slot<IdentifyEvent>()
+                verify { mockPlugin.identify(capture(identify)) }
+                assertEquals(
+                    IdentifyEvent(
+                        traits = buildJsonObject { put("name", "bar") },
+                        userId = "foobar"
+                    ).populate(),
+                    identify.captured
+                )
+            }
+
+            @Test
+            fun `identify event with mapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+
+                analytics.identify("foobar", mapOf<String, Any>("name" to "bar"))
+                val identify = slot<IdentifyEvent>()
+                verify { mockPlugin.identify(capture(identify)) }
+                assertEquals(
+                    IdentifyEvent(
+                        traits = buildJsonObject { put("name", "bar") },
+                        userId = "foobar"
+                    ).populate(),
+                    identify.captured
+                )
+            }
+
+            @Test
+            fun `identify event with mutableMapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+
+                analytics.identify("foobar", mutableMapOf<String, Any>("name" to "bar"))
+                val identify = slot<IdentifyEvent>()
+                verify { mockPlugin.identify(capture(identify)) }
+                assertEquals(
+                    IdentifyEvent(
+                        traits = buildJsonObject { put("name", "bar") },
+                        userId = "foobar"
+                    ).populate(),
+                    identify.captured
+                )
+            }
+
+            @Test
+            fun `identify event with HashMap properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+
+                analytics.identify("foobar", HashMap<String, Any>().apply { put("name", "bar") })
                 val identify = slot<IdentifyEvent>()
                 verify { mockPlugin.identify(capture(identify)) }
                 assertEquals(
@@ -352,7 +499,7 @@ class AnalyticsTests {
         @Nested
         inner class Screen {
             @Test
-            fun `screen event runs through analytics`() {
+            fun `screen event with JSON properties runs through analytics`() {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.screen(
@@ -370,15 +517,123 @@ class AnalyticsTests {
                     screen.captured
                 )
             }
+
+            @Test
+            fun `screen event with mapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.screen(
+                    title = "main",
+                    category = "mobile",
+                    properties = mapOf<String, Any>("foo" to "bar"))
+                val screen = slot<ScreenEvent>()
+                verify { mockPlugin.screen(capture(screen)) }
+                assertEquals(
+                    ScreenEvent(
+                        properties = buildJsonObject { put("foo", "bar") },
+                        name = "main",
+                        category = "mobile"
+                    ).populate(),
+                    screen.captured
+                )
+            }
+
+            @Test
+            fun `screen event with mutableMapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.screen(
+                    title = "main",
+                    category = "mobile",
+                    properties = mutableMapOf<String, Any>("foo" to "bar"))
+                val screen = slot<ScreenEvent>()
+                verify { mockPlugin.screen(capture(screen)) }
+                assertEquals(
+                    ScreenEvent(
+                        properties = buildJsonObject { put("foo", "bar") },
+                        name = "main",
+                        category = "mobile"
+                    ).populate(),
+                    screen.captured
+                )
+            }
+
+            @Test
+            fun `screen event with HashMap properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.screen(
+                    title = "main",
+                    category = "mobile",
+                    properties = HashMap<String, Any>().apply { put("foo", "bar") })
+                val screen = slot<ScreenEvent>()
+                verify { mockPlugin.screen(capture(screen)) }
+                assertEquals(
+                    ScreenEvent(
+                        properties = buildJsonObject { put("foo", "bar") },
+                        name = "main",
+                        category = "mobile"
+                    ).populate(),
+                    screen.captured
+                )
+            }
         }
 
         @Nested
         inner class Group {
             @Test
-            fun `group event runs through analytics`() {
+            fun `group event with JSON properties runs through analytics`() {
                 val mockPlugin = spyk(StubPlugin())
                 analytics.add(mockPlugin)
                 analytics.group("high school", buildJsonObject { put("foo", "bar") })
+                val group = slot<GroupEvent>()
+                verify { mockPlugin.group(capture(group)) }
+                assertEquals(
+                    GroupEvent(
+                        traits = buildJsonObject { put("foo", "bar") },
+                        groupId = "high school"
+                    ).populate(),
+                    group.captured
+                )
+            }
+
+            @Test
+            fun `group event with mapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.group("high school", mapOf<String, Any>("foo" to "bar"))
+                val group = slot<GroupEvent>()
+                verify { mockPlugin.group(capture(group)) }
+                assertEquals(
+                    GroupEvent(
+                        traits = buildJsonObject { put("foo", "bar") },
+                        groupId = "high school"
+                    ).populate(),
+                    group.captured
+                )
+            }
+
+            @Test
+            fun `group event with mutableMapOf properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.group("high school", mutableMapOf<String, Any>("foo" to "bar"))
+                val group = slot<GroupEvent>()
+                verify { mockPlugin.group(capture(group)) }
+                assertEquals(
+                    GroupEvent(
+                        traits = buildJsonObject { put("foo", "bar") },
+                        groupId = "high school"
+                    ).populate(),
+                    group.captured
+                )
+            }
+
+            @Test
+            fun `group event with HashMap properties runs through analytics`() {
+                val mockPlugin = spyk(StubPlugin())
+                analytics.add(mockPlugin)
+                analytics.group("high school", HashMap<String, Any>().apply { put("foo", "bar") })
                 val group = slot<GroupEvent>()
                 verify { mockPlugin.group(capture(group)) }
                 assertEquals(

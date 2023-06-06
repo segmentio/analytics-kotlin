@@ -87,7 +87,7 @@ class JavaAnalytics private constructor() {
      *          {@link Builder com.segment.analytics.kotlin.core.compat.Builder}
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
-    fun track(name: String, properties: Map<String, Any>) = analytics.track(name, properties.toJsonElement())
+    fun track(name: String, properties: Map<String, Any>) = analytics.track(name, properties)
 
     /**
      * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
@@ -126,7 +126,7 @@ class JavaAnalytics private constructor() {
      *          {@link Builder com.segment.analytics.kotlin.core.compat.Builder}
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
-    fun identify(userId: String, traits: Map<String, Any>) = analytics.identify(userId, traits.toJsonElement())
+    fun identify(userId: String, traits: Map<String, Any>) = analytics.identify(userId, traits)
 
     /**
      * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
@@ -179,7 +179,7 @@ class JavaAnalytics private constructor() {
      *          {@link Builder com.segment.analytics.kotlin.core.compat.Builder}
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
-    fun identify(traits: Map<String, Any>) = analytics.identify(traits.toJsonElement())
+    fun identify(traits: Map<String, Any>) = analytics.identify(traits)
 
     /**
      * Identify lets you record {@code traits} about the user, like their email, name, account type,
@@ -232,7 +232,7 @@ class JavaAnalytics private constructor() {
         title: String,
         properties: Map<String, Any>,
         category: String = ""
-    ) = analytics.screen(title, properties.toJsonElement(), category)
+    ) = analytics.screen(title, properties, category)
 
     /**
      * The screen methods let your record whenever a user sees a screen of your mobile app, and
@@ -277,7 +277,7 @@ class JavaAnalytics private constructor() {
      *          {@link Builder com.segment.analytics.kotlin.core.compat.Builder}
      * @see <a href="https://segment.com/docs/spec/group/">Group Documentation</a>
      */
-    fun group(groupId: String, traits: Map<String, Any>) = analytics.group(groupId, traits.toJsonElement())
+    fun group(groupId: String, traits: Map<String, Any>) = analytics.group(groupId, traits)
 
     /**
      * The group method lets you associate a user with a group. It also lets you record custom
