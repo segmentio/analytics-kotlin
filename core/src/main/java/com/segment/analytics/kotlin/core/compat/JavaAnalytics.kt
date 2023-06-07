@@ -1,16 +1,10 @@
 package com.segment.analytics.kotlin.core.compat
 
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.Configuration
-import com.segment.analytics.kotlin.core.Properties
-import com.segment.analytics.kotlin.core.Storage
-import com.segment.analytics.kotlin.core.Traits
-import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.utilities.toJsonElement
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
 import java.util.function.Consumer
