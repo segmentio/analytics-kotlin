@@ -24,13 +24,13 @@ test {
 dependencies {
     // MAIN DEPS
     api 'com.segment:sovran-kotlin:1.2.2'
-    api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1"
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
+    api "org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1'
 
     // TESTING
     repositories { mavenCentral() }
     testImplementation 'io.mockk:mockk:1.10.6'
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1'
 
     testImplementation platform("org.junit:junit-bom:5.7.2")
     testImplementation "org.junit.jupiter:junit-jupiter"

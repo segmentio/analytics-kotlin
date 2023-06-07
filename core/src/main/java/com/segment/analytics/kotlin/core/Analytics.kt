@@ -17,6 +17,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.Json.Default.decodeFromJsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.modules.SerializersModule
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.util.*
@@ -153,7 +154,7 @@ open class Analytics protected constructor(
      * @param serializationStrategy strategy to serialize [properties]
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
-    fun <T : Any> track(
+    fun <T> track(
         name: String,
         properties: T,
         serializationStrategy: SerializationStrategy<T>,
@@ -170,15 +171,14 @@ open class Analytics protected constructor(
      * @param properties to describe the action. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
-    inline fun <reified T : Any> track(
+    inline fun <reified T> track(
         name: String,
         properties: T,
     ) {
-        if (properties is Map<*, *>) {
-            track(name, properties, AnySerializer)
-        } else {
-            track(name, properties, Json.serializersModule.serializer())
-        }
+        val format = Json { serializersModule = SerializersModule {
+            contextual(Any::class) { AnySerializer }
+        } }
+        track(name, properties, format.serializersModule.serializer())
     }
 
     /**

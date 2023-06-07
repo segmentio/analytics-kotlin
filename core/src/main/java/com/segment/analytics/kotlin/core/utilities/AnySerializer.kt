@@ -1,7 +1,6 @@
 package com.segment.analytics.kotlin.core.utilities
 
-import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.descriptors.buildSerialDescriptor
@@ -16,8 +15,9 @@ object AnySerializer: KSerializer<Any> {
         return "not-implemented";
     }
 
-    @OptIn(InternalSerializationApi::class)
-    override val descriptor: SerialDescriptor = buildSerialDescriptor("My Any Serializer", SerialKind.CONTEXTUAL)
+    @OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
+    override val descriptor: SerialDescriptor = ContextualSerializer(Any::class, null, emptyArray()).descriptor
+
 
     override fun serialize(encoder: Encoder, value: Any) {
         val toJsonElement = value.toJsonElement()
