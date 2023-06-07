@@ -4,7 +4,6 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
 import java.util.function.Consumer
