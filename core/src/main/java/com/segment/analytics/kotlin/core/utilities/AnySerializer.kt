@@ -7,6 +7,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 object AnySerializer: KSerializer<Any> {
@@ -24,3 +25,10 @@ object AnySerializer: KSerializer<Any> {
         encoder.encodeSerializableValue(Json.serializersModule.serializer(), toJsonElement)
     }
 }
+
+/**
+ * A pre-configured Json Implementation with an Any type serializer.
+ */
+val JsonSerializer = Json { serializersModule = SerializersModule {
+    contextual(Any::class) { AnySerializer }
+} }
