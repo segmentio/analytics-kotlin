@@ -245,7 +245,7 @@ open class Analytics protected constructor(
     inline fun <reified T> identify(
         traits: T,
     ) {
-        identify(traits, Json.serializersModule.serializer())
+        identify(traits, JsonSerializer.serializersModule.serializer())
     }
 
     /**
