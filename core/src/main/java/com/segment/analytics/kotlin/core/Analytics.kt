@@ -61,6 +61,8 @@ open class Analytics protected constructor(
         // A Static Log Target that can be used from anywhere without an analytics reference.
         internal var logger: Logger = ConsoleLogger()
 
+        internal var metrics: Metrics = Metrics(Metrics.defaultOptions)
+
         fun setLogger(logger: Logger) {
             Analytics.logger = logger
         }
@@ -73,6 +75,7 @@ open class Analytics protected constructor(
     }
 
     init {
+        configureMetrics()
         require(configuration.isValid()) { "invalid configuration" }
         build()
     }
@@ -124,6 +127,12 @@ open class Analytics protected constructor(
 
             checkSettings()
         }
+    }
+
+
+    private fun configureMetrics() {
+        // TODO: Here we'd goto the Store and get the last values for this
+        println("METRIC: configuring metrics...")
     }
 
     // Analytic event specific APIs

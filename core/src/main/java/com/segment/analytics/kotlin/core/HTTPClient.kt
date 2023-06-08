@@ -12,6 +12,42 @@ import java.net.URL
 import java.util.zip.GZIPOutputStream
 class HTTPClient(private val writeKey: String) {
 
+    companion object {
+        fun upload(apiHost: String, path: String, requestProperties: Map<String, String>): Connection {
+            val connection: HttpURLConnection = openConnection("https://$apiHost/$path")
+            requestProperties.forEach {entry ->
+                connection.setRequestProperty(entry.key, entry.value)
+
+            }
+            connection.doOutput = true
+            connection.setChunkedStreamingMode(0)
+            return connection.createPostConnection()
+        }
+
+        /**
+         * Configures defaults for connections opened with [.upload], and [ ][.projectSettings].
+         */
+        @Throws(IOException::class)
+        private fun openConnection(url: String): HttpURLConnection {
+            val requestedURL: URL = try {
+                URL(url)
+            } catch (e: MalformedURLException) {
+                throw IOException("Attempted to use malformed url: $url", e)
+            }
+            val connection = requestedURL.openConnection() as HttpURLConnection
+            connection.connectTimeout = 15_000 // 15s
+            connection.readTimeout = 20_1000 // 20s
+
+            connection.setRequestProperty(
+                "User-Agent",
+                "analytics-kotlin/$LIBRARY_VERSION"
+            )
+            connection.doInput = true
+            return connection
+        }
+    }
+
+
     fun settings(cdnHost: String): Connection {
         val connection: HttpURLConnection =
             openConnection("https://$cdnHost/projects/$writeKey/settings")
@@ -25,34 +61,11 @@ class HTTPClient(private val writeKey: String) {
     }
 
     fun upload(apiHost: String): Connection {
-        val connection: HttpURLConnection = openConnection("https://$apiHost/b")
-        connection.setRequestProperty("Content-Type", "text/plain")
-        connection.doOutput = true
-        connection.setChunkedStreamingMode(0)
-        return connection.createPostConnection()
+        val requestProperties = mapOf("Content-Type" to "text/plain")
+        return Companion.upload(apiHost, "b", requestProperties)
     }
 
-    /**
-     * Configures defaults for connections opened with [.upload], and [ ][.projectSettings].
-     */
-    @Throws(IOException::class)
-    private fun openConnection(url: String): HttpURLConnection {
-        val requestedURL: URL = try {
-            URL(url)
-        } catch (e: MalformedURLException) {
-            throw IOException("Attempted to use malformed url: $url", e)
-        }
-        val connection = requestedURL.openConnection() as HttpURLConnection
-        connection.connectTimeout = 15_000 // 15s
-        connection.readTimeout = 20_1000 // 20s
 
-        connection.setRequestProperty(
-            "User-Agent",
-            "analytics-kotlin/$LIBRARY_VERSION"
-        )
-        connection.doInput = true
-        return connection
-    }
 }
 
 /**
