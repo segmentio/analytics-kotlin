@@ -31,8 +31,8 @@ fun testAnalytics(configuration: Configuration, testScope: TestScope, testDispat
     return object : Analytics(configuration, TestCoroutineConfiguration(testScope, testDispatcher)) {}
 }
 
-fun clearPersistentStorage() {
-    File("/tmp/analytics-kotlin/123").deleteRecursively()
+fun clearPersistentStorage(writeKey: String = "123") {
+    File("/tmp/analytics-kotlin/$writeKey").deleteRecursively()
 }
 
 fun spyStore(scope: TestScope, dispatcher: TestDispatcher): Store {

@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
+import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
@@ -589,6 +590,32 @@ internal class JavaAnalyticsTest {
     @Test
     fun version() {
         assertEquals(Constants.LIBRARY_VERSION, analytics.version())
+    }
+
+    @Test
+    fun `disable analytics prevents event being processed`() {
+        val segmentDestination = spyk(SegmentDestination())
+        analytics.add(segmentDestination)
+        val state = mutableListOf<System>()
+
+        analytics.enabled = false
+        analytics.track("test")
+
+        verify(exactly = 0) {
+            segmentDestination.track(any())
+            segmentDestination.execute(any())
+        }
+        verify { segmentDestination.onEnableToggled(capture(state)) }
+        assertEquals(false, state[1].enabled)
+
+        analytics.enabled = true
+        analytics.track("test")
+        verify(exactly = 1) {
+            segmentDestination.track(any())
+            segmentDestination.execute(any())
+        }
+        verify { segmentDestination.onEnableToggled(capture(state)) }
+        assertEquals(true, state[2].enabled)
     }
 
     private fun BaseEvent.populate() = apply {

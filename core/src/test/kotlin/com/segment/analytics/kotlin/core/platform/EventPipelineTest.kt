@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
+import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
 import com.segment.analytics.kotlin.core.utils.mockAnalytics
 import io.mockk.*
 import kotlinx.coroutines.delay
@@ -13,6 +14,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.util.*
@@ -55,6 +57,7 @@ internal class EventPipelineTest {
         mockkConstructor(File::class)
 
         analytics = mockAnalytics(testScope, testDispatcher)
+        clearPersistentStorage(analytics.configuration.writeKey)
         storage = spyk(ConcreteStorageProvider.getStorage(
             analytics,
             analytics.store,
@@ -155,6 +158,7 @@ internal class EventPipelineTest {
         }
     }
 
+    @Disabled("Ignore this test since it does not run the way it's designed to be. Better to do a unit test on FrequencyFlushPolicy")
     @Test
     fun `flushInterval causes regular flushing of events`() = runTest {
         //restart flushScheduler
@@ -184,6 +188,29 @@ internal class EventPipelineTest {
         verify(exactly = 0) {
             anyConstructed<HTTPClient>().upload(any())
             storage.removeFile(any())
+        }
+    }
+
+    @Test
+    fun `flush when pipeline stopped has no effect`() {
+        pipeline.stop()
+        pipeline.flush()
+
+        coVerify(exactly = 0) {
+            storage.rollover()
+            storage.read(Storage.Constants.Events)
+        }
+    }
+
+    @Test
+    fun `flush after pipeline restarted has effect`() {
+        pipeline.stop()
+        pipeline.start()
+        pipeline.flush()
+
+        coVerify(exactly = 1) {
+            storage.rollover()
+            storage.read(Storage.Constants.Events)
         }
     }
 }

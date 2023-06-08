@@ -12,30 +12,18 @@ import java.util.function.Consumer
  * This class is merely a wrapper of {@link Analytics com.segment.analytics.kotlin.core.Analytics}
  * for Java compatibility purpose.
  */
-class JavaAnalytics private constructor() {
+class JavaAnalytics(val analytics: Analytics) {
+
+    init {
+        setup(analytics)
+    }
 
     /**
      * A constructor that takes a configuration
      * @param configuration an instance of configuration that can be build
      *          through {@link ConfigurationBuilder com.segment.analytics.kotlin.core.compat.ConfigurationBuilder}
      */
-    constructor(configuration: Configuration): this() {
-        analytics = Analytics(configuration)
-        setup(analytics)
-    }
-
-    /**
-     * A constructor takes an instance of {@link Analytics com.segment.analytics.kotlin.core.Analytics}
-     * @param analytics an instance of Analytics object.
-     *          This constructor wrappers it and provides a JavaAnalytics for Java compatibility.
-     */
-    constructor(analytics: Analytics): this() {
-        this.analytics = analytics
-        setup(analytics)
-    }
-
-    internal lateinit var analytics: Analytics
-        private set
+    constructor(configuration: Configuration): this(Analytics(configuration))
 
     lateinit var store: Store
         private set
@@ -45,6 +33,8 @@ class JavaAnalytics private constructor() {
 
     lateinit var analyticsScope: CoroutineScope
         private set
+
+    var enabled by analytics::enabled
 
     /**
      * The track method is how you record any actions your users perform. Each action is known by a
