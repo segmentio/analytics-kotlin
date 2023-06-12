@@ -295,14 +295,12 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
                     // NO-OP
                 }
 
-                override fun getCurrentState(): State {
-                    return State.DESTROYED
-                }
+                override val currentState: State
+                    get() = State.DESTROYED
             }
 
-            override fun getLifecycle(): Lifecycle {
-                return stubLifecycle
-            }
+            override val lifecycle: Lifecycle
+                get() = stubLifecycle
         }
     }
 }
