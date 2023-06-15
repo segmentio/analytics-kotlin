@@ -1,17 +1,6 @@
 package com.segment.analytics.kotlin.core.compat
 
-import com.segment.analytics.kotlin.core.AliasEvent
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.Constants
-import com.segment.analytics.kotlin.core.GroupEvent
-import com.segment.analytics.kotlin.core.IdentifyEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.Settings
-import com.segment.analytics.kotlin.core.System
-import com.segment.analytics.kotlin.core.TrackEvent
-import com.segment.analytics.kotlin.core.UserInfo
-import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
@@ -21,27 +10,19 @@ import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.testAnalytics
-import io.mockk.CapturingSlot
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.slot
-import io.mockk.spyk
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.util.Date
-import java.util.UUID
+import java.util.*
 import java.util.function.Consumer
 
 internal class JavaAnalyticsTest {
@@ -98,6 +79,8 @@ internal class JavaAnalyticsTest {
 
         private val json = buildJsonObject { put("foo", "bar") }
 
+        private val map = mutableMapOf<String, Any>("foo" to "bar")
+
         private lateinit var track: CapturingSlot<TrackEvent>
 
         private val serializable = object : JsonSerializable {
@@ -136,6 +119,19 @@ internal class JavaAnalyticsTest {
         }
 
         @Test
+        fun `track with name and map`() {
+            analytics.add(mockPlugin)
+            analytics.track(event, map)
+
+            verify { mockPlugin.track(capture(track)) }
+            assertEquals(
+                TrackEvent(json, event).populate(),
+                track.captured
+            )
+        }
+
+
+        @Test
         fun `track with name and serializable`() {
             analytics.add(mockPlugin)
             analytics.track(event, serializable)
@@ -156,6 +152,8 @@ internal class JavaAnalyticsTest {
         private val category = "mobile"
 
         private val json = buildJsonObject { put("foo", "bar") }
+
+        private val map = mutableMapOf<String, Any>("foo" to "bar")
 
         private lateinit var screen: CapturingSlot<ScreenEvent>
 
@@ -195,6 +193,18 @@ internal class JavaAnalyticsTest {
         }
 
         @Test
+        fun `screen with title category and map`() {
+            analytics.add(mockPlugin)
+            analytics.screen(title, map, category)
+
+            verify { mockPlugin.screen(capture(screen)) }
+            assertEquals(
+                ScreenEvent(title, category, json).populate(),
+                screen.captured
+            )
+        }
+
+        @Test
         fun `screen with title category and serializable`() {
             analytics.add(mockPlugin)
             analytics.screen(title, serializable, category)
@@ -213,6 +223,8 @@ internal class JavaAnalyticsTest {
         private val groupId = "high school"
 
         private val json = buildJsonObject { put("foo", "bar") }
+
+        private val map = mutableMapOf<String, Any>("foo" to "bar")
 
         private lateinit var group: CapturingSlot<GroupEvent>
 
@@ -243,6 +255,18 @@ internal class JavaAnalyticsTest {
         fun `group with groupId and json`() {
             analytics.add(mockPlugin)
             analytics.group(groupId, json)
+
+            verify { mockPlugin.group(capture(group)) }
+            assertEquals(
+                GroupEvent(groupId, json).populate(),
+                group.captured
+            )
+        }
+
+        @Test
+        fun `group with groupId and map`() {
+            analytics.add(mockPlugin)
+            analytics.group(groupId, map)
 
             verify { mockPlugin.group(capture(group)) }
             assertEquals(
@@ -301,6 +325,8 @@ internal class JavaAnalyticsTest {
 
         private val json = buildJsonObject { put("name", "bar") }
 
+        private val map = mutableMapOf<String, Any>("name" to "bar")
+
         private lateinit var identify: CapturingSlot<IdentifyEvent>
 
         private val serializable = object : JsonSerializable {
@@ -332,6 +358,21 @@ internal class JavaAnalyticsTest {
         fun `identify with userId and json`() {
             analytics.add(mockPlugin)
             analytics.identify(userId, json)
+
+            val identify = slot<IdentifyEvent>()
+            verify { mockPlugin.identify(capture(identify)) }
+            assertEquals(
+                IdentifyEvent(userId, json).populate().apply {
+                    userId = this@Identify.userId
+                },
+                identify.captured
+            )
+        }
+
+        @Test
+        fun `identify with userId and map`() {
+            analytics.add(mockPlugin)
+            analytics.identify(userId, map)
 
             val identify = slot<IdentifyEvent>()
             verify { mockPlugin.identify(capture(identify)) }
@@ -379,6 +420,23 @@ internal class JavaAnalyticsTest {
 
             analytics.add(mockPlugin)
             analytics.identify(json)
+
+            val identify = slot<IdentifyEvent>()
+            verify { mockPlugin.identify(capture(identify)) }
+            assertEquals(
+                IdentifyEvent("", json).populate().apply {
+                    userId = this@Identify.userId
+                },
+                identify.captured
+            )
+        }
+
+        @Test
+        fun `identify with only map traits`() = runTest {
+            analytics.store.dispatch(UserInfo.SetUserIdAction(userId), UserInfo::class)
+
+            analytics.add(mockPlugin)
+            analytics.identify(map)
 
             val identify = slot<IdentifyEvent>()
             verify { mockPlugin.identify(capture(identify)) }

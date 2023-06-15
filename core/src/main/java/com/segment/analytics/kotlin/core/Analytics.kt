@@ -9,14 +9,13 @@ import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.utilities.JsonAnySerializer
 import kotlinx.coroutines.*
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.Json.Default.decodeFromJsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.serializer
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.util.*
@@ -99,11 +98,11 @@ open class Analytics protected constructor(
                 )
             }
             override val analyticsScope = CoroutineScope(SupervisorJob() + exceptionHandler)
-            override val analyticsDispatcher : CloseableCoroutineDispatcher =
+            override val analyticsDispatcher: CloseableCoroutineDispatcher =
                 Executors.newCachedThreadPool().asCoroutineDispatcher()
-            override val networkIODispatcher : CloseableCoroutineDispatcher =
+            override val networkIODispatcher: CloseableCoroutineDispatcher =
                 Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-            override val fileIODispatcher : CloseableCoroutineDispatcher =
+            override val fileIODispatcher: CloseableCoroutineDispatcher =
                 Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         })
 
@@ -161,7 +160,7 @@ open class Analytics protected constructor(
      * @param serializationStrategy strategy to serialize [properties]
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
-    fun <T : Any> track(
+    fun <T> track(
         name: String,
         properties: T,
         serializationStrategy: SerializationStrategy<T>,
@@ -178,11 +177,11 @@ open class Analytics protected constructor(
      * @param properties to describe the action. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
-    inline fun <reified T : Any> track(
+    inline fun <reified T> track(
         name: String,
         properties: T,
     ) {
-        track(name, properties, Json.serializersModule.serializer())
+        track(name, properties, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**
@@ -227,7 +226,7 @@ open class Analytics protected constructor(
      * @param serializationStrategy strategy to serialize [traits]
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
-    fun <T : Any> identify(
+    fun <T> identify(
         userId: String,
         traits: T,
         serializationStrategy: SerializationStrategy<T>,
@@ -250,10 +249,10 @@ open class Analytics protected constructor(
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
-    inline fun <reified T : Any> identify(
+    inline fun <reified T> identify(
         traits: T,
     ) {
-        identify(traits, Json.serializersModule.serializer())
+        identify(traits, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**
@@ -298,7 +297,7 @@ open class Analytics protected constructor(
      * @param serializationStrategy strategy to serialize [traits]
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
-    fun <T : Any> identify(
+    fun <T> identify(
         traits: T,
         serializationStrategy: SerializationStrategy<T>,
     ) {
@@ -321,11 +320,11 @@ open class Analytics protected constructor(
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
-    inline fun <reified T : Any> identify(
+    inline fun <reified T> identify(
         userId: String,
         traits: T,
     ) {
-        identify(userId, traits, Json.serializersModule.serializer())
+        identify(userId, traits, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**
@@ -359,7 +358,7 @@ open class Analytics protected constructor(
      * @param serializationStrategy strategy to serialize [properties]
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
-    fun <T : Any> screen(
+    fun <T> screen(
         title: String,
         properties: T,
         serializationStrategy: SerializationStrategy<T>,
@@ -382,12 +381,12 @@ open class Analytics protected constructor(
      * @param properties [Properties] to add extra information to this call. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
-    inline fun <reified T : Any> screen(
+    inline fun <reified T> screen(
         title: String,
         properties: T,
         category: String = "",
     ) {
-        screen(title, properties, Json.serializersModule.serializer(), category)
+        screen(title, properties, JsonAnySerializer.serializersModule.serializer(), category)
     }
 
     /**
@@ -419,7 +418,7 @@ open class Analytics protected constructor(
      * @param serializationStrategy strategy to serialize [traits]
      * @see <a href="https://segment.com/docs/spec/group/">Group Documentation</a>
      */
-    fun <T : Any> group(
+    fun <T> group(
         groupId: String,
         traits: T,
         serializationStrategy: SerializationStrategy<T>,
@@ -438,11 +437,11 @@ open class Analytics protected constructor(
      * @param traits [Traits] about the group. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @see <a href="https://segment.com/docs/spec/group/">Group Documentation</a>
      */
-    inline fun <reified T : Any> group(
+    inline fun <reified T> group(
         groupId: String,
         traits: T,
     ) {
-        group(groupId, traits, Json.serializersModule.serializer())
+        group(groupId, traits, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**
@@ -613,7 +612,7 @@ open class Analytics protected constructor(
     /**
      * Retrieve the traits registered by a previous `identify` call in a blocking way.
      */
-    inline fun <reified T : Any> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+    inline fun <reified T> traits(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits()?.let {
             decodeFromJsonElement(deserializationStrategy, it)
         }
@@ -626,7 +625,7 @@ open class Analytics protected constructor(
         "This function no longer serves a purpose and internally calls `traits(deserializationStrategy: DeserializationStrategy<T>)`.",
         ReplaceWith("traits(deserializationStrategy: DeserializationStrategy<T>)")
     )
-    inline fun <reified T : Any> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
+    inline fun <reified T> traitsAsync(deserializationStrategy: DeserializationStrategy<T> = Json.serializersModule.serializer()): T? {
         return traits(deserializationStrategy)
     }
 
