@@ -21,7 +21,8 @@ import com.segment.analytics.kotlin.core.platform.plugins.logger.*
  */
 public fun Analytics(
     writeKey: String,
-    context: Context
+    context: Context,
+    logger: Logger = AndroidLogger(),
 ): Analytics {
     require(writeKey.isNotBlank()) { "writeKey cannot be blank " }
     val conf = Configuration(
@@ -30,7 +31,7 @@ public fun Analytics(
         storageProvider = AndroidStorageProvider
     )
     return Analytics(conf).apply {
-        startup()
+        startup(logger)
     }
 }
 
@@ -48,9 +49,9 @@ public fun Analytics(
 public fun Analytics(
     writeKey: String,
     context: Context,
-    configs: Configuration.() -> Unit
+    configs: Configuration.() -> Unit,
+    logger: Logger = AndroidLogger(),
 ): Analytics {
-    Analytics.setLogger(AndroidLogger())
     require(writeKey.isNotBlank()) { "writeKey cannot be blank " }
     val conf = Configuration(
         writeKey = writeKey,
@@ -59,14 +60,15 @@ public fun Analytics(
     )
     configs.invoke(conf)
     return Analytics(conf).apply {
-        startup()
+        startup(logger)
     }
 }
 
 // Android specific startup
-private fun Analytics.startup() {
+private fun Analytics.startup(logger: Logger) {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
+    Analytics.setLogger(logger)
 }
 
 /**
