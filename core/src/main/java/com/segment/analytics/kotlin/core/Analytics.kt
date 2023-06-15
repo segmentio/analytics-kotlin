@@ -9,8 +9,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
-import com.segment.analytics.kotlin.core.utilities.AnySerializer
-import com.segment.analytics.kotlin.core.utilities.JsonSerializer
+import com.segment.analytics.kotlin.core.utilities.JsonAnySerializer
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
@@ -182,7 +181,7 @@ open class Analytics protected constructor(
         name: String,
         properties: T,
     ) {
-        track(name, properties, JsonSerializer.serializersModule.serializer())
+        track(name, properties, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**
@@ -253,7 +252,7 @@ open class Analytics protected constructor(
     inline fun <reified T> identify(
         traits: T,
     ) {
-        identify(traits, JsonSerializer.serializersModule.serializer())
+        identify(traits, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**
@@ -325,7 +324,7 @@ open class Analytics protected constructor(
         userId: String,
         traits: T,
     ) {
-        identify(userId, traits, JsonSerializer.serializersModule.serializer())
+        identify(userId, traits, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**
@@ -387,7 +386,7 @@ open class Analytics protected constructor(
         properties: T,
         category: String = "",
     ) {
-        screen(title, properties, JsonSerializer.serializersModule.serializer(), category)
+        screen(title, properties, JsonAnySerializer.serializersModule.serializer(), category)
     }
 
     /**
@@ -442,7 +441,7 @@ open class Analytics protected constructor(
         groupId: String,
         traits: T,
     ) {
-        group(groupId, traits, JsonSerializer.serializersModule.serializer())
+        group(groupId, traits, JsonAnySerializer.serializersModule.serializer())
     }
 
     /**

@@ -2,8 +2,6 @@ package com.segment.analytics.kotlin.core.utilities
 
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.SerialKind
-import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
@@ -29,6 +27,6 @@ object AnySerializer: KSerializer<Any> {
 /**
  * A pre-configured Json Implementation with an Any type serializer.
  */
-val JsonSerializer = Json { serializersModule = SerializersModule {
+val JsonAnySerializer = Json { serializersModule = SerializersModule {
     contextual(Any::class) { AnySerializer }
 } }
