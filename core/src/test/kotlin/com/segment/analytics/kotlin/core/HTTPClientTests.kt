@@ -3,16 +3,21 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import io.mockk.clearConstructorMockk
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.spyk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.net.HttpURLConnection
+import java.net.MalformedURLException
 import java.net.URL
+import java.net.http.HttpClient
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HTTPClientTests {
@@ -80,4 +85,53 @@ class HTTPClientTests {
         }
     }
 
+    @Test
+    fun `custom requestFactory takes effect`() {
+        val httpClient = HTTPClient("123", object : RequestFactory() {
+            override fun settings(cdnHost: String, writeKey: String): HttpURLConnection {
+                return openConnection("https://cdn.test.com")
+            }
+
+            override fun upload(apiHost: String): HttpURLConnection {
+                return openConnection("https://api.test.com").apply { doOutput = true }
+            }
+
+            override fun openConnection(url: String): HttpURLConnection {
+                val requestedURL: URL = try {
+                    URL(url)
+                } catch (e: MalformedURLException) {
+                    throw IOException("Attempted to use malformed url: $url", e)
+                }
+
+                return object : HttpURLConnection(requestedURL) {
+                    override fun connect() {
+
+                    }
+
+                    override fun disconnect() {
+                    }
+
+                    override fun usingProxy() = false
+
+                    override fun getOutputStream(): OutputStream {
+                        return ByteArrayOutputStream()
+                    }
+                }
+            }
+        })
+
+        httpClient.settings("cdn-settings.segment.com/v1").connection.let {
+            assertEquals(
+                "https://cdn.test.com",
+                it.url.toString()
+            )
+        }
+
+        httpClient.upload("api.segment.io/v1").connection.let {
+            assertEquals(
+                "https://api.test.com",
+                it.url.toString()
+            )
+        }
+    }
 }
