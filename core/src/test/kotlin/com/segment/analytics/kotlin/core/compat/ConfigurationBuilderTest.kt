@@ -123,6 +123,7 @@ internal class ConfigurationBuilderTest {
             .setAutoAddSegmentDestination(expected.autoAddSegmentDestination)
             .setApiHost(expected.apiHost)
             .setCdnHost(expected.cdnHost)
+            .setRequestFactory(expected.requestFactory)
             .build()
 
         assertEquals(expected, config)

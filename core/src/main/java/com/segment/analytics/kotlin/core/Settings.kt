@@ -106,7 +106,7 @@ internal fun Analytics.fetchSettings(
     writeKey: String,
     cdnHost: String
 ): Settings? = try {
-    val connection = HTTPClient(writeKey).settings(cdnHost)
+    val connection = HTTPClient(writeKey, this.configuration.requestFactory).settings(cdnHost)
     val settingsString =
         connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
     log("Fetched Settings: $settingsString")

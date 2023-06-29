@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core.compat
 
 import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.RequestFactory
 
 /**
  * This class serves as a helper class for Java compatibility, which makes the
@@ -31,6 +32,8 @@ class ConfigurationBuilder (writeKey: String) {
     fun setApiHost(apiHost: String) = apply { configuration.apiHost = apiHost}
 
     fun setCdnHost(cdnHost: String) = apply { configuration.cdnHost = cdnHost}
+
+    fun setRequestFactory(requestFactory: RequestFactory) = apply { configuration.requestFactory = requestFactory }
 
     fun build() = configuration
 }

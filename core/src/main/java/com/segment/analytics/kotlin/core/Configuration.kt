@@ -36,7 +36,8 @@ data class Configuration(
     val defaultSettings: Settings = Settings(),
     var autoAddSegmentDestination: Boolean = true,
     var apiHost: String = DEFAULT_API_HOST,
-    var cdnHost: String = DEFAULT_CDN_HOST
+    var cdnHost: String = DEFAULT_CDN_HOST,
+    var requestFactory: RequestFactory = RequestFactory()
 ) {
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null

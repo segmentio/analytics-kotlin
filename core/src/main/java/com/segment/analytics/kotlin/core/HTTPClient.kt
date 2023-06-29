@@ -10,25 +10,18 @@ import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.util.zip.GZIPOutputStream
-class HTTPClient(private val writeKey: String) {
+class HTTPClient(
+    private val writeKey: String,
+    private val requestFactory: RequestFactory = RequestFactory()
+) {
 
     fun settings(cdnHost: String): Connection {
-        val connection: HttpURLConnection =
-            openConnection("https://$cdnHost/projects/$writeKey/settings")
-        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-        val responseCode = connection.responseCode
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            connection.disconnect()
-            throw IOException("HTTP " + responseCode + ": " + connection.responseMessage)
-        }
+        val connection: HttpURLConnection = requestFactory.settings(cdnHost, writeKey)
         return connection.createGetConnection()
     }
 
     fun upload(apiHost: String): Connection {
-        val connection: HttpURLConnection = openConnection("https://$apiHost/b")
-        connection.setRequestProperty("Content-Type", "text/plain")
-        connection.doOutput = true
-        connection.setChunkedStreamingMode(0)
+        val connection: HttpURLConnection = requestFactory.upload(apiHost)
         return connection.createPostConnection()
     }
 
@@ -128,5 +121,47 @@ internal class HTTPException(
     IOException("HTTP $responseCode: $responseMessage. Response: ${responseBody ?: "No response"}") {
     fun is4xx(): Boolean {
         return responseCode in 400..499
+    }
+}
+
+open class RequestFactory {
+    open fun settings(cdnHost: String, writeKey: String): HttpURLConnection {
+        val connection: HttpURLConnection = openConnection("https://$cdnHost/projects/$writeKey/settings")
+        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        val responseCode = connection.responseCode
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            connection.disconnect()
+            throw IOException("HTTP " + responseCode + ": " + connection.responseMessage)
+        }
+        return connection
+    }
+
+    open fun upload(apiHost: String): HttpURLConnection {
+        val connection: HttpURLConnection = openConnection("https://$apiHost/b")
+        connection.setRequestProperty("Content-Type", "text/plain")
+        connection.doOutput = true
+        connection.setChunkedStreamingMode(0)
+        return connection
+    }
+
+    /**
+     * Configures defaults for connections opened with [.upload], and [ ][.projectSettings].
+     */
+    open fun openConnection(url: String): HttpURLConnection {
+        val requestedURL: URL = try {
+            URL(url)
+        } catch (e: MalformedURLException) {
+            throw IOException("Attempted to use malformed url: $url", e)
+        }
+        val connection = requestedURL.openConnection() as HttpURLConnection
+        connection.connectTimeout = 15_000 // 15s
+        connection.readTimeout = 20_1000 // 20s
+
+        connection.setRequestProperty(
+            "User-Agent",
+            "analytics-kotlin/$LIBRARY_VERSION"
+        )
+        connection.doInput = true
+        return connection
     }
 }
