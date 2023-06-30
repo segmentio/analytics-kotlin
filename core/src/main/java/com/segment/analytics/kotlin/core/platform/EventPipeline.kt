@@ -31,7 +31,7 @@ internal class EventPipeline(
 
     private var uploadChannel: Channel<String>
 
-    private val httpClient: HTTPClient = HTTPClient(apiKey)
+    private val httpClient: HTTPClient = HTTPClient(apiKey, analytics.configuration.requestFactory)
 
     private val storage get() = analytics.storage
 
