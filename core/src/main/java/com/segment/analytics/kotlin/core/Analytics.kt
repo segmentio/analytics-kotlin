@@ -670,6 +670,41 @@ open class Analytics protected constructor(
      * - Returns: A string representing the version in "BREAKING.FEATURE.FIX" format.
      */
     fun version() = Analytics.version()
+
+    /**
+     * Provides a list of finished, but unsent events.
+     */
+    fun pendingUploads(): List<String> {
+        return parseFilePaths(storage.read(Storage.Constants.Events))
+    }
+
+    /**
+     * Purge all pending event upload files.
+     */
+    fun purgeStorage() {
+        // do not call purgeStorage(filePath: String)
+        // since we want to schedule all files deletion in the same dispatch all at once
+        analyticsScope.launch(fileIODispatcher) {
+            for (file in pendingUploads()) {
+                try {
+                    storage.removeFile(file)
+                }
+                catch (ignored: Exception) {}
+            }
+        }
+    }
+
+    /**
+     * Purge a single event upload file.
+     */
+    fun purgeStorage(filePath: String) {
+        analyticsScope.launch(fileIODispatcher) {
+            try {
+                storage.removeFile(filePath)
+            }
+            catch (ignored: Exception) {}
+        }
+    }
 }
 
 
