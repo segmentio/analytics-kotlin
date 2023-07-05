@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.reportInternalError
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
@@ -64,6 +65,7 @@ internal class Timeline {
         try {
             plugin.setup(analytics)
         } catch (t: Throwable) {
+            analytics.reportInternalError(t)
             Analytics.segmentLog("Caught Exception while setting up plugin $plugin: $t")
         }
         plugins[plugin.type]?.add(plugin)

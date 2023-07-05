@@ -18,6 +18,7 @@ import com.segment.analytics.kotlin.android.utilities.DeepLinkUtils
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.reportInternalError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
@@ -63,6 +64,7 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         packageInfo = try {
             packageManager.getPackageInfo(application.packageName, 0)
         } catch (e: PackageManager.NameNotFoundException) {
+            analytics.reportInternalError(e)
             throw AssertionError("Package not found: " + application.packageName)
         }
 
@@ -334,7 +336,7 @@ private fun getReferrerCompatible(activity: Activity): Uri? {
                 // Try parsing the referrer URL; if it's invalid, return null
                 try {
                     Uri.parse(it)
-                } catch (e: ParseException) {
+                } catch (ignored: ParseException) {
                     null
                 }
             }

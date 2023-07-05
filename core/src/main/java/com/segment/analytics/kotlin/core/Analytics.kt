@@ -700,7 +700,7 @@ internal fun isAndroid(): Boolean {
     return try {
         Class.forName("com.segment.analytics.kotlin.android.AndroidStorage")
         true
-    } catch (e: ClassNotFoundException) {
+    } catch (ignored: ClassNotFoundException) {
         false
     }
 }

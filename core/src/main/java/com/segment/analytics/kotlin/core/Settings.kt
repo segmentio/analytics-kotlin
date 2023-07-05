@@ -112,6 +112,7 @@ internal fun Analytics.fetchSettings(
     log("Fetched Settings: $settingsString")
     LenientJson.decodeFromString(settingsString)
 } catch (ex: Exception) {
+    reportInternalError(ex)
     Analytics.segmentLog(
         "${ex.message}: failed to fetch settings",
         kind = LogKind.ERROR

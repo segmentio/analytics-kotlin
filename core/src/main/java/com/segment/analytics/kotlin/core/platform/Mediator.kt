@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.reportInternalError
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
@@ -41,7 +42,7 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                         }
                     }
                 } catch (t: Throwable) {
-                    Analytics.segmentLog("Caught Exception in plugin: $t", kind = LogKind.ERROR)
+                    Analytics.reportInternalError("Caught Exception in plugin: $t")
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
                 }
             }
@@ -55,6 +56,7 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             try {
                 closure(it)
             } catch (t: Throwable) {
+                Analytics.reportInternalError(t)
                 Analytics.segmentLog("Caught Exception applying closure to plugin: $it: $t")
             }
         }

@@ -121,7 +121,7 @@ class AndroidContextPlugin : Plugin {
                 }
                 put(APP_BUILD_KEY, appBuild)
             }
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (ignored: PackageManager.NameNotFoundException) {
             emptyJsonObject
         }
 
@@ -300,7 +300,7 @@ fun getUniqueID(): String? {
         val md = MessageDigest.getInstance("SHA-256")
         md.update(wideVineId)
         return  md.digest().toHexString()
-    } catch (e: Exception) {
+    } catch (ignored: Exception) {
         return null
     } finally {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
