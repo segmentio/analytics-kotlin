@@ -2,6 +2,9 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 
+/**
+ * Reports an internal error to the user-defined error handler.
+ */
 fun Analytics.reportInternalError(error: Throwable) {
     configuration.errorHandler?.invoke(error)
     Analytics.reportInternalError(error)
