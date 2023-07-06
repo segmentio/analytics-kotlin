@@ -64,8 +64,9 @@ class AndroidLifecyclePlugin() : Application.ActivityLifecycleCallbacks, Default
         packageInfo = try {
             packageManager.getPackageInfo(application.packageName, 0)
         } catch (e: PackageManager.NameNotFoundException) {
-            analytics.reportInternalError(e)
-            throw AssertionError("Package not found: " + application.packageName)
+            val error = AssertionError("Package not found: " + application.packageName)
+            analytics.reportInternalError(error)
+            throw error
         }
 
         // setup lifecycle listeners

@@ -23,8 +23,9 @@ class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {
             val activityLabel = info?.loadLabel(packageManager)
             analytics.screen(activityLabel.toString())
         } catch (e: PackageManager.NameNotFoundException) {
-            analytics.reportInternalError(e)
-            throw AssertionError("Activity Not Found: $e")
+            val error = AssertionError("Activity Not Found: $e")
+            analytics.reportInternalError(error)
+            throw error
         } catch (e: Exception) {
             analytics.reportInternalError(e)
             Analytics.segmentLog(
