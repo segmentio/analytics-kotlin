@@ -819,6 +819,44 @@ class AnalyticsTests {
         assertEquals(true, state[2].enabled)
     }
 
+    @Test
+    fun `pendingUploads returns the correct number of files`() = runTest {
+        analytics.track("test")
+        analytics.storage.rollover()
+        analytics.track("test")
+        analytics.storage.rollover()
+
+        val files = analytics.pendingUploads()
+        assertEquals(2, files.size)
+    }
+
+    @Test
+    fun `purgeStorage clears storage`() = runTest {
+        analytics.track("test")
+        analytics.storage.rollover()
+        analytics.track("test")
+        analytics.storage.rollover()
+
+        analytics.purgeStorage()
+        val files = analytics.pendingUploads()
+        assertEquals(0, files.size)
+    }
+
+    @Test
+    fun `purgeStorage removes given file`() = runTest {
+        analytics.track("test")
+        analytics.storage.rollover()
+        analytics.track("test")
+        analytics.storage.rollover()
+
+        var files = analytics.pendingUploads()
+        assertEquals(2, files.size)
+
+        analytics.purgeStorage(files[0])
+        files = analytics.pendingUploads()
+        assertEquals(1, files.size)
+    }
+
     private fun BaseEvent.populate() = apply {
         anonymousId = "qwerty-qwerty-123"
         messageId = "qwerty-qwerty-123"

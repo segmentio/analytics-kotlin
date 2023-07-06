@@ -6,6 +6,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.reportInternalError
 import com.segment.analytics.kotlin.core.utilities.putAll
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.Dispatchers
@@ -89,6 +90,7 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
             analytics.log("Collected advertising Id from Google Play Services")
             return
         } catch (e: Exception) {
+            analytics.reportInternalError(e)
             Analytics.segmentLog(
                 message = "${e.message}: Unable to collect advertising ID from Google Play Services.",
                 kind = LogKind.ERROR
@@ -109,6 +111,7 @@ class AndroidAdvertisingIdPlugin(private val androidContext: Context) : Plugin {
             analytics.log("Collected advertising Id from Amazon Fire OS")
             return
         } catch (e: Exception) {
+            analytics.reportInternalError(e)
             Analytics.segmentLog(
                 "${e.message}: Unable to collect advertising ID from Amazon Fire OS.",
                 kind = LogKind.WARNING

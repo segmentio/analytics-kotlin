@@ -37,7 +37,8 @@ data class Configuration(
     var autoAddSegmentDestination: Boolean = true,
     var apiHost: String = DEFAULT_API_HOST,
     var cdnHost: String = DEFAULT_CDN_HOST,
-    var requestFactory: RequestFactory = RequestFactory()
+    var requestFactory: RequestFactory = RequestFactory(),
+    var errorHandler: ErrorHandler? = null
 ) {
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null
@@ -55,3 +56,5 @@ interface CoroutineConfiguration {
 
     val fileIODispatcher: CoroutineDispatcher
 }
+
+typealias ErrorHandler = (Throwable) -> Unit

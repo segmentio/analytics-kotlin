@@ -31,7 +31,7 @@ data class System(
                     Settings.serializer(),
                     storage.read(Storage.Constants.Settings) ?: ""
                 )
-            } catch (ex: Exception) {
+            } catch (ignored: Exception) {
                 configuration.defaultSettings
             }
             return System(

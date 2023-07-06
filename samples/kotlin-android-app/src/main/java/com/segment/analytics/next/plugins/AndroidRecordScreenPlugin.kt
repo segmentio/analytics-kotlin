@@ -6,6 +6,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecycle
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import com.segment.analytics.kotlin.core.reportInternalError
 
 class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {
 
@@ -22,8 +23,11 @@ class AndroidRecordScreenPlugin : Plugin, AndroidLifecycle {
             val activityLabel = info?.loadLabel(packageManager)
             analytics.screen(activityLabel.toString())
         } catch (e: PackageManager.NameNotFoundException) {
-            throw AssertionError("Activity Not Found: $e")
+            val error = AssertionError("Activity Not Found: $e")
+            analytics.reportInternalError(error)
+            throw error
         } catch (e: Exception) {
+            analytics.reportInternalError(e)
             Analytics.segmentLog(
                 "Unable to track screen view for ${activity.toString()}",
                 kind = LogKind.ERROR

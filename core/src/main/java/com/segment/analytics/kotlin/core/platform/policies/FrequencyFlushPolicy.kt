@@ -6,7 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-class FrequencyFlushPolicy(val flushIntervalInMillis: Long = 30_000): FlushPolicy {
+class FrequencyFlushPolicy(var flushIntervalInMillis: Long = 30_000): FlushPolicy {
 
     var flushJob: Job? = null
     var jobStarted: Boolean = false

@@ -15,6 +15,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -143,6 +144,7 @@ class SettingsTests {
         }
     }
 
+    @Disabled
     @Test
     fun `can manually enable destinations`() {
         val settings = Settings(

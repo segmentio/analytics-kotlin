@@ -33,7 +33,9 @@ class HTTPClient(
         val requestedURL: URL = try {
             URL(url)
         } catch (e: MalformedURLException) {
-            throw IOException("Attempted to use malformed url: $url", e)
+            val error = IOException("Attempted to use malformed url: $url", e)
+            Analytics.reportInternalError(error)
+            throw error
         }
         val connection = requestedURL.openConnection() as HttpURLConnection
         connection.connectTimeout = 15_000 // 15s
@@ -96,6 +98,7 @@ internal fun HttpURLConnection.createPostConnection(): Connection {
                         inputStream = safeGetInputStream(this.connection)
                         responseBody = inputStream?.bufferedReader()?.use(BufferedReader::readText)
                     } catch (e: IOException) {
+                        Analytics.reportInternalError(e)
                         responseBody = ("Could not read response body for rejected message: "
                                 + e.toString())
                     } finally {
@@ -151,7 +154,9 @@ open class RequestFactory {
         val requestedURL: URL = try {
             URL(url)
         } catch (e: MalformedURLException) {
-            throw IOException("Attempted to use malformed url: $url", e)
+            val error = IOException("Attempted to use malformed url: $url", e)
+            Analytics.reportInternalError(error)
+            throw error
         }
         val connection = requestedURL.openConnection() as HttpURLConnection
         connection.connectTimeout = 15_000 // 15s

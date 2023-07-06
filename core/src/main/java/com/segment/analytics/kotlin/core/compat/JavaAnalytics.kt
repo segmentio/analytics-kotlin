@@ -369,6 +369,26 @@ class JavaAnalytics(val analytics: Analytics) {
      */
     fun version() = analytics.version()
 
+    /**
+     * Reports an internal error to the user-defined error handler.
+     */
+    fun reportInternalError(error: Throwable) = analytics.reportInternalError(error)
+
+    /**
+     * Provides a list of finished, but unsent events.
+     */
+    fun pendingUploads(): List<String> = analytics.pendingUploads()
+
+    /**
+     * Purge all pending event upload files.
+     */
+    fun purgeStorage() = analytics.purgeStorage()
+
+    /**
+     * Purge a single event upload file.
+     */
+    fun purgeStorage(filePath: String) = analytics.purgeStorage(filePath)
+
     private fun setup(analytics: Analytics) {
         store = analytics.store
         storage = analytics.storage

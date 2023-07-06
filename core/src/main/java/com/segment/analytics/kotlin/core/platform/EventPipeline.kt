@@ -110,6 +110,7 @@ internal class EventPipeline(
                 flushPolicies.forEach { flushPolicy -> flushPolicy.updateState(event) }
             }
             catch (e : Exception) {
+                analytics.reportInternalError(e)
                 Analytics.segmentLog("Error adding payload: $event", kind = LogKind.ERROR)
             }
 
@@ -150,6 +151,7 @@ internal class EventPipeline(
                     // Cleanup uploaded payloads
                     analytics.log("$logTag uploaded $url")
                 } catch (e: Exception) {
+                    analytics.reportInternalError(e)
                     shouldCleanup = handleUploadException(e, file)
                 }
 
