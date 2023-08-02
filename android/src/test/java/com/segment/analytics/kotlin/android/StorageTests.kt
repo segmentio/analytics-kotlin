@@ -96,6 +96,19 @@ class StorageTests {
         }
 
         @Test
+        fun `userInfo reset action removes userInfo`() = runTest {
+            store.dispatch(UserInfo.ResetAction(), UserInfo::class)
+
+            val userId = androidStorage.read(Storage.Constants.UserId)
+            val anonId = androidStorage.read(Storage.Constants.AnonymousId)
+            val traits = androidStorage.read(Storage.Constants.Traits)
+
+            assertNotNull(anonId)
+            assertEquals(null, userId)
+            assertEquals(null, traits)
+        }
+
+        @Test
         fun `system update calls write for settings`() = runTest {
             val action = object : Action<System> {
                 override fun reduce(state: System): System {
@@ -135,6 +148,20 @@ class StorageTests {
                     edgeFunction = emptyJsonObject
                 ), Json.decodeFromString(Settings.serializer(), settings)
             )
+        }
+
+        @Test
+        fun `system reset action removes system`() = runTest {
+            val action = object : Action<System> {
+                override fun reduce(state: System): System {
+                    return System(state.configuration, null, state.running, state.initialSettingsDispatched, state.enabled)
+                }
+            }
+            store.dispatch(action, System::class)
+
+            val settings = androidStorage.read(Storage.Constants.Settings)
+
+            assertEquals(null, settings)
         }
 
         @Nested

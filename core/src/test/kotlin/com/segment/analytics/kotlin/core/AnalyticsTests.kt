@@ -704,12 +704,14 @@ class AnalyticsTests {
 
                 analytics.identify("oldUserId",
                         buildJsonObject { put("behaviour", "bad") })
-                assertEquals(analytics.userIdAsync(), "oldUserId")
-                assertEquals(analytics.traitsAsync(), buildJsonObject { put("behaviour", "bad") })
+                assertEquals(analytics.userId(), "oldUserId")
+                assertEquals(analytics.traits(), buildJsonObject { put("behaviour", "bad") })
 
                 analytics.reset()
-                assertEquals(analytics.userIdAsync(), null)
-                assertEquals(analytics.traitsAsync(), null)
+                assertEquals(analytics.userId(), null)
+                assertEquals(analytics.traits(), null)
+                assertEquals(analytics.storage.read(Storage.Constants.UserId), null)
+                assertEquals(analytics.storage.read(Storage.Constants.Traits), null)
                 verify { plugin.reset() }
             }
         }

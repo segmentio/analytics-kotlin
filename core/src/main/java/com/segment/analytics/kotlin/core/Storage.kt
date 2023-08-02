@@ -57,21 +57,25 @@ interface Storage {
 
     suspend fun userInfoUpdate(userInfo: UserInfo) {
         write(Constants.AnonymousId, userInfo.anonymousId)
-        userInfo.userId?.let { write(Constants.UserId, it) }
+
+        userInfo.userId?.let {
+            write(Constants.UserId, it)
+        } ?: run {
+            remove(Constants.UserId)
+        }
+
         userInfo.traits?.let {
-            write(
-                Constants.Traits,
-                Json.encodeToString(JsonObject.serializer(), it)
-            )
+            write(Constants.Traits, Json.encodeToString(JsonObject.serializer(), it))
+        } ?: run {
+            remove(Constants.Traits)
         }
     }
 
     suspend fun systemUpdate(system: System) {
         system.settings?.let {
-            write(
-                Constants.Settings,
-                Json.encodeToString(Settings.serializer(), it)
-            )
+            write(Constants.Settings, Json.encodeToString(Settings.serializer(), it))
+        } ?: run {
+            remove(Constants.Settings)
         }
     }
 }
