@@ -528,6 +528,8 @@ internal class JavaAnalyticsTest {
             analytics.reset()
             assertEquals(analytics.userId(), null)
             assertEquals(analytics.traits(), null)
+            assertEquals(analytics.storage.read(Storage.Constants.UserId), null)
+            assertEquals(analytics.storage.read(Storage.Constants.Traits), null)
             verify { plugin.reset() }
         }
     }
