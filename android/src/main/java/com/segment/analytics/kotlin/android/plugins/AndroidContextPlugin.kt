@@ -161,10 +161,8 @@ class AndroidContextPlugin : Plugin {
                 deviceId = task.await()
             }
 
-            if (deviceId != fallbackDeviceId) {
-                device = updateJsonObject(device) {
-                    it[DEVICE_ID_KEY] = deviceId
-                }
+            device = updateJsonObject(device) {
+                it[DEVICE_ID_KEY] = deviceId
             }
 
             storage.write(Storage.Constants.DeviceId, deviceId)
@@ -173,7 +171,7 @@ class AndroidContextPlugin : Plugin {
 
     internal fun getDeviceId(collectDeviceId: Boolean, fallbackDeviceId: String): String {
         if (!collectDeviceId) {
-            return storage.read(Storage.Constants.AnonymousId) ?: ""
+            return storage.read(Storage.Constants.AnonymousId) ?: fallbackDeviceId
         }
 
         // unique id generated from DRM API
