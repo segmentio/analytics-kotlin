@@ -71,10 +71,18 @@ internal class Timeline {
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {
-                val systemSettings = store.currentState(System::class)?.settings
+                val systemState = store.currentState(System::class)
+                val systemSettings = systemState?.settings
                 systemSettings?.let {
                     // if we have settings then update plugin with it
                     plugin.update(it, Plugin.UpdateType.Initial)
+
+                    if (!systemState.initialSettingsDispatched) {
+                        store.dispatch(
+                            System.ToggleSettingsDispatch(dispatched = true),
+                            System::class
+                        )
+                    }
                 }
             }
         }
