@@ -79,9 +79,6 @@ class PassiveLocationPlugin(val context: Context) : Plugin {
                         put("isMock", JsonPrimitive(passiveLastKnownLocation?.isMock))
                     }
                 })
-            } else {
-                // If we don't have permissions then just set event.context.location = "n/a"
-                put("location", JsonPrimitive("n/a"))
             }
         }
 
