@@ -608,7 +608,7 @@ internal class JavaAnalyticsTest {
             segmentDestination.execute(any())
         }
         verify { segmentDestination.onEnableToggled(capture(state)) }
-        assertEquals(false, state[1].enabled)
+        assertEquals(false, state.last().enabled)
 
         analytics.enabled = true
         analytics.track("test")
@@ -617,7 +617,7 @@ internal class JavaAnalyticsTest {
             segmentDestination.execute(any())
         }
         verify { segmentDestination.onEnableToggled(capture(state)) }
-        assertEquals(true, state[2].enabled)
+        assertEquals(true, state.last().enabled)
     }
 
     private fun BaseEvent.populate() = apply {

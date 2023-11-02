@@ -146,7 +146,7 @@ class SettingsTests {
 
     @Disabled
     @Test
-    fun `can manually enable destinations`() {
+    fun `can manually enable destinations`() = runTest {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("Foo", buildJsonObject {
@@ -168,7 +168,7 @@ class SettingsTests {
         }
 
         analytics.add(barDestination)
-        analytics.update(settings, Plugin.UpdateType.Initial)
+        analytics.update(settings)
 
         analytics.track("track", buildJsonObject { put("direct", true) })
         assertEquals(0, eventCounter.get())
