@@ -1,14 +1,13 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.utilities.putAll
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import sovran.kotlin.Action
 import sovran.kotlin.State
-import java.util.UUID
+import java.util.*
 
 /**
  * Stores state related to the analytics system
@@ -20,7 +19,7 @@ data class System(
     var configuration: Configuration = Configuration(""),
     var settings: Settings?,
     var running: Boolean,
-    var initialSettingsDispatched: Boolean,
+    var initializedPlugins: Set<Int>,
     var enabled: Boolean
 ) : State {
 
@@ -38,7 +37,7 @@ data class System(
                 configuration = configuration,
                 settings = settings,
                 running = false,
-                initialSettingsDispatched = false,
+                initializedPlugins = setOf(),
                 enabled = true
             )
         }
@@ -50,7 +49,7 @@ data class System(
                 state.configuration,
                 settings,
                 state.running,
-                state.initialSettingsDispatched,
+                state.initializedPlugins,
                 state.enabled
             )
         }
@@ -62,7 +61,7 @@ data class System(
                 state.configuration,
                 state.settings,
                 running,
-                state.initialSettingsDispatched,
+                state.initializedPlugins,
                 state.enabled
             )
         }
@@ -81,21 +80,22 @@ data class System(
                 state.configuration,
                 newSettings,
                 state.running,
-                state.initialSettingsDispatched,
+                state.initializedPlugins,
                 state.enabled
             )
         }
     }
 
-    class ToggleSettingsDispatch(
-        var dispatched: Boolean,
+    class AddInitializedPlugins(
+        var dispatched: Set<Int>,
     ) : Action<System> {
         override fun reduce(state: System): System {
+            val initializedPlugins = state.initializedPlugins + dispatched
             return System(
                 state.configuration,
                 state.settings,
                 state.running,
-                dispatched,
+                initializedPlugins,
                 state.enabled
             )
         }
@@ -107,7 +107,7 @@ data class System(
                 state.configuration,
                 state.settings,
                 state.running,
-                state.initialSettingsDispatched,
+                state.initializedPlugins,
                 enabled
             )
         }
