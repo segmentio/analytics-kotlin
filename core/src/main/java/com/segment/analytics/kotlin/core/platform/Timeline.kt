@@ -6,7 +6,6 @@ import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.reportInternalError
 import kotlinx.coroutines.launch
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
 // Platform abstraction for managing all plugins and their execution
@@ -74,12 +73,12 @@ internal class Timeline {
                 val systemState = store.currentState(System::class)
                 val systemSettings = systemState?.settings
                 systemSettings?.let {
-                    // if we have settings then update plugin with it
-                    plugin.update(it, Plugin.UpdateType.Initial)
-
-                    if (!systemState.initialSettingsDispatched) {
+                    if (systemState.initializedPlugins.isNotEmpty()) {
+                        // if we have settings then update plugin with it
+                        // otherwise it will be updated when settings becomes available
+                        plugin.update(it, Plugin.UpdateType.Initial)
                         store.dispatch(
-                            System.ToggleSettingsDispatch(dispatched = true),
+                            System.AddInitializedPlugins(setOf(plugin.hashCode())),
                             System::class
                         )
                     }

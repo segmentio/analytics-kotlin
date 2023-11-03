@@ -14,7 +14,6 @@ import com.segment.analytics.kotlin.core.UserInfo
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -59,7 +58,7 @@ class StorageTests {
                     configuration = Configuration("123"),
                     settings = Settings(),
                     running = false,
-                    initialSettingsDispatched = false,
+                    initializedPlugins = setOf(),
                     enabled = true
                 )
             )
@@ -129,7 +128,7 @@ class StorageTests {
                             edgeFunction = emptyJsonObject
                         ),
                         running = false,
-                        initialSettingsDispatched = false,
+                        initializedPlugins = setOf(),
                         enabled = true
                     )
                 }
@@ -154,7 +153,7 @@ class StorageTests {
         fun `system reset action removes system`() = runTest {
             val action = object : Action<System> {
                 override fun reduce(state: System): System {
-                    return System(state.configuration, null, state.running, state.initialSettingsDispatched, state.enabled)
+                    return System(state.configuration, null, state.running, state.initializedPlugins, state.enabled)
                 }
             }
             store.dispatch(action, System::class)

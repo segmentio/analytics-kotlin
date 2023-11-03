@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
@@ -42,12 +41,22 @@ data class Settings(
     }
 }
 
-internal fun Analytics.update(settings: Settings, type: Plugin.UpdateType) {
+internal suspend fun Analytics.update(settings: Settings) {
+    val systemState = store.currentState(System::class) ?: return
+    val set = mutableSetOf<Int>()
     timeline.applyClosure { plugin ->
         // tell all top level plugins to update.
         // For destination plugins they auto-handle propagation to sub-plugins
+        val type: Plugin.UpdateType =
+            if (systemState.initializedPlugins.contains(plugin.hashCode())) {
+                Plugin.UpdateType.Refresh
+            } else {
+                set.add(plugin.hashCode())
+                Plugin.UpdateType.Initial
+            }
         plugin.update(settings, type)
     }
+    store.dispatch(System.AddInitializedPlugins(set), System::class)
 }
 
 /**
@@ -74,14 +83,7 @@ suspend fun Analytics.checkSettings() {
     val writeKey = configuration.writeKey
     val cdnHost = configuration.cdnHost
 
-    // check current system state to determine whether it's initial or refresh
-    val systemState = store.currentState(System::class) ?: return
-    val updateType = if (systemState.initialSettingsDispatched) {
-        Plugin.UpdateType.Refresh
-    } else {
-        Plugin.UpdateType.Initial
-    }
-
+    store.currentState(System::class) ?: return
     store.dispatch(System.ToggleRunningAction(running = false), System::class)
 
     withContext(networkIODispatcher) {
@@ -92,8 +94,7 @@ suspend fun Analytics.checkSettings() {
             settingsObj?.let {
                 log("Dispatching update settings on ${Thread.currentThread().name}")
                 store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
-                update(settingsObj, updateType)
-                store.dispatch(System.ToggleSettingsDispatch(dispatched = true), System::class)
+                update(settingsObj)
             }
 
             // we're good to go back to a running state.

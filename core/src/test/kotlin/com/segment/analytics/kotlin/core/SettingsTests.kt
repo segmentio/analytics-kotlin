@@ -86,6 +86,69 @@ class SettingsTests {
     }
 
     @Test
+    fun `plugin added before settings is available updates plugin correctly`() = runTest {
+        // forces settings to fail
+        mockHTTPClient("")
+
+        analytics = testAnalytics(Configuration(
+            writeKey = "123",
+            application = "Test",
+            autoAddSegmentDestination = false
+        ), testScope, testDispatcher)
+        val mockPlugin = spyk<StubPlugin>()
+
+        // no settings available, should not be called
+        analytics.add(mockPlugin)
+        verify (exactly = 0){
+            mockPlugin.update(any(), any())
+        }
+
+        // load settings
+        mockHTTPClient()
+        analytics.checkSettings()
+        verify (exactly =  1) {
+            mockPlugin.update(any(), Plugin.UpdateType.Initial)
+        }
+        val system = analytics.store.currentState(System::class)
+        assertTrue(system!!.initializedPlugins.contains(mockPlugin.hashCode()))
+
+        // load settings again
+        mockHTTPClient()
+        analytics.checkSettings()
+        verify (exactly =  1) {
+            mockPlugin.update(any(), Plugin.UpdateType.Refresh)
+        }
+    }
+
+    @Test
+    fun `plugin added after settings is available updates plugin correctly`() = runTest {
+        // load settings
+        mockHTTPClient()
+        analytics = testAnalytics(Configuration(
+            writeKey = "123",
+            application = "Test",
+            autoAddSegmentDestination = false
+        ), testScope, testDispatcher)
+        val mockPlugin = spyk<StubPlugin>()
+
+        analytics.add(mockPlugin)
+
+        // settings is already available, update with Initial
+        verify (exactly =  1) {
+            mockPlugin.update(any(), Plugin.UpdateType.Initial)
+        }
+        val system = analytics.store.currentState(System::class)
+        assertTrue(system!!.initializedPlugins.contains(mockPlugin.hashCode()))
+
+        // load settings again
+        mockHTTPClient()
+        analytics.checkSettings()
+        verify (exactly =  1) {
+            mockPlugin.update(any(), Plugin.UpdateType.Refresh)
+        }
+    }
+
+    @Test
     fun `isDestinationEnabled returns true when present`() {
         val settings = Settings(
             integrations = buildJsonObject {
@@ -146,7 +209,7 @@ class SettingsTests {
 
     @Disabled
     @Test
-    fun `can manually enable destinations`() {
+    fun `can manually enable destinations`() = runTest {
         val settings = Settings(
             integrations = buildJsonObject {
                 put("Foo", buildJsonObject {
@@ -168,7 +231,7 @@ class SettingsTests {
         }
 
         analytics.add(barDestination)
-        analytics.update(settings, Plugin.UpdateType.Initial)
+        analytics.update(settings)
 
         analytics.track("track", buildJsonObject { put("direct", true) })
         assertEquals(0, eventCounter.get())
