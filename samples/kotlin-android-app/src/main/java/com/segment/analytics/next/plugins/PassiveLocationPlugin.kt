@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import com.segment.analytics.kotlin.core.Analytics
@@ -38,15 +39,7 @@ class PassiveLocationPlugin(val context: Context) : Plugin {
             if (haveAnyLocationPermission()
             ) {
 
-
-                val locationManager =
-                    context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-                @SuppressLint("MissingPermission")
-                // Passive Provider is API level 8
-                val passiveLastKnownLocation = locationManager.getLastKnownLocation(
-                    LocationManager.PASSIVE_PROVIDER
-                )
+                val passiveLastKnownLocation = getLastKnownLocation()
 
                 // Build top-level event.context.location object.
                 put("location", buildJsonObject {
@@ -65,8 +58,7 @@ class PassiveLocationPlugin(val context: Context) : Plugin {
                             JsonPrimitive(passiveLastKnownLocation?.bearingAccuracyDegrees)
                         )
                     }
-
-
+                    
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         put(
                             "elapsedRealtimeAgeMillis",
@@ -83,6 +75,18 @@ class PassiveLocationPlugin(val context: Context) : Plugin {
         }
 
         return event
+    }
+
+    private fun getLastKnownLocation(): Location? {
+        val locationManager =
+            context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        @SuppressLint("MissingPermission")
+        // Passive Provider is API level 8
+        val passiveLastKnownLocation = locationManager.getLastKnownLocation(
+            LocationManager.PASSIVE_PROVIDER
+        )
+        return passiveLastKnownLocation
     }
 
     /**
