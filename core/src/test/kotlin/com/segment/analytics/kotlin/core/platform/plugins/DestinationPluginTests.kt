@@ -180,4 +180,54 @@ class DestinationPluginTests {
         val result = destinationPlugin.process(trackEvent)
         assertEquals(null, result)
     }
+
+    @Test
+    fun `findAll will find single added plugin`() {
+        val destinationPlugin = object: DestinationPlugin() {
+            override val key: String = "TestDestination"
+        }
+
+        timeline.add(destinationPlugin)
+        var simplePlugins = destinationPlugin.findAll(SimplePlugin::class)
+        assertTrue(simplePlugins.isEmpty())
+
+        val testPlugin = SimplePlugin("Test1")
+        destinationPlugin.add(testPlugin)
+        simplePlugins = destinationPlugin.findAll(SimplePlugin::class)
+
+        assertTrue(simplePlugins.isNotEmpty())
+        assertEquals(1, simplePlugins.size)
+        assertEquals(testPlugin, simplePlugins.get(0))
+    }
+
+    @Test
+    fun `findAll will find multiple added plugin`() {
+        val destinationPlugin = object: DestinationPlugin() {
+            override val key: String = "TestDestination"
+        }
+
+        timeline.add(destinationPlugin)
+        var simplePlugins = destinationPlugin.findAll(SimplePlugin::class)
+        assertTrue(simplePlugins.isEmpty())
+
+        val testPlugin1 = SimplePlugin("Test1")
+        val testPlugin2 = SimplePlugin("Test2")
+        val testPlugin3 = SimplePlugin("Test3")
+
+        destinationPlugin.add(testPlugin1)
+        destinationPlugin.add(testPlugin2)
+        destinationPlugin.add(testPlugin3)
+        simplePlugins = destinationPlugin.findAll(SimplePlugin::class)
+
+        assertTrue(simplePlugins.isNotEmpty())
+        assertEquals(3, simplePlugins.size)
+        assertEquals(testPlugin1, simplePlugins.get(0))
+        assertEquals(testPlugin2, simplePlugins.get(1))
+        assertEquals(testPlugin3, simplePlugins.get(2))
+    }
+
+    class SimplePlugin(var name: String) : Plugin {
+        override val type: Plugin.Type = Plugin.Type.Enrichment
+        override lateinit var analytics: Analytics
+    }
 }
