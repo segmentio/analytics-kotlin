@@ -9,6 +9,7 @@ import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.utilities.getBoolean
+import kotlin.reflect.KClass
 
 // Most simple interface for an plugin
 interface Plugin {
@@ -103,6 +104,13 @@ abstract class DestinationPlugin : EventPlugin {
 
     fun remove(plugin: Plugin) {
         timeline.remove(plugin)
+    }
+
+    /**
+     * Find all Plugins matching the given class that have been added to this Destination Plugin.
+     */
+    fun <T: Plugin> findAll(pluginClass: KClass<T>): List<T> {
+        return timeline.findAll(pluginClass)
     }
 
     /**
