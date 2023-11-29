@@ -4,7 +4,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
-import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
+import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
@@ -28,7 +28,6 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
-import java.time.Instant
 import java.util.Date
 import java.util.UUID
 
@@ -50,10 +49,8 @@ class AnalyticsTests {
     private val testScope = TestScope(testDispatcher)
 
     init {
-        mockkStatic(Instant::class)
-        every { Instant.now() } returns Date(0).toInstant()
-        mockkStatic(::dateTimeNowString)
-        every { dateTimeNowString() } returns Date(0).toInstant().toString()
+        mockkObject(SegmentInstant)
+        every { SegmentInstant.now() } returns Date(0).toInstant().toString()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
     }

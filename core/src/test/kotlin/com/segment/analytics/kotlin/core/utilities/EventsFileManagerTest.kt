@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.utilities
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import io.mockk.every
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
@@ -24,11 +25,8 @@ internal class EventsFileManagerTest{
     private val kvStore = PropertiesFile(directory.parentFile, "123")
 
     init {
-        mockkStatic(Instant::class)
-        every { Instant.now() } returns Date(0).toInstant()
-
-        mockkStatic(::dateTimeNowString)
-        every { dateTimeNowString() } returns Date(0).toInstant().toString()
+        mockkObject(SegmentInstant)
+        every { SegmentInstant.now() } returns Date(0).toInstant().toString()
     }
 
     @BeforeEach

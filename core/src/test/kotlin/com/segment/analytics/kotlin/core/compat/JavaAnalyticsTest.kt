@@ -5,7 +5,7 @@ import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
-import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
+import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.time.Instant
 import java.util.*
 import java.util.function.Consumer
 
@@ -43,10 +42,8 @@ internal class JavaAnalyticsTest {
     private val testScope = TestScope(testDispatcher)
 
     init {
-        mockkStatic(Instant::class)
-        every { Instant.now() } returns Date(0).toInstant()
-        mockkStatic(::dateTimeNowString)
-        every { dateTimeNowString() } returns Date(0).toInstant().toString()
+        mockkObject(SegmentInstant)
+        every { SegmentInstant.now() } returns Date(0).toInstant().toString()
         mockkStatic(UUID::class)
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
         mockHTTPClient()
