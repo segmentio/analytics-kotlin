@@ -1,6 +1,6 @@
 package com.segment.analytics.kotlin.core
 
-import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
+import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -80,7 +80,7 @@ sealed class BaseEvent {
     }
 
     internal fun applyBaseData() {
-        this.timestamp = dateTimeNowString()
+        this.timestamp = SegmentInstant.now()
         this.context = emptyJsonObject
         this.messageId = UUID.randomUUID().toString()
     }

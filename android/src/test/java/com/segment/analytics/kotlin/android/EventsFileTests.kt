@@ -6,9 +6,9 @@ import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.EventsFileManager
-import com.segment.analytics.kotlin.core.utilities.dateTimeNowString
+import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import io.mockk.every
-import io.mockk.mockkStatic
+import io.mockk.mockkObject
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonObject
@@ -32,10 +32,8 @@ class EventsFileTests {
     private val directory = File("/tmp/analytics-android-test/")
 
     init {
-        mockkStatic(Instant::class)
-        mockkStatic(::dateTimeNowString)
-        every { dateTimeNowString() } returns Date(0).toInstant().toString()
-        every { Instant.now() } returns Date(0).toInstant()
+        mockkObject(SegmentInstant)
+        every { SegmentInstant.now() } returns Date(0).toInstant().toString()
     }
 
     @BeforeEach
