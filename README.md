@@ -5,6 +5,8 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/segmentio/analytics-kotlin/badge.svg)](https://snyk.io/test/github/segmentio/analytics-kotlin)
 [![](https://img.shields.io/github/license/segmentio/analytics-kotlin)](https://github.com/segmentio/analytics-kotlin/blob/main/LICENSE)
 
+### 🎉 Flagship 🎉
+This library is one of Segment’s most popular Flagship libraries. It is actively maintained by Segment, benefitting from new feature releases and ongoing support.
 
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM). Analytics helps you measure your users, product, and business. It unlocks insights into your app's funnel, core business metrics, and whether you have product-market fit.
 
