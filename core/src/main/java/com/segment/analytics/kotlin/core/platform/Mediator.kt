@@ -44,6 +44,8 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                 } catch (t: Throwable) {
                     Analytics.reportInternalError("Caught Exception in plugin: $t")
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
+                    plugin.analytics.telemetry.increment("analytics_mobile.integration.invoke.error",
+                        listOf("error: $t", "class:${plugin.javaClass.toString()}"))
                 }
             }
         }
@@ -58,6 +60,8 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             } catch (t: Throwable) {
                 Analytics.reportInternalError(t)
                 Analytics.segmentLog("Caught Exception applying closure to plugin: $it: $t")
+                it.analytics.telemetry.increment("analytics_mobile.integration.invoke.error",
+                    listOf("error: $t", "class:${it.javaClass.toString()}"))
             }
         }
     }

@@ -84,9 +84,9 @@ internal fun HttpURLConnection.createGetConnection(): Connection {
 
 internal fun HttpURLConnection.createPostConnection(): Connection {
     val outputStream: OutputStream
-    setRequestProperty("Content-Encoding", "gzip")
+    //setRequestProperty("Content-Encoding", "gzip")
     outputStream = GZIPOutputStream(this.outputStream)
-    return object : Connection(this, null, outputStream) {
+    return object : Connection(this, null, this.outputStream) {
         @Throws(IOException::class)
         override fun close() {
             try {

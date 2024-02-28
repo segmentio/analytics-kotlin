@@ -52,6 +52,8 @@ open class Analytics protected constructor(
         )
     }
 
+    internal var telemetry: Telemetry = Telemetry()
+
     internal var userInfo: UserInfo = UserInfo.defaultState(storage)
 
     var enabled = true
@@ -80,6 +82,8 @@ open class Analytics protected constructor(
     }
 
     init {
+        this.telemetry.increment("analytics_mobile.invoke",
+            listOf("version:${Constants.LIBRARY_VERSION}", "api_host:${Constants.DEFAULT_API_HOST}"))
         require(configuration.isValid()) { "invalid configuration" }
         build()
     }
