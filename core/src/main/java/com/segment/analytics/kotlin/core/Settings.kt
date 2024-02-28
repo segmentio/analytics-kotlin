@@ -118,7 +118,7 @@ internal fun Analytics.fetchSettings(
         "${ex.message}: failed to fetch settings",
         kind = LogKind.ERROR
     )
-    telemetry.increment("analytics_mobile.integration.invoke.error",
+    telemetry.increment("analytics_mobile.invoke.error",
         listOf("error:$ex", "writekey:$writeKey", "cdnhost:$cdnHost"))
     null
 }
