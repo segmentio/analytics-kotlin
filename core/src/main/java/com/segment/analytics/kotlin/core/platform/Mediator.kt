@@ -2,6 +2,7 @@ package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.Telemetry
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.reportInternalError
@@ -44,8 +45,9 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                 } catch (t: Throwable) {
                     Analytics.reportInternalError("Caught Exception in plugin: $t")
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
-                    plugin.analytics.telemetry.increment("analytics_mobile.integration.invoke.error",
-                        listOf("error: $t", "class:${plugin.javaClass.toString()}"))
+                    Telemetry.increment("analytics_mobile.integration.invoke.error",
+                        mapOf("error" to t.toString(), "plugin" to "${plugin.type}-${plugin.javaClass}",
+                        "writekey" to plugin.analytics.configuration.writeKey, "message" to "Exception executing plugin"))
                 }
             }
         }
@@ -60,8 +62,9 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             } catch (t: Throwable) {
                 Analytics.reportInternalError(t)
                 Analytics.segmentLog("Caught Exception applying closure to plugin: $it: $t")
-                it.analytics.telemetry.increment("analytics_mobile.integration.invoke.error",
-                    listOf("error: $t", "class:${it.javaClass.toString()}"))
+                Telemetry.increment("analytics_mobile.integration.invoke.error",
+                    mapOf("error" to t.toString(), "plugin" to "${it.type}-${it.javaClass}",
+                        "writekey" to it.analytics.configuration.writeKey, "message" to "Exception executing plugin"))
             }
         }
     }

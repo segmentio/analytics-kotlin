@@ -4,25 +4,17 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.*
 import java.net.HttpURLConnection
+import java.lang.System
 
 class MetricsRequestFactory : RequestFactory() {
     override fun upload(apiHost: String): HttpURLConnection {
-        val connection: HttpURLConnection = openConnection("https://webhook.site/6fd5d19e-fb17-46e5-940d-27628dd8991a")
+        val connection: HttpURLConnection = openConnection("https://$apiHost/m")
         connection.setRequestProperty("Content-Type", "text/plain")
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
         return connection
     }
 }
-
-const val SEGMENT_API_HOST = "api.segment.io"
-
-data class MetricsOptions(
-    val host: String? = null,
-    val sampleRate: Double? = null,
-    val flushTimer: Int? = null,
-    val maxQueueSize: Int? = null
-)
 
 @Serializable
 data class RemoteMetric(
@@ -32,12 +24,19 @@ data class RemoteMetric(
     val tags: Map<String, String>
 )
 
-fun createRemoteMetric(metric: String, tags: List<String>): RemoteMetric {
-    val formattedTags = tags.map { it.split(":") }.associate { it[0] to it[1] }
-
+fun createRemoteMetric(metric: String, tags: Map<String, String>): RemoteMetric {
+    var osversion = System.getProperty("os.version")
+    val regex = Regex("android[0-9]+")
+    val match = regex.find(osversion)
+    if (match != null) {
+        val majorVersion = match.value.takeLast(2) // last two characters should be major version
+        osversion = "android$majorVersion"
+    }
     return RemoteMetric(
         metric = metric,
-        tags = formattedTags + mapOf(
+        tags = tags + mapOf(
+            "os" to System.getProperty("os.name") + "-" + osversion,
+            "interpreter" to System.getProperty("java.vendor") + "-" + System.getProperty("java.version"),
             "library" to "analytics.kotlin",
             "library_version" to Constants.LIBRARY_VERSION
         )
@@ -48,12 +47,42 @@ fun logError(err: Throwable) {
     println("Error sending segment performance metrics $err")
 }
 
-class Telemetry(options: MetricsOptions? = null) {
-    private val client = HTTPClient("", MetricsRequestFactory())
-    private var host: String = options?.host ?: SEGMENT_API_HOST
-    private var sampleRate: Double = options?.sampleRate ?: 1.0
-    private val flushTimer: Int = options?.flushTimer ?: (/*30*/ 1 * 1000) // 30s
-    private val maxQueueSize: Int = options?.maxQueueSize ?: 20
+object Telemetry {
+    private var _host: String = Constants.DEFAULT_API_HOST
+    private var _sampleRate: Double = 0.1
+    private var _flushTimer: Int = /*30*/ 1 * 1000 // 30s
+    private var _maxQueueSize: Int = 20
+    private var _httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
+
+    var host: String
+        get() = _host
+        set(value) {
+            _host = value
+        }
+
+    var sampleRate: Double
+        get() = _sampleRate
+        set(value) {
+            _sampleRate = value
+        }
+
+    var flushTimer: Int
+        get() = _flushTimer
+        set(value) {
+            _flushTimer = value
+        }
+
+    var maxQueueSize: Int
+        get() = _maxQueueSize
+        set(value) {
+            _maxQueueSize = value
+        }
+
+    var httpClient: HTTPClient
+        get() = _httpClient
+        set(value) {
+            _httpClient = value
+        }
 
     private val queue = mutableListOf<RemoteMetric>()
 
@@ -72,7 +101,7 @@ class Telemetry(options: MetricsOptions? = null) {
         }
     }
 
-    fun increment(metric: String, tags: List<String>) {
+    fun increment(metric: String, tags: Map<String, String>) {
         if (!metric.startsWith("analytics_mobile.")) return
         if (tags.isEmpty()) return
         if (Math.random() > sampleRate) return
@@ -108,7 +137,7 @@ class Telemetry(options: MetricsOptions? = null) {
         queue.clear()
 
         try {
-            val connection = client.upload(host)
+            val connection = httpClient.upload(host)
             connection.outputStream?.use { outputStream ->
                 // Write the JSON string to the outputStream.
                 outputStream.write(payload.toByteArray(Charsets.UTF_8))

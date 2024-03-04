@@ -3,7 +3,7 @@ package com.segment.analytics.kotlin.core.platform
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
-import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+import com.segment.analytics.kotlin.core.Telemetry
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.reportInternalError
 import kotlinx.coroutines.launch
@@ -67,13 +67,14 @@ internal class Timeline {
         } catch (t: Throwable) {
             analytics.reportInternalError(t)
             Analytics.segmentLog("Caught Exception while setting up plugin $plugin: $t")
-            this.analytics.telemetry.increment("analytics_mobile.integration.invoke.error",
-                listOf("plugintype:${plugin.type.toString()}", "class:${plugin.javaClass.toString()}",
-                    "error:$t"
+            Telemetry.increment("analytics_mobile.integration.invoke.error",
+                mapOf("plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}",
+                    "error" to t.toString(), "writekey" to analytics.configuration.writeKey,
+                    "message" to "Exception setting up plugin"
                 ))
         }
-        this.analytics.telemetry.increment("analytics_mobile.integration.invoke",
-            listOf("plugintype:${plugin.type.toString()}", "class:${plugin.javaClass.toString()}"))
+        Telemetry.increment("analytics_mobile.integration.invoke",
+            mapOf("plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}"))
 
         plugins[plugin.type]?.add(plugin)
         with(analytics) {

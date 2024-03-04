@@ -13,6 +13,8 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.serializer
 import java.io.BufferedReader
 
@@ -22,6 +24,7 @@ data class Settings(
     var plan: JsonObject = emptyJsonObject,
     var edgeFunction: JsonObject = emptyJsonObject,
     var middlewareSettings: JsonObject = emptyJsonObject,
+    var metrics: JsonObject = emptyJsonObject,
 ) {
     inline fun <reified T : Any> destinationSettings(
         name: String,
@@ -97,6 +100,12 @@ suspend fun Analytics.checkSettings() {
                 update(settingsObj)
             }
 
+            settingsObj?.metrics?.get("sampleRate")?.jsonPrimitive?.double.also {
+                if (it != null) {
+                    Telemetry.sampleRate = it
+                }
+            }
+
             // we're good to go back to a running state.
             store.dispatch(System.ToggleRunningAction(running = true), System::class)
         }
@@ -118,7 +127,7 @@ internal fun Analytics.fetchSettings(
         "${ex.message}: failed to fetch settings",
         kind = LogKind.ERROR
     )
-    telemetry.increment("analytics_mobile.invoke.error",
-        listOf("error:$ex", "writekey:$writeKey", "cdnhost:$cdnHost"))
+    Telemetry.increment("analytics_mobile.invoke.error",
+        mapOf("error" to ex.toString(), "writekey" to writeKey, "message" to "Error retrieving settings"))
     null
 }

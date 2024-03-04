@@ -35,6 +35,8 @@ class HTTPClient(
         } catch (e: MalformedURLException) {
             val error = IOException("Attempted to use malformed url: $url", e)
             Analytics.reportInternalError(error)
+            Telemetry.increment("analytics_mobile.invoke.error",
+                mapOf("error" to e.toString(), "writekey" to writeKey, "message" to "Malformed url"))
             throw error
         }
         val connection = requestedURL.openConnection() as HttpURLConnection
@@ -84,9 +86,9 @@ internal fun HttpURLConnection.createGetConnection(): Connection {
 
 internal fun HttpURLConnection.createPostConnection(): Connection {
     val outputStream: OutputStream
-    //setRequestProperty("Content-Encoding", "gzip")
+    setRequestProperty("Content-Encoding", "gzip")
     outputStream = GZIPOutputStream(this.outputStream)
-    return object : Connection(this, null, this.outputStream) {
+    return object : Connection(this, null, outputStream) {
         @Throws(IOException::class)
         override fun close() {
             try {
