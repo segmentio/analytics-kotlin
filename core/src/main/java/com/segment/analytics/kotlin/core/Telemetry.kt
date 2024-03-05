@@ -49,7 +49,7 @@ fun logError(err: Throwable) {
 
 object Telemetry {
     private var _host: String = Constants.DEFAULT_API_HOST
-    private var _sampleRate: Double = 0.1
+    private var _sampleRate: Double = 1.0
     private var _flushTimer: Int = /*30*/ 1 * 1000 // 30s
     private var _maxQueueSize: Int = 20
     private var _httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
@@ -132,8 +132,10 @@ object Telemetry {
         }
     }
 
+    private val json = Json { encodeDefaults = true }
+
     private fun send() {
-        val payload = Json.encodeToString(mapOf("series" to queue))
+        val payload = json.encodeToString(mapOf("series" to queue))
         queue.clear()
 
         try {
