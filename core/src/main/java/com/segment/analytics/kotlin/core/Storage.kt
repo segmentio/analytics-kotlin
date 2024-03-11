@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
+import java.io.File
 
 /**
  * Storage interface that abstracts storage of
@@ -40,6 +41,8 @@ interface Storage {
         LegacyAppBuild("build"),
         DeviceId("segment.device.id")
     }
+
+    val storageDirectory: File
 
     suspend fun subscribeToStore()
     suspend fun write(key: Constants, value: String)

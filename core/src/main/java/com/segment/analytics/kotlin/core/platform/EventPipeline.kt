@@ -19,7 +19,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.io.FileInputStream
 
-internal class EventPipeline(
+open class EventPipeline(
     private val analytics: Analytics,
     private val logTag: String,
     apiKey: String,
@@ -31,11 +31,15 @@ internal class EventPipeline(
 
     private var uploadChannel: Channel<String>
 
-    private val httpClient: HTTPClient = HTTPClient(apiKey, analytics.configuration.requestFactory)
+    protected open val httpClient: HTTPClient = HTTPClient(apiKey, analytics.configuration.requestFactory)
 
-    private val storage get() = analytics.storage
+    protected open val storage get() = analytics.storage
 
-    private val scope get() = analytics.analyticsScope
+    protected open val scope get() = analytics.analyticsScope
+
+    protected open val fileIODispatcher get() = analytics.fileIODispatcher
+
+    protected open val networkIODispatcher get() = analytics.networkIODispatcher
 
     var running: Boolean
         private set
@@ -87,7 +91,7 @@ internal class EventPipeline(
         unschedule()
     }
 
-    internal fun stringifyBaseEvent(payload: BaseEvent): String {
+    open fun stringifyBaseEvent(payload: BaseEvent): String {
         val finalPayload = EncodeDefaultsJson.encodeToJsonElement(payload)
             .jsonObject.filterNot { (k, v) ->
                 // filter out empty userId and traits values
@@ -98,7 +102,7 @@ internal class EventPipeline(
         return stringVal
     }
 
-    private fun write() = scope.launch(analytics.fileIODispatcher) {
+    private fun write() = scope.launch(fileIODispatcher) {
         for (event in writeChannel) {
             // write to storage
             val isPoison = (event.messageId == FLUSH_POISON)
@@ -122,10 +126,10 @@ internal class EventPipeline(
         }
     }
 
-    private fun upload() = scope.launch(analytics.networkIODispatcher) {
+    private fun upload() = scope.launch(networkIODispatcher) {
         uploadChannel.consumeEach {
             analytics.log("$logTag performing flush")
-            withContext(analytics.fileIODispatcher) {
+            withContext(fileIODispatcher) {
                 storage.rollover()
             }
 

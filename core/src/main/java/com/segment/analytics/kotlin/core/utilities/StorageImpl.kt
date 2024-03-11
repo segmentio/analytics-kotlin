@@ -22,7 +22,7 @@ class StorageImpl(
     private val ioDispatcher: CoroutineDispatcher
 ) : Subscriber, Storage {
 
-    private val storageDirectory = File("/tmp/analytics-kotlin/$writeKey")
+    override val storageDirectory = File("/tmp/analytics-kotlin/$writeKey")
     private val storageDirectoryEvents = File(storageDirectory, "events")
 
     internal val propertiesFile = PropertiesFile(storageDirectory, writeKey)

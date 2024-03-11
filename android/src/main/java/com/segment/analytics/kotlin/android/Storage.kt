@@ -25,7 +25,7 @@ class AndroidStorage(
 
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)
-    private val storageDirectory: File = context.getDir("segment-disk-queue", Context.MODE_PRIVATE)
+    override val storageDirectory: File = context.getDir("segment-disk-queue", Context.MODE_PRIVATE)
     internal val eventsFile =
         EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences))
 
