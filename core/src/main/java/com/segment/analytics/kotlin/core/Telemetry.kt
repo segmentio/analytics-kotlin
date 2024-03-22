@@ -111,21 +111,21 @@ object Telemetry {
     private var started = false
 
     init {
-        if (sampleRate > 0) {
-            CoroutineScope(Dispatchers.Default).launch {
-                while (isActive) {
-                    try {
-                        if(started) flush()
-                    } catch (e: Throwable) {
-                        logError(e)
-                    }
-                    try {
-                        delay(flushTimer.toLong())
-                    } catch (e: CancellationException) {
-                        // last flush before shutdown
-                        if(started) flush()
-                    }
+        CoroutineScope(Dispatchers.Default).launch {
+            while (isActive) {
+                if (!enable) return@launch
+                try {
+                    flush()
+                } catch (e: Throwable) {
+                    logError(e)
                 }
+                try {
+                    delay(flushTimer.toLong())
+                } catch (e: CancellationException) {
+                    // last flush before shutdown
+                    flush()
+                }
+
             }
         }
     }
@@ -145,7 +145,7 @@ object Telemetry {
     }
 
     fun increment(metric: String, tags: Map<String, String>) {
-        if (!_enable) return
+        if (!enable) return
         if (!metric.startsWith("analytics_mobile.")) return
         if (tags.isEmpty()) return
         if (Math.random() > sampleRate) return
@@ -182,7 +182,7 @@ object Telemetry {
     }
 
     fun flush() {
-        if (queue.isEmpty()) return
+        if (!started || !enable || queue.isEmpty()) return
 
         if (_rateLimitTimer > 0 && _rateLimitTimer > (System.currentTimeMillis() / 1000).toInt()) {
             return
@@ -198,10 +198,8 @@ object Telemetry {
         }
     }
 
-    private val json = Json
-
     private fun send() {
-        val payload = json.encodeToString(mapOf("series" to queue))
+        val payload = Json.encodeToString(mapOf("series" to queue))
         resetQueue()
 
         try {
