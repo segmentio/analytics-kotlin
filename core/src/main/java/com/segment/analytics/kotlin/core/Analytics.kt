@@ -82,7 +82,7 @@ open class Analytics protected constructor(
     init {
         require(configuration.isValid()) { "invalid configuration" }
         Telemetry.increment("analytics_mobile.invoke",
-            mapOf("apihost" to configuration.apiHost, "cdnhost" to configuration.cdnHost,
+            mapOf("message" to "configured", "apihost" to configuration.apiHost, "cdnhost" to configuration.cdnHost,
                 "flush" to "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"))
         build()
     }

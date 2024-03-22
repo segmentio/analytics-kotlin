@@ -67,14 +67,16 @@ internal class Timeline {
         } catch (t: Throwable) {
             analytics.reportInternalError(t)
             Analytics.segmentLog("Caught Exception while setting up plugin $plugin: $t")
-            Telemetry.increment("analytics_mobile.integration.invoke.error",
+            Telemetry.error("analytics_mobile.integration.invoke.error",
                 mapOf("plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}",
                     "error" to t.toString(), "writekey" to analytics.configuration.writeKey,
-                    "message" to "Exception setting up plugin"
-                ))
+                    "message" to "Exception setting up plugin"),
+                t.stackTraceToString()
+            )
         }
         Telemetry.increment("analytics_mobile.integration.invoke",
-            mapOf("plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}"))
+            mapOf("message" to "added",
+                "plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}"))
 
         plugins[plugin.type]?.add(plugin)
         with(analytics) {

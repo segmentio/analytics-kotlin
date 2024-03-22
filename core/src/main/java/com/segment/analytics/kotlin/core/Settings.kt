@@ -103,6 +103,7 @@ suspend fun Analytics.checkSettings() {
             settingsObj?.metrics?.get("sampleRate")?.jsonPrimitive?.double.also {
                 if (it != null) {
                     Telemetry.sampleRate = it
+                    Telemetry.start()
                 }
             }
 
@@ -127,7 +128,9 @@ internal fun Analytics.fetchSettings(
         "${ex.message}: failed to fetch settings",
         kind = LogKind.ERROR
     )
-    Telemetry.increment("analytics_mobile.invoke.error",
-        mapOf("error" to ex.toString(), "writekey" to writeKey, "message" to "Error retrieving settings"))
+    Telemetry.error("analytics_mobile.invoke.error",
+        mapOf("error" to ex.toString(), "writekey" to writeKey, "message" to "Error retrieving settings"),
+        ex.stackTraceToString()
+    )
     null
 }
