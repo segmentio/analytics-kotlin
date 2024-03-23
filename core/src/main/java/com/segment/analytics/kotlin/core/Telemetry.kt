@@ -20,6 +20,7 @@ class MetricsRequestFactory : RequestFactory() {
 }
 
 @Serializable
+// Default values will not be sent by Json.encodeToString
 data class RemoteMetric(
     val type: String,
     val metric: String,
@@ -27,81 +28,37 @@ data class RemoteMetric(
     val tags: Map<String, String>,
     val log: Map<String, String>? = null,
 )
+private const val METRIC_TYPE = "Counter"
 
 fun logError(err: Throwable) {
     println("Error sending segment performance metrics $err")
 }
 
 object Telemetry {
-    private var _enable: Boolean = true
-    private var _host: String = Constants.DEFAULT_API_HOST
-    private var _sampleRate: Double = 1.0
-    private var _flushTimer: Int = 30 * 1000 // 30s
-    private var _maxQueueSize: Int = 20
-    private var MAX_QUEUE_BYTES = 28000
-    private var _maxQueueBytes: Int = MAX_QUEUE_BYTES
-    private var _httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
-    private var _sendWriteKeyOnError: Boolean = true
-    private var _sendErrorLogData: Boolean = false
-    private var _errorHandler: ((Throwable) -> Unit)? = null
-    private var _rateLimitTimer: Int = 0
+    // Metric class for Analytics SDK
+    const val INVOKE = "analytics_mobile.invoke"
+    // Metric class for Analytics SDK errors
+    const val INVOKE_ERROR = "analytics_mobile.invoke.error"
+    // Metric class for Analytics SDK plugins
+    const val INTEGRATION = "analytics_mobile.integration.invoke"
+    // Metric class for Analytics SDK plugin errors
+    const val INTEGRATION_ERROR = "analytics_mobile.integration.invoke.error"
 
-    var enable: Boolean
-        get() = _enable
-        set(value) {
-            _enable = value
-        }
-    var sendWriteKeyOnError: Boolean
-        get() = _sendWriteKeyOnError
-        set(value) {
-            _sendWriteKeyOnError = value
-        }
+    var enable: Boolean = true
+    var host: String = "webhook.site/5d2ce61e-0b30-4fb6-a51c-1b87ed500c46" //Constants.DEFAULT_API_HOST
+    // 1.0 is 100%, will get set by Segment setting before start()
+    var sampleRate: Double = 1.0
+    var flushTimer: Int = 30 * 1000 // 30s
+    var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
+    var sendWriteKeyOnError: Boolean = true
+    var sendErrorLogData: Boolean = false
+    var errorHandler: ((Throwable) -> Unit)? = null
+    var maxQueueSize: Int = 20
 
-    var sendErrorLogData: Boolean
-        get() = _sendErrorLogData
+    private const val MAX_QUEUE_BYTES = 28000
+    var maxQueueBytes: Int = MAX_QUEUE_BYTES
         set(value) {
-            _sendErrorLogData = value
-        }
-    var errorHandler: ((Throwable) -> Unit)?
-        get() = _errorHandler
-        set(value) {
-            _errorHandler = value
-        }
-
-    var host: String
-        get() = _host
-        set(value) {
-            _host = value
-        }
-
-    var sampleRate: Double
-        get() = _sampleRate
-        set(value) {
-            _sampleRate = value
-        }
-
-    var flushTimer: Int
-        get() = _flushTimer
-        set(value) {
-            _flushTimer = value
-        }
-
-    var maxQueueSize: Int
-        get() = _maxQueueSize
-        set(value) {
-            _maxQueueSize = value
-        }
-
-    var maxQueueBytes: Int
-        get() = _maxQueueBytes
-        set(value) {
-            _maxQueueBytes = min(value, MAX_QUEUE_BYTES)
-        }
-
-    var httpClient: HTTPClient
-        get() = _httpClient
-        set(value) {
-            _httpClient = value
+            field = min(value, MAX_QUEUE_BYTES)
         }
 
     private val queue = mutableListOf<RemoteMetric>()
@@ -109,8 +66,21 @@ object Telemetry {
     private var queueSizeExceeded = false
     private val seenErrors = mutableMapOf<String, Int>()
     private var started = false
+    private var rateLimitEndTime: Long = 0
 
-    init {
+    fun start() {
+        if (started || sampleRate == 0.0) return
+        // Assume sampleRate is now set and everything in the queue hasn't had it applied
+        if (Math.random() > sampleRate) {
+            resetQueue()
+        } else {
+            queue.forEach {
+                it.value = (it.value / sampleRate).roundToInt()
+            }
+        }
+
+        started = true
+
         CoroutineScope(Dispatchers.Default).launch {
             while (isActive) {
                 if (!enable) return@launch
@@ -125,27 +95,12 @@ object Telemetry {
                     // last flush before shutdown
                     flush()
                 }
-
             }
         }
-    }
-
-    fun start() {
-        if (started) return
-        // Assume sampleRate is now set and everything in the queue hasn't had it applied
-        if (Math.random() > sampleRate) {
-            resetQueue()
-        } else {
-            queue.forEach {
-                it.value = (it.value / sampleRate).roundToInt()
-            }
-        }
-
-        started = true
     }
 
     fun increment(metric: String, tags: Map<String, String>) {
-        if (!enable) return
+        if (!enable || sampleRate == 0.0) return
         if (!metric.startsWith("analytics_mobile.")) return
         if (tags.isEmpty()) return
         if (Math.random() > sampleRate) return
@@ -155,13 +110,13 @@ object Telemetry {
     }
 
     fun error(metric:String, tags: Map<String, String>, log: String) {
-        if (!enable) return
+        if (!enable || sampleRate == 0.0) return
         if (!metric.startsWith("analytics_mobile.")) return
         if (tags.isEmpty()) return
         if (queue.size >= maxQueueSize) return
 
         var filteredTags = tags
-        if (!sendWriteKeyOnError) filteredTags = tags.filterKeys { it != "writekey" }
+        if (!sendWriteKeyOnError) filteredTags = tags.filterKeys { it.lowercase() != "writekey" }
         var logData: String? = null
         if (sendErrorLogData) logData = log
 
@@ -184,10 +139,10 @@ object Telemetry {
     fun flush() {
         if (!started || !enable || queue.isEmpty()) return
 
-        if (_rateLimitTimer > 0 && _rateLimitTimer > (System.currentTimeMillis() / 1000).toInt()) {
+        if (rateLimitEndTime > (System.currentTimeMillis() / 1000).toInt()) {
             return
         }
-        _rateLimitTimer = 0
+        rateLimitEndTime = 0
 
         try {
             send()
@@ -199,6 +154,8 @@ object Telemetry {
     }
 
     private fun send() {
+        // Json.encodeToString by default does not include default values
+        //  We're using this to leave off the 'log' parameter if unset.
         val payload = Json.encodeToString(mapOf("series" to queue))
         resetQueue()
 
@@ -211,16 +168,16 @@ object Telemetry {
             }
             connection.close()
         } catch (e: HTTPException) {
-            _errorHandler?.let { it(e) }
-            if (e.responseCode != 429) {
+            errorHandler?.let { it(e) }
+            if (e.responseCode == 429) {
                 val headers = e.responseHeaders
-                val rateLimit = headers["X-RateLimit-Reset"]?.firstOrNull()?.toLongOrNull()
+                val rateLimit = headers["Retry-After"]?.firstOrNull()?.toLongOrNull()
                 if (rateLimit != null) {
-                    _rateLimitTimer = rateLimit.toInt() + (System.currentTimeMillis() / 1000).toInt()
+                    rateLimitEndTime = rateLimit + (System.currentTimeMillis() / 1000)
                 }
             }
         } catch (e: Exception) {
-            _errorHandler?.let { it(e) }
+            errorHandler?.let { it(e) }
         }
     }
 
@@ -249,7 +206,7 @@ object Telemetry {
         }
 
         val newMetric = RemoteMetric(
-            type = "Counter",
+            type = METRIC_TYPE,
             metric = metric,
             value = value,
             log = log?.let { mapOf("timestamp" to LocalDateTime.now().toString(), "trace" to it) },

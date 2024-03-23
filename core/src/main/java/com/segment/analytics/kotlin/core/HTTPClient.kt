@@ -35,7 +35,7 @@ class HTTPClient(
         } catch (e: MalformedURLException) {
             val error = IOException("Attempted to use malformed url: $url", e)
             Analytics.reportInternalError(error)
-            Telemetry.error("analytics_mobile.invoke.error",
+            Telemetry.error(Telemetry.INVOKE_ERROR,
                 mapOf("error" to e.toString(), "writekey" to writeKey, "message" to "Malformed url"),
                 e.stackTraceToString()
             )

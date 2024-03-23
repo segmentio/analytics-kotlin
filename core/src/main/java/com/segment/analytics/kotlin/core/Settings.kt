@@ -128,7 +128,7 @@ internal fun Analytics.fetchSettings(
         "${ex.message}: failed to fetch settings",
         kind = LogKind.ERROR
     )
-    Telemetry.error("analytics_mobile.invoke.error",
+    Telemetry.error(Telemetry.INVOKE_ERROR,
         mapOf("error" to ex.toString(), "writekey" to writeKey, "message" to "Error retrieving settings"),
         ex.stackTraceToString()
     )

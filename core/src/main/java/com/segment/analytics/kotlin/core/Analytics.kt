@@ -81,7 +81,7 @@ open class Analytics protected constructor(
 
     init {
         require(configuration.isValid()) { "invalid configuration" }
-        Telemetry.increment("analytics_mobile.invoke",
+        Telemetry.increment(Telemetry.INVOKE,
             mapOf("message" to "configured", "apihost" to configuration.apiHost, "cdnhost" to configuration.cdnHost,
                 "flush" to "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"))
         build()
@@ -98,6 +98,10 @@ open class Analytics protected constructor(
             val exceptionHandler = CoroutineExceptionHandler { _, t ->
                 Analytics.segmentLog(
                     "Caught Exception in Analytics Scope: ${t}"
+                )
+                Telemetry.error(Telemetry.INVOKE_ERROR,
+                    mapOf("error" to t.toString(), "message" to "Exception in Analytics Scope"),
+                    t.stackTraceToString()
                 )
             }
             override val analyticsScope = CoroutineScope(SupervisorJob() + exceptionHandler)
