@@ -6,6 +6,7 @@ import kotlinx.coroutines.*
 import java.net.HttpURLConnection
 import java.lang.System
 import java.time.LocalDateTime
+import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -31,7 +32,7 @@ data class RemoteMetric(
 private const val METRIC_TYPE = "Counter"
 
 fun logError(err: Throwable) {
-    println("Error sending segment performance metrics $err")
+    Analytics.reportInternalError(err)
 }
 
 object Telemetry {
@@ -81,13 +82,25 @@ object Telemetry {
 
         started = true
 
-        CoroutineScope(Dispatchers.Default).launch {
+        val exceptionHandler = CoroutineExceptionHandler { _, t ->
+            errorHandler?.let {
+                it( Exception(
+                    "Caught Exception in Telemetry Scope: ${t.message}",
+                    t
+                ))
+            }
+        }
+        val telemetryScope = CoroutineScope(SupervisorJob() + exceptionHandler)
+        val telemetryDispatcher: CloseableCoroutineDispatcher =
+            Executors.newCachedThreadPool().asCoroutineDispatcher()
+
+        telemetryScope.launch(telemetryDispatcher) {
             while (isActive) {
                 if (!enable) return@launch
                 try {
                     flush()
                 } catch (e: Throwable) {
-                    logError(e)
+                    errorHandler?.let { it(e) }
                 }
                 try {
                     delay(flushTimer.toLong())
@@ -148,7 +161,7 @@ object Telemetry {
             send()
             queueBytes = 0
         } catch (error: Throwable) {
-            logError(error)
+            errorHandler?.let { it(error) }
             sampleRate = 0.0
         }
     }
