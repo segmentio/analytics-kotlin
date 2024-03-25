@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.platform
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.Telemetry
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.reportInternalError
 import kotlinx.coroutines.launch
@@ -66,7 +67,17 @@ internal class Timeline {
         } catch (t: Throwable) {
             analytics.reportInternalError(t)
             Analytics.segmentLog("Caught Exception while setting up plugin $plugin: $t")
+            Telemetry.error(Telemetry.INTEGRATION_ERROR,
+                mapOf("plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}",
+                    "error" to t.toString(), "writekey" to analytics.configuration.writeKey,
+                    "message" to "Exception setting up plugin"),
+                t.stackTraceToString()
+            )
         }
+        Telemetry.increment(Telemetry.INTEGRATION,
+            mapOf("message" to "added",
+                "plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}"))
+
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {

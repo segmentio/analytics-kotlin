@@ -213,7 +213,7 @@ class SegmentDestinationTests {
         val httpConnection: HttpURLConnection = mockk()
         val connection = object : Connection(httpConnection, null, ByteArrayOutputStream()) {
             override fun close() {
-                throw HTTPException(400, "", null)
+                throw HTTPException(400, "", null, mutableMapOf())
             }
         }
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
@@ -248,7 +248,7 @@ class SegmentDestinationTests {
         val httpConnection: HttpURLConnection = mockk()
         val connection = object : Connection(httpConnection, null, ByteArrayOutputStream()) {
             override fun close() {
-                throw HTTPException(429, "", null)
+                throw HTTPException(429, "", null, mutableMapOf())
             }
         }
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection
@@ -291,7 +291,7 @@ class SegmentDestinationTests {
         val httpConnection: HttpURLConnection = mockk()
         val connection = object : Connection(httpConnection, null, ByteArrayOutputStream()) {
             override fun close() {
-                throw HTTPException(500, "", null)
+                throw HTTPException(500, "", null, mutableMapOf())
             }
         }
         every { anyConstructed<HTTPClient>().upload(any()) } returns connection

@@ -2,6 +2,7 @@ package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.Telemetry
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.reportInternalError
@@ -33,6 +34,8 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             result?.let {
                 val copy = it.copy<BaseEvent>()
                 try {
+                    Telemetry.increment(Telemetry.INTEGRATION,
+                        mapOf("message" to "event-${it.type}", "plugin" to "${plugin.type}-${plugin.javaClass}"))
                     when (plugin) {
                         is DestinationPlugin -> {
                             plugin.execute(copy)
@@ -44,6 +47,11 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                 } catch (t: Throwable) {
                     Analytics.reportInternalError("Caught Exception in plugin: $t")
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
+                    Telemetry.error(Telemetry.INTEGRATION_ERROR,
+                        mapOf("error" to t.toString(), "plugin" to "${plugin.type}-${plugin.javaClass}",
+                        "writekey" to plugin.analytics.configuration.writeKey, "message" to "Exception executing plugin"),
+                        t.stackTraceToString()
+                    )
                 }
             }
         }
@@ -58,6 +66,11 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             } catch (t: Throwable) {
                 Analytics.reportInternalError(t)
                 Analytics.segmentLog("Caught Exception applying closure to plugin: $it: $t")
+                Telemetry.error(Telemetry.INTEGRATION_ERROR,
+                    mapOf("error" to t.toString(), "plugin" to "${it.type}-${it.javaClass}",
+                        "writekey" to it.analytics.configuration.writeKey, "message" to "Exception executing plugin"),
+                    t.stackTraceToString()
+                )
             }
         }
     }
