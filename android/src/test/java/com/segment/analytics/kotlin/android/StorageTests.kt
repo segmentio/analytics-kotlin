@@ -9,6 +9,7 @@ import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.System
+import com.segment.analytics.kotlin.core.Telemetry
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.UserInfo
 import com.segment.analytics.kotlin.core.emptyJsonObject
@@ -42,6 +43,10 @@ class StorageTests {
         private var store = Store()
         private lateinit var androidStorage: AndroidStorage
         private var mockContext: Context = mockContext()
+
+        init {
+            Telemetry.enable = false
+        }
 
         @BeforeEach
         fun setup() = runTest  {

@@ -49,6 +49,7 @@ class AnalyticsTests {
     private val testScope = TestScope(testDispatcher)
 
     init {
+        Telemetry.enable = false
         mockkObject(SegmentInstant)
         every { SegmentInstant.now() } returns Date(0).toInstant().toString()
         mockkStatic(UUID::class)

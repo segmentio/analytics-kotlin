@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core
 
+import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.*
@@ -46,15 +47,16 @@ object Telemetry {
     const val INTEGRATION_ERROR = "analytics_mobile.integration.invoke.error"
 
     var enable: Boolean = true
-    var host: String = "webhook.site/5d2ce61e-0b30-4fb6-a51c-1b87ed500c46" //Constants.DEFAULT_API_HOST
+    var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
     var sampleRate: Double = 1.0
     var flushTimer: Int = 30 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
     var sendErrorLogData: Boolean = false
-    var errorHandler: ((Throwable) -> Unit)? = null
+    var errorHandler: ((Throwable) -> Unit)? = ::logError
     var maxQueueSize: Int = 20
+    var errorLogSizeMax: Int = 4000
 
     private const val MAX_QUEUE_BYTES = 28000
     var maxQueueBytes: Int = MAX_QUEUE_BYTES
@@ -68,9 +70,12 @@ object Telemetry {
     private val seenErrors = mutableMapOf<String, Int>()
     private var started = false
     private var rateLimitEndTime: Long = 0
-
+    private var telemetryScope: CoroutineScope? = null
+    private var telemetryDispatcher: ExecutorCoroutineDispatcher? = null
     fun start() {
         if (started || sampleRate == 0.0) return
+        started = true
+
         // Assume sampleRate is now set and everything in the queue hasn't had it applied
         if (Math.random() > sampleRate) {
             resetQueue()
@@ -80,8 +85,6 @@ object Telemetry {
             }
         }
 
-        started = true
-
         val exceptionHandler = CoroutineExceptionHandler { _, t ->
             errorHandler?.let {
                 it( Exception(
@@ -90,11 +93,10 @@ object Telemetry {
                 ))
             }
         }
-        val telemetryScope = CoroutineScope(SupervisorJob() + exceptionHandler)
-        val telemetryDispatcher: CloseableCoroutineDispatcher =
-            Executors.newCachedThreadPool().asCoroutineDispatcher()
+        telemetryScope = CoroutineScope(SupervisorJob() + exceptionHandler)
+        telemetryDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
 
-        telemetryScope.launch(telemetryDispatcher) {
+        telemetryScope?.launch(telemetryDispatcher!!) {
             while (isActive) {
                 if (!enable) return@launch
                 try {
@@ -110,6 +112,17 @@ object Telemetry {
                 }
             }
         }
+    }
+
+    fun reset()
+    {
+        telemetryDispatcher?.close()
+        telemetryScope = null
+        telemetryDispatcher = null
+        resetQueue()
+        seenErrors.clear()
+        started = false
+        rateLimitEndTime = 0
     }
 
     fun increment(metric: String, tags: Map<String, String>) {
@@ -131,7 +144,13 @@ object Telemetry {
         var filteredTags = tags
         if (!sendWriteKeyOnError) filteredTags = tags.filterKeys { it.lowercase() != "writekey" }
         var logData: String? = null
-        if (sendErrorLogData) logData = log
+        if (sendErrorLogData) {
+            logData = if (log.length > errorLogSizeMax) {
+                log.substring(0, errorLogSizeMax)
+            } else {
+                log
+            }
+        }
 
         val errorKey = tags["error"]
         if (errorKey != null) {
@@ -147,11 +166,14 @@ object Telemetry {
                 seenErrors[errorKey] = 0 // Zero because it's already been sent.
             }
         }
+        else {
+            addRemoteMetric(metric, filteredTags, log=logData)
+        }
     }
 
+    @Synchronized
     fun flush() {
-        if (!started || !enable || queue.isEmpty()) return
-
+        if (!enable || queue.isEmpty()) return
         if (rateLimitEndTime > (System.currentTimeMillis() / 1000).toInt()) {
             return
         }
@@ -161,18 +183,18 @@ object Telemetry {
             send()
             queueBytes = 0
         } catch (error: Throwable) {
-            errorHandler?.let { it(error) }
+            errorHandler?.invoke(error)
             sampleRate = 0.0
         }
     }
 
     private fun send() {
-        // Json.encodeToString by default does not include default values
-        //  We're using this to leave off the 'log' parameter if unset.
-        val payload = Json.encodeToString(mapOf("series" to queue))
-        resetQueue()
-
         try {
+            // Json.encodeToString by default does not include default values
+            //  We're using this to leave off the 'log' parameter if unset.
+            val payload = Json.encodeToString(mapOf("series" to queue))
+            resetQueue()
+
             val connection = httpClient.upload(host)
             connection.outputStream?.use { outputStream ->
                 // Write the JSON string to the outputStream.
@@ -181,7 +203,7 @@ object Telemetry {
             }
             connection.close()
         } catch (e: HTTPException) {
-            errorHandler?.let { it(e) }
+            errorHandler?.invoke(e)
             if (e.responseCode == 429) {
                 val headers = e.responseHeaders
                 val rateLimit = headers["Retry-After"]?.firstOrNull()?.toLongOrNull()
@@ -190,16 +212,23 @@ object Telemetry {
                 }
             }
         } catch (e: Exception) {
-            errorHandler?.let { it(e) }
+            errorHandler?.invoke(e)
         }
     }
 
     private val additionalTags: Map<String, String> by lazy {
         var osVersion = System.getProperty("os.version")
-        val regex = Regex("android[0-9][0-9]")
-        val match = regex.find(osVersion)
-        if (match != null) {
-            osVersion = match.value
+        val androidRegex = Regex("android[0-9][0-9]")
+        val androidMatch = androidRegex.find(osVersion)
+        if (androidMatch != null) {
+            osVersion = androidMatch.value
+        } else {
+            // other OSes seem to have well formed version numbers, just grab first for major version
+            val otherRegex = Regex("[0-9]+")
+            val otherMatch = otherRegex.find(osVersion)
+            if (otherMatch != null) {
+                osVersion = otherMatch.value
+            }
         }
         mapOf(
             "os" to System.getProperty("os.name") + "-" + osVersion,
@@ -222,7 +251,7 @@ object Telemetry {
             type = METRIC_TYPE,
             metric = metric,
             value = value,
-            log = log?.let { mapOf("timestamp" to LocalDateTime.now().toString(), "trace" to it) },
+            log = log?.let { mapOf("timestamp" to SegmentInstant.now(), "trace" to it) },
             tags = tags + additionalTags
         )
         val newMetricSize = newMetric.toString().toByteArray().size

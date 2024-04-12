@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import com.segment.analytics.kotlin.core.utilities.EventsFileManager
 import com.segment.analytics.kotlin.core.utilities.SegmentInstant
+import com.segment.analytics.kotlin.core.Telemetry
 import io.mockk.every
 import io.mockk.mockkObject
 import kotlinx.coroutines.test.runTest
@@ -32,6 +33,7 @@ class EventsFileTests {
     private val directory = File("/tmp/analytics-android-test/")
 
     init {
+        Telemetry.enable = false
         mockkObject(SegmentInstant)
         every { SegmentInstant.now() } returns Date(0).toInstant().toString()
     }

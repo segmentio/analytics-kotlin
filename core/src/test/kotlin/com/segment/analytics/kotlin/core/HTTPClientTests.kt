@@ -24,6 +24,7 @@ class HTTPClientTests {
     private val httpClient: HTTPClient
 
     init {
+        Telemetry.enable = false
         clearConstructorMockk(HTTPClient::class)
         httpClient = HTTPClient("1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ")
     }

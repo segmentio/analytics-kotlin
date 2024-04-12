@@ -14,6 +14,10 @@ import java.lang.Exception
 class SerializingTests {
     val analytics = Analytics(Configuration(writeKey = "123", application = "Test"))
 
+    init {
+        Telemetry.enable = false
+    }
+
     @Serializable
     data class Foo(val name: String)
 
