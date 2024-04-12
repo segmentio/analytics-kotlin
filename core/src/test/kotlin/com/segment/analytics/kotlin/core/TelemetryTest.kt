@@ -168,4 +168,24 @@ class TelemetryTest {
         assertEquals(0,TelemetryQueueSize())
         assertEquals(1,errors.size)
     }
+
+    @Test
+    fun `Test increment and error methods when queue is full`() {
+        Telemetry.start()
+        for (i in 1..Telemetry.maxQueueSize + 1) {
+            Telemetry.increment(Telemetry.INVOKE, mapOf("test" to "test" + i))
+            Telemetry.error(Telemetry.INVOKE_ERROR, mapOf("test" to "test" + i), "error")
+        }
+        assertEquals(Telemetry.maxQueueSize, TelemetryQueueSize())
+    }
+
+    @Test
+    fun `Test error method with different flag settings`() {
+        val longString = CharArray(1000) { 'a' }.joinToString("")
+        Telemetry.start()
+        Telemetry.sendWriteKeyOnError = false
+        Telemetry.sendErrorLogData = false
+        Telemetry.error(Telemetry.INVOKE_ERROR, mapOf("writekey" to longString), longString)
+        assertTrue(TelemetryQueueSize() < 1000)
+    }
 }
