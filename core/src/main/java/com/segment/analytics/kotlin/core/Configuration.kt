@@ -33,7 +33,7 @@ data class Configuration(
     var flushAt: Int = 20,
     var flushInterval: Int = 30,
     var flushPolicies: List<FlushPolicy> = emptyList<FlushPolicy>(),
-    val defaultSettings: Settings = Settings(),
+    var defaultSettings: Settings = Settings(),
     var autoAddSegmentDestination: Boolean = true,
     var apiHost: String = DEFAULT_API_HOST,
     var cdnHost: String = DEFAULT_CDN_HOST,
