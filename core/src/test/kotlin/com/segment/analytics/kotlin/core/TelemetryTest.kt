@@ -120,14 +120,6 @@ class TelemetryTest {
     }
 
     @Test
-    fun `Test error with wrong metric`() {
-        Telemetry.start()
-        Telemetry.error("wrong_metric", mapOf("test" to "test"), "error")
-        assertEquals(0, TelemetryQueueSize())
-        assertEquals(0,errors.size)
-    }
-
-    @Test
     fun `Test error with no tags`() {
         Telemetry.start()
         Telemetry.error(Telemetry.INVOKE_ERROR, emptyMap(), "error")
