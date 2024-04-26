@@ -77,6 +77,7 @@ class HTTPClientTests {
         every { connection.connection.responseMessage } returns "test"
         every { connection.outputStream?.close() } returns Unit
         every { connection.connection.errorStream } returns null
+        every { connection.connection.headerFields } returns mutableMapOf<String, List<String> >()
         try {
             connection.close()
         }
