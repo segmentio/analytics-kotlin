@@ -10,6 +10,14 @@ fun Analytics.reportInternalError(error: Throwable) {
     Analytics.reportInternalError(error)
 }
 
+fun reportErrorWithMetrics(analytics: Analytics?, error: Throwable, message: String, metric:String, tags: Map<String, String>, log: String) {
+    analytics?.configuration?.errorHandler?.invoke(error)
+    var fullMessage = message
+    error.message?.let { fullMessage += ": $it"}
+    Analytics.segmentLog(fullMessage)
+    Telemetry.error(metric, tags, log)
+}
+
 fun Analytics.Companion.reportInternalError(error: Throwable) {
     error.message?.let {
         Analytics.segmentLog(it)

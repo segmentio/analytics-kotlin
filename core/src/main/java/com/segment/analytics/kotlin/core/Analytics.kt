@@ -93,10 +93,8 @@ open class Analytics protected constructor(
         object : CoroutineConfiguration {
             override val store = Store()
             val exceptionHandler = CoroutineExceptionHandler { _, t ->
-                Analytics.segmentLog(
-                    "Caught Exception in Analytics Scope: ${t}"
-                )
-                Telemetry.error(Telemetry.INVOKE_ERROR,
+                reportErrorWithMetrics(null, t,
+                    "Caught Exception in Analytics Scope", Telemetry.INVOKE_ERROR_METRIC,
                     mapOf("error" to t.toString(), "message" to "Exception in Analytics Scope"),
                     t.stackTraceToString()
                 )
@@ -118,7 +116,7 @@ open class Analytics protected constructor(
         add(ContextPlugin())
         add(UserInfoPlugin())
 
-        Telemetry.increment(Telemetry.INVOKE,
+        Telemetry.increment(Telemetry.INVOKE_METRIC,
             mapOf("message" to "configured", "apihost" to configuration.apiHost, "cdnhost" to configuration.cdnHost,
                 "flush" to "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"))
 

@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.Telemetry
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.reportErrorWithMetrics
 import com.segment.analytics.kotlin.core.reportInternalError
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
@@ -34,7 +35,7 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             result?.let {
                 val copy = it.copy<BaseEvent>()
                 try {
-                    Telemetry.increment(Telemetry.INTEGRATION,
+                    Telemetry.increment(Telemetry.INTEGRATION_METRIC,
                         mapOf("message" to "event-${it.type}", "plugin" to "${plugin.type}-${plugin.javaClass}"))
                     when (plugin) {
                         is DestinationPlugin -> {
@@ -45,9 +46,9 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                         }
                     }
                 } catch (t: Throwable) {
-                    Analytics.reportInternalError("Caught Exception in plugin: $t")
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
-                    Telemetry.error(Telemetry.INTEGRATION_ERROR,
+                    reportErrorWithMetrics(null, t,"Caught Exception in plugin",
+                        Telemetry.INTEGRATION_ERROR_METRIC,
                         mapOf("error" to t.toString(), "plugin" to "${plugin.type}-${plugin.javaClass}",
                         "writekey" to plugin.analytics.configuration.writeKey, "message" to "Exception executing plugin"),
                         t.stackTraceToString()
@@ -64,9 +65,8 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             try {
                 closure(it)
             } catch (t: Throwable) {
-                Analytics.reportInternalError(t)
-                Analytics.segmentLog("Caught Exception applying closure to plugin: $it: $t")
-                Telemetry.error(Telemetry.INTEGRATION_ERROR,
+                reportErrorWithMetrics(null, t,
+                    "Caught Exception applying closure to plugin: $it", Telemetry.INTEGRATION_ERROR_METRIC,
                     mapOf("error" to t.toString(), "plugin" to "${it.type}-${it.javaClass}",
                         "writekey" to it.analytics.configuration.writeKey, "message" to "Exception executing plugin"),
                     t.stackTraceToString()

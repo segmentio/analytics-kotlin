@@ -4,13 +4,10 @@ import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.*
-import kotlinx.serialization.json.double
-import kotlinx.serialization.json.jsonPrimitive
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.net.HttpURLConnection
 import java.lang.System
-import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import kotlin.math.min
@@ -42,20 +39,21 @@ fun logError(err: Throwable) {
 }
 
 object Telemetry: Subscriber {
+    private const val METRICS_BASE_TAG = "analytics_mobile"
     // Metric class for Analytics SDK
-    const val INVOKE = "analytics_mobile.invoke"
+    const val INVOKE_METRIC = "$METRICS_BASE_TAG.invoke"
     // Metric class for Analytics SDK errors
-    const val INVOKE_ERROR = "analytics_mobile.invoke.error"
+    const val INVOKE_ERROR_METRIC = "$METRICS_BASE_TAG.invoke.error"
     // Metric class for Analytics SDK plugins
-    const val INTEGRATION = "analytics_mobile.integration.invoke"
+    const val INTEGRATION_METRIC = "$METRICS_BASE_TAG.integration.invoke"
     // Metric class for Analytics SDK plugin errors
-    const val INTEGRATION_ERROR = "analytics_mobile.integration.invoke.error"
+    const val INTEGRATION_ERROR_METRIC = "$METRICS_BASE_TAG.integration.invoke.error"
 
     var enable: Boolean = true
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
     var sampleRate: Double = 1.0
-    var flushTimer: Int = 1 * 1000 // 30s
+    var flushTimer: Int = 30 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
     var sendErrorLogData: Boolean = false
@@ -85,6 +83,7 @@ object Telemetry: Subscriber {
     }
     private var telemetryScope: CoroutineScope = CoroutineScope(SupervisorJob() + exceptionHandler)
     private var telemetryDispatcher: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private var telemetryJob: Job? = null
     fun start() {
         if (started || sampleRate == 0.0) return
         started = true
@@ -94,7 +93,7 @@ object Telemetry: Subscriber {
             resetQueue()
         }
 
-        telemetryScope.launch(telemetryDispatcher) {
+        telemetryJob = telemetryScope.launch(telemetryDispatcher) {
             while (isActive) {
                 if (!enable) return@launch
                 try {
@@ -114,7 +113,7 @@ object Telemetry: Subscriber {
 
     fun reset()
     {
-        telemetryDispatcher.close()
+        telemetryJob?.cancel()
         resetQueue()
         seenErrors.clear()
         started = false
@@ -124,7 +123,7 @@ object Telemetry: Subscriber {
     fun increment(metric: String, tags: Map<String, String>) {
         start()
         if (!enable || sampleRate == 0.0) return
-        if (!metric.startsWith("analytics_mobile.")) return
+        if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
         if (Math.random() > sampleRate) return
         if (queue.size >= maxQueueSize) return
@@ -134,7 +133,7 @@ object Telemetry: Subscriber {
 
     fun error(metric:String, tags: Map<String, String>, log: String) {
         if (!enable || sampleRate == 0.0) return
-        if (!metric.startsWith("analytics_mobile.")) return
+        if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
         if (queue.size >= maxQueueSize) return
 

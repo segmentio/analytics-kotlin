@@ -13,8 +13,6 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.double
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.serializer
 import java.io.BufferedReader
 
@@ -116,12 +114,8 @@ internal fun Analytics.fetchSettings(
     log("Fetched Settings: $settingsString")
     LenientJson.decodeFromString(settingsString)
 } catch (ex: Exception) {
-    reportInternalError(ex)
-    Analytics.segmentLog(
-        "${ex.message}: failed to fetch settings",
-        kind = LogKind.ERROR
-    )
-    Telemetry.error(Telemetry.INVOKE_ERROR,
+    reportErrorWithMetrics(this, ex, "Failed to fetch settings",
+        Telemetry.INVOKE_ERROR_METRIC,
         mapOf("error" to ex.toString(), "writekey" to writeKey, "message" to "Error retrieving settings"),
         ex.stackTraceToString()
     )
