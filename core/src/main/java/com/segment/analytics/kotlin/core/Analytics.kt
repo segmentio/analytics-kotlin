@@ -81,9 +81,6 @@ open class Analytics protected constructor(
 
     init {
         require(configuration.isValid()) { "invalid configuration" }
-        Telemetry.increment(Telemetry.INVOKE,
-            mapOf("message" to "configured", "apihost" to configuration.apiHost, "cdnhost" to configuration.cdnHost,
-                "flush" to "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"))
         build()
     }
 
@@ -121,6 +118,10 @@ open class Analytics protected constructor(
         add(ContextPlugin())
         add(UserInfoPlugin())
 
+        Telemetry.increment(Telemetry.INVOKE,
+            mapOf("message" to "configured", "apihost" to configuration.apiHost, "cdnhost" to configuration.cdnHost,
+                "flush" to "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"))
+
         // Setup store
         analyticsScope.launch(analyticsDispatcher) {
             store.also {
@@ -135,6 +136,8 @@ open class Analytics protected constructor(
             if (configuration.autoAddSegmentDestination) {
                 add(SegmentDestination())
             }
+
+            Telemetry.subscribe(store)
 
             checkSettings()
         }

@@ -4,9 +4,14 @@ import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.jsonPrimitive
+import sovran.kotlin.Store
+import sovran.kotlin.Subscriber
 import java.net.HttpURLConnection
 import java.lang.System
 import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -36,7 +41,7 @@ fun logError(err: Throwable) {
     Analytics.reportInternalError(err)
 }
 
-object Telemetry {
+object Telemetry: Subscriber {
     // Metric class for Analytics SDK
     const val INVOKE = "analytics_mobile.invoke"
     // Metric class for Analytics SDK errors
@@ -50,7 +55,7 @@ object Telemetry {
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
     var sampleRate: Double = 1.0
-    var flushTimer: Int = 30 * 1000 // 30s
+    var flushTimer: Int = 1 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
     var sendErrorLogData: Boolean = false
@@ -64,14 +69,22 @@ object Telemetry {
             field = min(value, MAX_QUEUE_BYTES)
         }
 
-    private val queue = mutableListOf<RemoteMetric>()
+    private val queue = ConcurrentLinkedQueue<RemoteMetric>()
     private var queueBytes = 0
     private var queueSizeExceeded = false
     private val seenErrors = mutableMapOf<String, Int>()
     private var started = false
     private var rateLimitEndTime: Long = 0
-    private var telemetryScope: CoroutineScope? = null
-    private var telemetryDispatcher: ExecutorCoroutineDispatcher? = null
+    private val exceptionHandler = CoroutineExceptionHandler { _, t ->
+        errorHandler?.let {
+            it( Exception(
+                "Caught Exception in Telemetry Scope: ${t.message}",
+                t
+            ))
+        }
+    }
+    private var telemetryScope: CoroutineScope = CoroutineScope(SupervisorJob() + exceptionHandler)
+    private var telemetryDispatcher: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     fun start() {
         if (started || sampleRate == 0.0) return
         started = true
@@ -79,24 +92,9 @@ object Telemetry {
         // Assume sampleRate is now set and everything in the queue hasn't had it applied
         if (Math.random() > sampleRate) {
             resetQueue()
-        } else {
-            queue.forEach {
-                it.value = (it.value / sampleRate).roundToInt()
-            }
         }
 
-        val exceptionHandler = CoroutineExceptionHandler { _, t ->
-            errorHandler?.let {
-                it( Exception(
-                    "Caught Exception in Telemetry Scope: ${t.message}",
-                    t
-                ))
-            }
-        }
-        telemetryScope = CoroutineScope(SupervisorJob() + exceptionHandler)
-        telemetryDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-
-        telemetryScope?.launch(telemetryDispatcher!!) {
+        telemetryScope.launch(telemetryDispatcher) {
             while (isActive) {
                 if (!enable) return@launch
                 try {
@@ -116,9 +114,7 @@ object Telemetry {
 
     fun reset()
     {
-        telemetryDispatcher?.close()
-        telemetryScope = null
-        telemetryDispatcher = null
+        telemetryDispatcher.close()
         resetQueue()
         seenErrors.clear()
         started = false
@@ -126,13 +122,14 @@ object Telemetry {
     }
 
     fun increment(metric: String, tags: Map<String, String>) {
+        start()
         if (!enable || sampleRate == 0.0) return
         if (!metric.startsWith("analytics_mobile.")) return
         if (tags.isEmpty()) return
         if (Math.random() > sampleRate) return
         if (queue.size >= maxQueueSize) return
 
-        addRemoteMetric(metric, tags, value = (1.0 / sampleRate).roundToInt())
+        addRemoteMetric(metric, tags)
     }
 
     fun error(metric:String, tags: Map<String, String>, log: String) {
@@ -157,8 +154,9 @@ object Telemetry {
             if (seenErrors.containsKey(errorKey)) {
                 seenErrors[errorKey] = seenErrors[errorKey]!! + 1
                 if (Math.random() > sampleRate) return
-                // Send how many we've seen after the first since we know for sure.
-                addRemoteMetric(metric, filteredTags, log=logData, value = seenErrors[errorKey]!!)
+                // Adjust how many we've seen after the first since we know for sure.
+                addRemoteMetric(metric, filteredTags, log=logData,
+                    value = (seenErrors[errorKey]!! * sampleRate).toInt())
                 seenErrors[errorKey] = 0
             } else {
                 addRemoteMetric(metric, filteredTags, log=logData)
@@ -189,8 +187,19 @@ object Telemetry {
     }
 
     private fun send() {
-        val sendQueue = queue.toList()
-        resetQueue();
+        if (sampleRate == 0.0) return
+        var queueCount = queue.size
+        // Reset queue data size counter since all current queue items will be removed
+        queueBytes = 0
+        queueSizeExceeded = false
+        val sendQueue = mutableListOf<RemoteMetric>()
+        while (queueCount-- > 0 && !queue.isEmpty()) {
+            val m = queue.poll()
+            if(m != null) {
+                m.value = (m.value / sampleRate).roundToInt()
+                sendQueue.add(m)
+            }
+        }
         try {
             // Json.encodeToString by default does not include default values
             //  We're using this to leave off the 'log' parameter if unset.
@@ -263,6 +272,22 @@ object Telemetry {
             queueBytes += newMetricSize
         } else {
             queueSizeExceeded = true
+        }
+    }
+
+    internal suspend fun subscribe(store: Store) {
+        store.subscribe(
+            this,
+            com.segment.analytics.kotlin.core.System::class,
+            initialState = true,
+            handler = ::systemUpdate,
+            queue = telemetryDispatcher
+        )
+    }
+    private suspend fun systemUpdate(system: com.segment.analytics.kotlin.core.System) {
+        system.settings?: let {
+            Telemetry.sampleRate = it.sampleRate
+            Telemetry.start()
         }
     }
 

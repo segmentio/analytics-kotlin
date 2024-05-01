@@ -100,13 +100,6 @@ suspend fun Analytics.checkSettings() {
                 update(settingsObj)
             }
 
-            settingsObj?.metrics?.get("sampleRate")?.jsonPrimitive?.double.also {
-                if (it != null) {
-                    Telemetry.sampleRate = it
-                    Telemetry.start()
-                }
-            }
-
             // we're good to go back to a running state.
             store.dispatch(System.ToggleRunningAction(running = true), System::class)
         }
