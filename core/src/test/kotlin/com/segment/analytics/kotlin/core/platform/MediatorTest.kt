@@ -1,12 +1,13 @@
 package com.segment.analytics.kotlin.core.platform
 
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.BaseEvent
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.*
+import com.segment.analytics.kotlin.core.utils.mockAnalytics
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.*
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -39,7 +40,7 @@ internal class MediatorTest {
 
         open class BasePlugin : Plugin {
             override val type: Plugin.Type = Plugin.Type.Enrichment
-            override lateinit var analytics: Analytics
+            override var analytics: Analytics = mockk<Analytics>(relaxed = true)
 
             override fun execute(event: BaseEvent): BaseEvent? {
                 return event
@@ -268,10 +269,19 @@ internal class MediatorTest {
     @Test
     fun `catches all exception and errors from plugins`() {
         val mediator = Mediator()
+        val testDispatcher = UnconfinedTestDispatcher()
+        val testScope = TestScope(testDispatcher)
+        val mockAnalytics = mockAnalytics(testScope, testDispatcher)
 
         val pluginA = mockk<PluginA>()
+        every { pluginA.type } answers { Plugin.Type.Enrichment }
+        every { pluginA.analytics } answers { mockAnalytics }
         val pluginB = mockk<PluginB>()
+        every { pluginB.type } answers { Plugin.Type.Enrichment }
+        every { pluginB.analytics } answers { mockAnalytics }
         val pluginC = mockk<PluginC>()
+        every { pluginC.type } answers { Plugin.Type.Enrichment }
+        every { pluginC.analytics } answers { mockAnalytics }
 
         mediator.plugins.add(pluginA)
         mediator.plugins.add(ExceptionPlugin())
