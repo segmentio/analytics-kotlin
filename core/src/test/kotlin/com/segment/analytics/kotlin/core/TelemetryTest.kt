@@ -6,12 +6,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.lang.reflect.Field
 import java.net.HttpURLConnection
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class TelemetryTest {
     fun TelemetryQueueSize(): Int {
         val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
         queueField.isAccessible = true
-        val queueValue: List<*> = queueField.get(Telemetry) as List<*>
+        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
         return queueValue.size
     }
     fun TelemetryQueueBytes(): Int {

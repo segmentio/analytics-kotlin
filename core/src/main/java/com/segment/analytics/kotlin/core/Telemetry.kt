@@ -4,6 +4,8 @@ import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.jsonPrimitive
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.net.HttpURLConnection
@@ -255,8 +257,9 @@ object Telemetry: Subscriber {
     }
 
     private fun addRemoteMetric(metric: String, tags: Map<String, String>, value: Int = 1, log: String? = null) {
+        val fullTags = tags + additionalTags
         val found = queue.find {
-            it.metric == metric && it.tags == (tags + additionalTags)
+            it.metric == metric && it.tags == fullTags
         }
         if (found != null) {
             found.value += value
@@ -289,8 +292,10 @@ object Telemetry: Subscriber {
         )
     }
     private suspend fun systemUpdate(system: com.segment.analytics.kotlin.core.System) {
-        system.settings?: let {
-            Telemetry.sampleRate = it.sampleRate
+        system.settings?.let { settings ->
+            settings.metrics["sampleRate"]?.jsonPrimitive?.double?.let {
+                Telemetry.sampleRate = it
+            }
             Telemetry.start()
         }
     }
