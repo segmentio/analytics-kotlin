@@ -79,8 +79,8 @@ class TelemetryTest {
     fun `Test rolling up duplicate metrics`() {
         Telemetry.start()
         for (i in 1..3) {
-            Telemetry.increment(Telemetry.INVOKE_METRIC,mapOf("test" to "test"))
-            Telemetry.error(Telemetry.INVOKE_ERROR_METRIC,mapOf("test" to "test2"),"log")
+            Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" }
+            Telemetry.error(Telemetry.INVOKE_ERROR_METRIC,"log") { it["test"] = "test2" }
         }
         assertEquals(2,TelemetryQueueSize())
     }
@@ -89,7 +89,7 @@ class TelemetryTest {
     fun `Test increment when telemetry is disabled`() {
         Telemetry.enable = false
         Telemetry.start()
-        Telemetry.increment(Telemetry.INVOKE_METRIC, mapOf("test" to "test"))
+        Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" }
         assertEquals(0, TelemetryQueueSize())
         assertEquals(0,errors.size)
     }
@@ -97,7 +97,7 @@ class TelemetryTest {
     @Test
     fun `Test increment with wrong metric`() {
         Telemetry.start()
-        Telemetry.increment("wrong_metric", mapOf("test" to "test"))
+        Telemetry.increment("wrong_metric") { it["test"] = "test" }
         assertEquals(0, TelemetryQueueSize())
         assertEquals(0,errors.size)
     }
@@ -105,7 +105,7 @@ class TelemetryTest {
     @Test
     fun `Test increment with no tags`() {
         Telemetry.start()
-        Telemetry.increment(Telemetry.INVOKE_METRIC, emptyMap())
+        Telemetry.increment(Telemetry.INVOKE_METRIC) { it.clear() }
         assertEquals(0, TelemetryQueueSize())
         assertEquals(0,errors.size)
     }
@@ -114,7 +114,7 @@ class TelemetryTest {
     fun `Test error when telemetry is disabled`() {
         Telemetry.enable = false
         Telemetry.start()
-        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, mapOf("test" to "test"), "error")
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error") { it["test"] = "test" }
         assertEquals(0, TelemetryQueueSize())
         assertEquals(0,errors.size)
     }
@@ -122,14 +122,14 @@ class TelemetryTest {
     @Test
     fun `Test error with no tags`() {
         Telemetry.start()
-        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, emptyMap(), "error")
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error") { it.clear() }
         assertEquals(0, TelemetryQueueSize())
         assertEquals(0,errors.size)
     }
 
     @Test
     fun `Test flush works even when telemetry is not started`() {
-        Telemetry.increment(Telemetry.INVOKE_METRIC, mapOf("test" to "test"))
+        Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" }
         Telemetry.flush()
         assertEquals(0,TelemetryQueueSize())
         assertEquals(0,errors.size)
@@ -139,7 +139,7 @@ class TelemetryTest {
     fun `Test flush when telemetry is disabled`() {
         Telemetry.start()
         Telemetry.enable = false
-        Telemetry.increment(Telemetry.INVOKE_METRIC, mapOf("test" to "test"))
+        Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" }
         assertTrue(TelemetryQueueSize() == 0)
         assertEquals(0,errors.size)
     }
@@ -156,7 +156,7 @@ class TelemetryTest {
     fun `Test HTTP Exception`() {
         mockTelemetryHTTPClient(shouldThrow = true)
         Telemetry.start()
-        Telemetry.error(Telemetry.INVOKE_METRIC, mapOf("error" to "test"),"log")
+        Telemetry.error(Telemetry.INVOKE_METRIC,"log") { it["error"] = "test" }
         assertEquals(0,TelemetryQueueSize())
         assertEquals(1,errors.size)
     }
@@ -165,8 +165,8 @@ class TelemetryTest {
     fun `Test increment and error methods when queue is full`() {
         Telemetry.start()
         for (i in 1..Telemetry.maxQueueSize + 1) {
-            Telemetry.increment(Telemetry.INVOKE_METRIC, mapOf("test" to "test" + i))
-            Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, mapOf("test" to "test" + i), "error")
+            Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" + i }
+            Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error") { it["test"] = "test" + i }
         }
         assertEquals(Telemetry.maxQueueSize, TelemetryQueueSize())
     }
@@ -177,7 +177,7 @@ class TelemetryTest {
         Telemetry.start()
         Telemetry.sendWriteKeyOnError = false
         Telemetry.sendErrorLogData = false
-        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, mapOf("writekey" to longString), longString)
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, longString) { it["writekey"] = longString }
         assertTrue(TelemetryQueueSize() < 1000)
     }
 }

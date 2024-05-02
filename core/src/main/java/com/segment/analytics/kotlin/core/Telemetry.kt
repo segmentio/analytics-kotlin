@@ -120,8 +120,10 @@ object Telemetry: Subscriber {
         rateLimitEndTime = 0
     }
 
-    fun increment(metric: String, tags: Map<String, String>) {
-        start()
+    fun increment(metric: String, buildTags: (MutableMap<String, String>) -> Unit) {
+        val tags = mutableMapOf<String, String>()
+        buildTags(tags)
+
         if (!enable || sampleRate == 0.0) return
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
@@ -131,13 +133,16 @@ object Telemetry: Subscriber {
         addRemoteMetric(metric, tags)
     }
 
-    fun error(metric:String, tags: Map<String, String>, log: String) {
+    fun error(metric:String, log: String, buildTags: (MutableMap<String, String>) -> Unit) {
+        val tags = mutableMapOf<String, String>()
+        buildTags(tags)
+
         if (!enable || sampleRate == 0.0) return
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
         if (queue.size >= maxQueueSize) return
 
-        var filteredTags = tags
+        var filteredTags = tags.toMap()
         if (!sendWriteKeyOnError) filteredTags = tags.filterKeys { it.lowercase() != "writekey" }
         var logData: String? = null
         if (sendErrorLogData) {

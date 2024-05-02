@@ -67,17 +67,18 @@ internal class Timeline {
             plugin.setup(analytics)
         } catch (t: Throwable) {
             reportErrorWithMetrics(analytics, t,
-                "Caught Exception while setting up plugin $plugin", Telemetry.INTEGRATION_ERROR_METRIC,
-                mapOf("plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}",
-                    "error" to t.toString(), "writekey" to analytics.configuration.writeKey,
-                    "message" to "Exception setting up plugin"),
-                t.stackTraceToString()
-            )
+                "Caught Exception while setting up plugin $plugin",
+                Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
+                it["error"] = t.toString()
+                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                it["writekey"] = plugin.analytics.configuration.writeKey
+                it["message"] = "Exception executing plugin"
+            }
         }
-        Telemetry.increment(Telemetry.INTEGRATION_METRIC,
-            mapOf("message" to "added",
-                "plugin" to "${plugin.type.toString()}-${plugin.javaClass.toString()}"))
-
+        Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
+            it["message"] = "added"
+            it["plugin"] = "${plugin.type.toString()}-${plugin.javaClass.toString()}"
+        }
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {

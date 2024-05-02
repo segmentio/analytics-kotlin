@@ -34,11 +34,12 @@ class HTTPClient(
             URL(url)
         } catch (e: MalformedURLException) {
             val error = IOException("Attempted to use malformed url: $url", e)
-            reportErrorWithMetrics(null, e,
-                "Attempted to use malformed url: $url", Telemetry.INVOKE_ERROR_METRIC,
-                mapOf("error" to e.toString(), "writekey" to writeKey, "message" to "Malformed url"),
-                e.stackTraceToString()
-            )
+            reportErrorWithMetrics(null, e,"Attempted to use malformed url: $url",
+                Telemetry.INVOKE_ERROR_METRIC, e.stackTraceToString()) {
+                it["error"] = e.toString()
+                it["writekey"] = writeKey
+                it["message"] = "Malformed url"
+            }
             throw error
         }
         val connection = requestedURL.openConnection() as HttpURLConnection

@@ -93,11 +93,11 @@ open class Analytics protected constructor(
         object : CoroutineConfiguration {
             override val store = Store()
             val exceptionHandler = CoroutineExceptionHandler { _, t ->
-                reportErrorWithMetrics(null, t,
-                    "Caught Exception in Analytics Scope", Telemetry.INVOKE_ERROR_METRIC,
-                    mapOf("error" to t.toString(), "message" to "Exception in Analytics Scope"),
-                    t.stackTraceToString()
-                )
+                reportErrorWithMetrics(null, t,"Caught Exception in Analytics Scope",
+                    Telemetry.INVOKE_ERROR_METRIC, t.stackTraceToString()) {
+                    it["error"] = t.toString()
+                    it["message"] = "Exception in Analytics Scope"
+                }
             }
             override val analyticsScope = CoroutineScope(SupervisorJob() + exceptionHandler)
             override val analyticsDispatcher: CloseableCoroutineDispatcher =
@@ -116,9 +116,13 @@ open class Analytics protected constructor(
         add(ContextPlugin())
         add(UserInfoPlugin())
 
-        Telemetry.increment(Telemetry.INVOKE_METRIC,
-            mapOf("message" to "configured", "apihost" to configuration.apiHost, "cdnhost" to configuration.cdnHost,
-                "flush" to "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"))
+        Telemetry.increment(Telemetry.INVOKE_METRIC) {
+            it["message"] = "configured"
+            it["apihost"] = configuration.apiHost
+            it["cdnhost"] = configuration.cdnHost
+            it["flush"] =
+                "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"
+        }
 
         // Setup store
         analyticsScope.launch(analyticsDispatcher) {
@@ -129,13 +133,12 @@ open class Analytics protected constructor(
 
                 // subscribe to store after state is provided
                 storage.subscribeToStore()
+                Telemetry.subscribe(store)
             }
 
             if (configuration.autoAddSegmentDestination) {
                 add(SegmentDestination())
             }
-
-            Telemetry.subscribe(store)
 
             checkSettings()
         }

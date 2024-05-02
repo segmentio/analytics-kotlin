@@ -35,8 +35,10 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
             result?.let {
                 val copy = it.copy<BaseEvent>()
                 try {
-                    Telemetry.increment(Telemetry.INTEGRATION_METRIC,
-                        mapOf("message" to "event-${it.type}", "plugin" to "${plugin.type}-${plugin.javaClass}"))
+                    Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
+                        it["message"] = "event-${plugin.type}"
+                        "plugin" to "${plugin.type}-${plugin.javaClass}"
+                    }
                     when (plugin) {
                         is DestinationPlugin -> {
                             plugin.execute(copy)
@@ -48,11 +50,12 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                 } catch (t: Throwable) {
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
                     reportErrorWithMetrics(null, t,"Caught Exception in plugin",
-                        Telemetry.INTEGRATION_ERROR_METRIC,
-                        mapOf("error" to t.toString(), "plugin" to "${plugin.type}-${plugin.javaClass}",
-                        "writekey" to plugin.analytics.configuration.writeKey, "message" to "Exception executing plugin"),
-                        t.stackTraceToString()
-                    )
+                        Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
+                        it["error"] = t.toString()
+                        it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                        it["writekey"] = plugin.analytics.configuration.writeKey
+                        it["message"] ="Exception executing plugin"
+                    }
                 }
             }
         }
@@ -61,16 +64,18 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
     }
 
     fun applyClosure(closure: (Plugin) -> Unit) {
-        plugins.forEach {
+        plugins.forEach {plugin ->
             try {
-                closure(it)
+                closure(plugin)
             } catch (t: Throwable) {
                 reportErrorWithMetrics(null, t,
-                    "Caught Exception applying closure to plugin: $it", Telemetry.INTEGRATION_ERROR_METRIC,
-                    mapOf("error" to t.toString(), "plugin" to "${it.type}-${it.javaClass}",
-                        "writekey" to it.analytics.configuration.writeKey, "message" to "Exception executing plugin"),
-                    t.stackTraceToString()
-                )
+                    "Caught Exception applying closure to plugin: $plugin",
+                    Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
+                    it["error"] = t.toString()
+                    it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                    it["writekey"] = plugin.analytics.configuration.writeKey
+                    it["message"] = "Exception executing plugin"
+                }
             }
         }
     }
