@@ -32,11 +32,11 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
         var result: BaseEvent? = event
 
         plugins.forEach { plugin ->
-            result?.let {
-                val copy = it.copy<BaseEvent>()
+            result?.let {event ->
+                val copy = event.copy<BaseEvent>()
                 try {
                     Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
-                        it["message"] = "event-${plugin.type}"
+                        it["message"] = "event-${event.type}"
                         "plugin" to "${plugin.type}-${plugin.javaClass}"
                     }
                     when (plugin) {

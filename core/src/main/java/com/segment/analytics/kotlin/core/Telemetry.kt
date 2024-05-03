@@ -51,7 +51,7 @@ object Telemetry: Subscriber {
     // Metric class for Analytics SDK plugin errors
     const val INTEGRATION_ERROR_METRIC = "$METRICS_BASE_TAG.integration.invoke.error"
 
-    var enable: Boolean = true
+    var enable: Boolean = false
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
     var sampleRate: Double = 1.0
