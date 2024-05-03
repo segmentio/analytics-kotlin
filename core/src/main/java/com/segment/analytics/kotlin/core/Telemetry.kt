@@ -52,9 +52,19 @@ object Telemetry: Subscriber {
     const val INTEGRATION_ERROR_METRIC = "$METRICS_BASE_TAG.integration.invoke.error"
 
     var enable: Boolean = false
+        set(value) {
+            field = value
+            if(value) {
+                // We don't want to start telemetry until two conditions are met:
+                // Telemetry.enable is set to true
+                // Settings from the server have adjusted the sampleRate
+                // start is called in both places
+                start()
+            }
+        }
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
-    var sampleRate: Double = 1.0
+    var sampleRate: Double = 0.0
     var flushTimer: Int = 30 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
@@ -87,7 +97,7 @@ object Telemetry: Subscriber {
     private var telemetryDispatcher: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var telemetryJob: Job? = null
     fun start() {
-        if (started || sampleRate == 0.0) return
+        if (!enable || started || sampleRate == 0.0) return
         started = true
 
         // Assume sampleRate is now set and everything in the queue hasn't had it applied
@@ -97,7 +107,10 @@ object Telemetry: Subscriber {
 
         telemetryJob = telemetryScope.launch(telemetryDispatcher) {
             while (isActive) {
-                if (!enable) return@launch
+                if (!enable) {
+                    started = false
+                    return@launch
+                }
                 try {
                     flush()
                 } catch (e: Throwable) {
@@ -294,9 +307,13 @@ object Telemetry: Subscriber {
     private suspend fun systemUpdate(system: com.segment.analytics.kotlin.core.System) {
         system.settings?.let { settings ->
             settings.metrics["sampleRate"]?.jsonPrimitive?.double?.let {
-                Telemetry.sampleRate = it
+                sampleRate = it
             }
-            Telemetry.start()
+            // We don't want to start telemetry until two conditions are met:
+            // Telemetry.enable is set to true
+            // Settings from the server have adjusted the sampleRate
+            // start is called in both places
+            start()
         }
     }
 

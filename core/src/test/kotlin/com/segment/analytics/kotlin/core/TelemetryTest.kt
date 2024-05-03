@@ -56,17 +56,18 @@ class TelemetryTest {
     @BeforeEach
     fun setup() {
         Telemetry.reset()
-        Telemetry.enable = true
         Telemetry.errorHandler = ::errorHandler
         errors.clear()
         Telemetry.sampleRate = 1.0
         MockKAnnotations.init(this)
         mockTelemetryHTTPClient()
+        // Telemetry.enable = true <- this will call start(), so don't do it here
     }
 
     @Test
     fun `Test telemetry start`() {
         Telemetry.sampleRate = 0.0
+        Telemetry.enable = true
         Telemetry.start()
         assertEquals(false, TelemetryStarted)
 
@@ -78,6 +79,7 @@ class TelemetryTest {
 
     @Test
     fun `Test rolling up duplicate metrics`() {
+        Telemetry.enable = true
         Telemetry.start()
         for (i in 1..3) {
             Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" }
@@ -97,6 +99,7 @@ class TelemetryTest {
 
     @Test
     fun `Test increment with wrong metric`() {
+        Telemetry.enable = true
         Telemetry.start()
         Telemetry.increment("wrong_metric") { it["test"] = "test" }
         assertEquals(0, TelemetryQueueSize())
@@ -105,6 +108,7 @@ class TelemetryTest {
 
     @Test
     fun `Test increment with no tags`() {
+        Telemetry.enable = true
         Telemetry.start()
         Telemetry.increment(Telemetry.INVOKE_METRIC) { it.clear() }
         assertEquals(0, TelemetryQueueSize())
@@ -122,6 +126,7 @@ class TelemetryTest {
 
     @Test
     fun `Test error with no tags`() {
+        Telemetry.enable = true
         Telemetry.start()
         Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error") { it.clear() }
         assertEquals(0, TelemetryQueueSize())
@@ -138,6 +143,7 @@ class TelemetryTest {
 
     @Test
     fun `Test flush when telemetry is disabled`() {
+        Telemetry.enable = true
         Telemetry.start()
         Telemetry.enable = false
         Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" }
@@ -147,6 +153,7 @@ class TelemetryTest {
 
     @Test
     fun `Test flush with empty queue`() {
+        Telemetry.enable = true
         Telemetry.start()
         Telemetry.flush()
         assertEquals(0, TelemetryQueueSize())
@@ -156,6 +163,7 @@ class TelemetryTest {
     @Test
     fun `Test HTTP Exception`() {
         mockTelemetryHTTPClient(shouldThrow = true)
+        Telemetry.enable = true
         Telemetry.start()
         Telemetry.error(Telemetry.INVOKE_METRIC,"log") { it["error"] = "test" }
         assertEquals(0,TelemetryQueueSize())
@@ -164,6 +172,7 @@ class TelemetryTest {
 
     @Test
     fun `Test increment and error methods when queue is full`() {
+        Telemetry.enable = true
         Telemetry.start()
         for (i in 1..Telemetry.maxQueueSize + 1) {
             Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" + i }
@@ -175,6 +184,7 @@ class TelemetryTest {
     @Test
     fun `Test error method with different flag settings`() {
         val longString = CharArray(1000) { 'a' }.joinToString("")
+        Telemetry.enable = true
         Telemetry.start()
         Telemetry.sendWriteKeyOnError = false
         Telemetry.sendErrorLogData = false
