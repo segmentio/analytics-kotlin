@@ -2,6 +2,12 @@
 
 package com.segment.analytics.kotlin.core.utilities
 
+import com.segment.analytics.kotlin.core.AliasEvent
+import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.GroupEvent
+import com.segment.analytics.kotlin.core.IdentifyEvent
+import com.segment.analytics.kotlin.core.ScreenEvent
+import com.segment.analytics.kotlin.core.TrackEvent
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.BooleanArraySerializer
@@ -420,4 +426,17 @@ fun Any.toJsonElement(): JsonElement {
         }
     }
     return JsonNull
+}
+
+fun JsonObject.toBaseEvent(): BaseEvent? {
+    val type = getString("type")
+
+    return when (type) {
+        "identify" -> LenientJson.decodeFromJsonElement(IdentifyEvent.serializer(), this)
+        "track" -> LenientJson.decodeFromJsonElement(TrackEvent.serializer(), this)
+        "screen" -> LenientJson.decodeFromJsonElement(ScreenEvent.serializer(), this)
+        "group" -> LenientJson.decodeFromJsonElement(GroupEvent.serializer(), this)
+        "alias" -> LenientJson.decodeFromJsonElement(AliasEvent.serializer(), this)
+        else -> null
+    }
 }

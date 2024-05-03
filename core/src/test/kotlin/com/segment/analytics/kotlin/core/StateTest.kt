@@ -21,6 +21,7 @@ internal class StateTest {
     private val testScope = TestScope(testDispatcher)
 
     init {
+        Telemetry.enable = false
         mockHTTPClient()
     }
 

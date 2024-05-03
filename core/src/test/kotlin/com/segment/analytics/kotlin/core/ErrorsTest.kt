@@ -20,6 +20,10 @@ class ErrorsTest {
     private val testScope = TestScope(testDispatcher)
     private val errorHandler = spyk<ErrorHandler>()
 
+    init {
+        Telemetry.enable = false
+    }
+
     @BeforeEach
     fun setup() {
         clearPersistentStorage()

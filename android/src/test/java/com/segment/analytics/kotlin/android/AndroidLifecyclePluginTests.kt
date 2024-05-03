@@ -41,6 +41,7 @@ class AndroidLifecyclePluginTests {
     private val testScope = TestScope(testDispatcher)
 
     init {
+        Telemetry.enable = false
         val packageInfo = PackageInfo()
         packageInfo.versionCode = 100
         packageInfo.versionName = "1.0.0"

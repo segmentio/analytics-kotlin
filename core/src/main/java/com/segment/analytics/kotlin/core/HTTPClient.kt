@@ -34,7 +34,12 @@ class HTTPClient(
             URL(url)
         } catch (e: MalformedURLException) {
             val error = IOException("Attempted to use malformed url: $url", e)
-            Analytics.reportInternalError(error)
+            reportErrorWithMetrics(null, e,"Attempted to use malformed url: $url",
+                Telemetry.INVOKE_ERROR_METRIC, e.stackTraceToString()) {
+                it["error"] = e.toString()
+                it["writekey"] = writeKey
+                it["message"] = "Malformed url"
+            }
             throw error
         }
         val connection = requestedURL.openConnection() as HttpURLConnection
@@ -105,7 +110,7 @@ internal fun HttpURLConnection.createPostConnection(): Connection {
                         inputStream?.close()
                     }
                     throw HTTPException(
-                        responseCode, connection.responseMessage, responseBody
+                        responseCode, connection.responseMessage, responseBody, connection.headerFields
                     )
                 }
             } finally {
@@ -119,7 +124,8 @@ internal fun HttpURLConnection.createPostConnection(): Connection {
 internal class HTTPException(
     val responseCode: Int,
     val responseMessage: String,
-    val responseBody: String?
+    val responseBody: String?,
+    val responseHeaders: MutableMap<String, MutableList<String>>
 ) :
     IOException("HTTP $responseCode: $responseMessage. Response: ${responseBody ?: "No response"}") {
     fun is4xx(): Boolean {

@@ -22,6 +22,7 @@ data class Settings(
     var plan: JsonObject = emptyJsonObject,
     var edgeFunction: JsonObject = emptyJsonObject,
     var middlewareSettings: JsonObject = emptyJsonObject,
+    var metrics: JsonObject = emptyJsonObject,
 ) {
     inline fun <reified T : Any> destinationSettings(
         name: String,
@@ -113,10 +114,11 @@ internal fun Analytics.fetchSettings(
     log("Fetched Settings: $settingsString")
     LenientJson.decodeFromString(settingsString)
 } catch (ex: Exception) {
-    reportInternalError(ex)
-    Analytics.segmentLog(
-        "${ex.message}: failed to fetch settings",
-        kind = LogKind.ERROR
-    )
+    reportErrorWithMetrics(this, ex, "Failed to fetch settings",
+        Telemetry.INVOKE_ERROR_METRIC, ex.stackTraceToString()) {
+        it["error"] = ex.toString()
+        it["writekey"] = writeKey
+        it["message"] = "Error retrieving settings"
+    }
     null
 }

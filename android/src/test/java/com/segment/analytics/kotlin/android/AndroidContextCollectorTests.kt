@@ -31,6 +31,10 @@ class AndroidContextCollectorTests {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
+    init {
+        Telemetry.enable = false
+    }
+
     @Before
     fun setUp() {
         appContext = spyk(InstrumentationRegistry.getInstrumentation().targetContext)

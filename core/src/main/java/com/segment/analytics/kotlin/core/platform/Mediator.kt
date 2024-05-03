@@ -2,8 +2,10 @@ package com.segment.analytics.kotlin.core.platform
 
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.Telemetry
 import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import com.segment.analytics.kotlin.core.reportErrorWithMetrics
 import com.segment.analytics.kotlin.core.reportInternalError
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
@@ -30,9 +32,13 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
         var result: BaseEvent? = event
 
         plugins.forEach { plugin ->
-            result?.let {
-                val copy = it.copy<BaseEvent>()
+            result?.let {event ->
+                val copy = event.copy<BaseEvent>()
                 try {
+                    Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
+                        it["message"] = "event-${event.type}"
+                        "plugin" to "${plugin.type}-${plugin.javaClass}"
+                    }
                     when (plugin) {
                         is DestinationPlugin -> {
                             plugin.execute(copy)
@@ -42,8 +48,14 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                         }
                     }
                 } catch (t: Throwable) {
-                    Analytics.reportInternalError("Caught Exception in plugin: $t")
                     Analytics.segmentLog("Skipping plugin due to Exception: $plugin", kind = LogKind.WARNING)
+                    reportErrorWithMetrics(null, t,"Caught Exception in plugin",
+                        Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
+                        it["error"] = t.toString()
+                        it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                        it["writekey"] = plugin.analytics.configuration.writeKey
+                        it["message"] ="Exception executing plugin"
+                    }
                 }
             }
         }
@@ -52,12 +64,18 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
     }
 
     fun applyClosure(closure: (Plugin) -> Unit) {
-        plugins.forEach {
+        plugins.forEach {plugin ->
             try {
-                closure(it)
+                closure(plugin)
             } catch (t: Throwable) {
-                Analytics.reportInternalError(t)
-                Analytics.segmentLog("Caught Exception applying closure to plugin: $it: $t")
+                reportErrorWithMetrics(null, t,
+                    "Caught Exception applying closure to plugin: $plugin",
+                    Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
+                    it["error"] = t.toString()
+                    it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                    it["writekey"] = plugin.analytics.configuration.writeKey
+                    it["message"] = "Exception executing plugin"
+                }
             }
         }
     }

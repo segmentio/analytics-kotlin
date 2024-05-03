@@ -117,7 +117,7 @@ internal class EventPipelineTest {
 
     @Test
     fun `enqueuing properly handles 400 http exception`() {
-        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "")
+        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "", mutableMapOf())
         pipeline.put(event1)
         pipeline.put(event2)
         coVerify {
@@ -130,7 +130,7 @@ internal class EventPipelineTest {
 
     @Test
     fun `enqueuing properly handles other http exception`() {
-        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(300, "", "")
+        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(300, "", "", mutableMapOf())
         pipeline.put(event1)
         pipeline.put(event2)
         coVerify {

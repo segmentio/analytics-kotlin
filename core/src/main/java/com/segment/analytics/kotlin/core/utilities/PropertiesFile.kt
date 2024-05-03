@@ -20,7 +20,9 @@ class PropertiesFile(private val directory: File, writeKey: String) : KVS {
      */
     fun load() {
         if (propertiesFile.exists()) {
-            underlyingProperties.load(FileInputStream(propertiesFile))
+            FileInputStream(propertiesFile).use {
+                underlyingProperties.load(it)
+            }
         }
         else {
             propertiesFile.parentFile.mkdirs()
@@ -29,7 +31,9 @@ class PropertiesFile(private val directory: File, writeKey: String) : KVS {
     }
 
     fun save() {
-        underlyingProperties.store(FileOutputStream(propertiesFile), null)
+        FileOutputStream(propertiesFile).use {
+            underlyingProperties.store(it, null)
+        }
     }
 
     override fun getInt(key: String, defaultVal: Int): Int =
