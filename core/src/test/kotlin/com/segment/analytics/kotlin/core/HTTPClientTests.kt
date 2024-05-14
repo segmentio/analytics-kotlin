@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
@@ -18,6 +19,7 @@ import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.http.HttpClient
+import java.util.zip.GZIPOutputStream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HTTPClientTests {
@@ -134,6 +136,7 @@ class HTTPClientTests {
                 "https://api.test.com",
                 it.url.toString()
             )
+            assertFalse(it.outputStream is GZIPOutputStream)
         }
     }
 }
