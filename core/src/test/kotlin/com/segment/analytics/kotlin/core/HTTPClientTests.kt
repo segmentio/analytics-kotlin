@@ -47,7 +47,9 @@ class HTTPClientTests {
 
     @Test
     fun `settings connection has correct configuration`() {
-        httpClient.upload("api.segment.io/v1").connection.let {
+        httpClient.upload("api.segment.io/v1").also {
+            assertTrue(it.outputStream is GZIPOutputStream)
+        }.connection.let {
             assertEquals(
                 "https://api.segment.io/v1/b",
                 it.url.toString()
@@ -131,12 +133,13 @@ class HTTPClientTests {
             )
         }
 
-        httpClient.upload("api.segment.io/v1").connection.let {
+        httpClient.upload("api.segment.io/v1").also {
+            assertFalse(it.outputStream is GZIPOutputStream)
+        }.connection.let {
             assertEquals(
                 "https://api.test.com",
                 it.url.toString()
             )
-            assertFalse(it.outputStream is GZIPOutputStream)
         }
     }
 
@@ -152,8 +155,6 @@ class HTTPClientTests {
             }
         })
 
-        httpClient.upload("api.segment.io/v1").connection.let {
-            assertFalse(it.outputStream is GZIPOutputStream)
-        }
+        assertFalse(httpClient.upload("api.segment.io/v1").outputStream is GZIPOutputStream)
     }
 }
