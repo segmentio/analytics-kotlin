@@ -88,8 +88,9 @@ internal fun HttpURLConnection.createGetConnection(): Connection {
 }
 
 internal fun HttpURLConnection.createPostConnection(): Connection {
+    val encoding = getRequestProperty("Content-Encoding") ?: ""
     val outputStream: OutputStream =
-        if (getRequestProperty("Content-Encoding") == "gzip") {
+        if (encoding.contains("gzip")) {
             GZIPOutputStream(this.outputStream)
         }
         else {

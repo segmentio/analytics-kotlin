@@ -139,4 +139,21 @@ class HTTPClientTests {
             assertFalse(it.outputStream is GZIPOutputStream)
         }
     }
+
+    @Test
+    fun `custom requestFactory can remove gzip`() {
+        val httpClient = HTTPClient("123", object : RequestFactory() {
+            override fun upload(apiHost: String): HttpURLConnection {
+                val connection: HttpURLConnection = openConnection("https://$apiHost/b")
+                connection.setRequestProperty("Content-Type", "text/plain")
+                connection.doOutput = true
+                connection.setChunkedStreamingMode(0)
+                return connection
+            }
+        })
+
+        httpClient.upload("api.segment.io/v1").connection.let {
+            assertFalse(it.outputStream is GZIPOutputStream)
+        }
+    }
 }
