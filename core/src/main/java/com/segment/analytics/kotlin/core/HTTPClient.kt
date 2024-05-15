@@ -88,9 +88,14 @@ internal fun HttpURLConnection.createGetConnection(): Connection {
 }
 
 internal fun HttpURLConnection.createPostConnection(): Connection {
-    val outputStream: OutputStream
-    setRequestProperty("Content-Encoding", "gzip")
-    outputStream = GZIPOutputStream(this.outputStream)
+    val encoding = getRequestProperty("Content-Encoding") ?: ""
+    val outputStream: OutputStream =
+        if (encoding.contains("gzip")) {
+            GZIPOutputStream(this.outputStream)
+        }
+        else {
+            this.outputStream
+        }
     return object : Connection(this, null, outputStream) {
         @Throws(IOException::class)
         override fun close() {
@@ -148,6 +153,7 @@ open class RequestFactory {
     open fun upload(apiHost: String): HttpURLConnection {
         val connection: HttpURLConnection = openConnection("https://$apiHost/b")
         connection.setRequestProperty("Content-Type", "text/plain")
+        connection.setRequestProperty("Content-Encoding", "gzip")
         connection.doOutput = true
         connection.setChunkedStreamingMode(0)
         return connection

@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
@@ -18,6 +19,7 @@ import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.http.HttpClient
+import java.util.zip.GZIPOutputStream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HTTPClientTests {
@@ -45,7 +47,9 @@ class HTTPClientTests {
 
     @Test
     fun `settings connection has correct configuration`() {
-        httpClient.upload("api.segment.io/v1").connection.let {
+        httpClient.upload("api.segment.io/v1").also {
+            assertTrue(it.outputStream is GZIPOutputStream)
+        }.connection.let {
             assertEquals(
                 "https://api.segment.io/v1/b",
                 it.url.toString()
@@ -129,11 +133,28 @@ class HTTPClientTests {
             )
         }
 
-        httpClient.upload("api.segment.io/v1").connection.let {
+        httpClient.upload("api.segment.io/v1").also {
+            assertFalse(it.outputStream is GZIPOutputStream)
+        }.connection.let {
             assertEquals(
                 "https://api.test.com",
                 it.url.toString()
             )
         }
+    }
+
+    @Test
+    fun `custom requestFactory can remove gzip`() {
+        val httpClient = HTTPClient("123", object : RequestFactory() {
+            override fun upload(apiHost: String): HttpURLConnection {
+                val connection: HttpURLConnection = openConnection("https://$apiHost/b")
+                connection.setRequestProperty("Content-Type", "text/plain")
+                connection.doOutput = true
+                connection.setChunkedStreamingMode(0)
+                return connection
+            }
+        })
+
+        assertFalse(httpClient.upload("api.segment.io/v1").outputStream is GZIPOutputStream)
     }
 }
