@@ -161,6 +161,23 @@ internal class StorageImplTest {
         assertEquals(null, settings)
     }
 
+    @Test
+    fun `storage directory can be customized`() {
+        storage = StorageImpl(
+            store,
+            "123",
+            UnconfinedTestDispatcher(),
+            "/tmp/test"
+        )
+
+        assertEquals("/tmp/test", storage.storageDirectory.path)
+        assertTrue(storage.eventsFile.directory.path.contains("/tmp/test"))
+        assertTrue(storage.propertiesFile.directory.path.contains("/tmp/test"))
+        assertTrue(storage.storageDirectory.exists())
+        assertTrue(storage.eventsFile.directory.exists())
+        assertTrue(storage.propertiesFile.directory.exists())
+    }
+
     @Nested
     inner class EventsStorage() {
 
