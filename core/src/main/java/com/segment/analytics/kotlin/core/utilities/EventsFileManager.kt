@@ -32,7 +32,7 @@ import java.io.FileOutputStream
  * remove() will delete the file path specified
  */
 class EventsFileManager(
-    private val directory: File,
+    val directory: File,
     private val writeKey: String,
     private val kvs: KVS
 ) {

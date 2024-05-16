@@ -20,12 +20,13 @@ class AndroidStorage(
     context: Context,
     private val store: Store,
     writeKey: String,
-    private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher,
+    directory: String? = null
 ) : Subscriber, Storage {
 
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)
-    override val storageDirectory: File = context.getDir("segment-disk-queue", Context.MODE_PRIVATE)
+    override val storageDirectory: File = context.getDir(directory ?: "segment-disk-queue", Context.MODE_PRIVATE)
     internal val eventsFile =
         EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences))
 
@@ -121,7 +122,7 @@ object AndroidStorageProvider : StorageProvider {
             store = store,
             writeKey = writeKey,
             ioDispatcher = ioDispatcher,
-            context = application as Context
+            context = application as Context,
         )
     }
 }

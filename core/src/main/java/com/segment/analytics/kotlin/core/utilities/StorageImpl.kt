@@ -19,10 +19,11 @@ import java.io.File
 class StorageImpl(
     private val store: Store,
     writeKey: String,
-    private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher,
+    directory: String? = null
 ) : Subscriber, Storage {
 
-    override val storageDirectory = File("/tmp/analytics-kotlin/$writeKey")
+    override val storageDirectory = File(directory ?: "/tmp/analytics-kotlin/$writeKey")
     private val storageDirectoryEvents = File(storageDirectory, "events")
 
     internal val propertiesFile = PropertiesFile(storageDirectory, writeKey)

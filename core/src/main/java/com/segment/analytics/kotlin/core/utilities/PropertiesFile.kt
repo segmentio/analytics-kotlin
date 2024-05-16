@@ -10,7 +10,7 @@ import java.util.Properties
  * conforming to {@link com.segment.analytics.kotlin.core.utilities.KVS} interface.
  * Ideal for use on JVM systems to store k-v pairs on a file.
  */
-class PropertiesFile(private val directory: File, writeKey: String) : KVS {
+class PropertiesFile(val directory: File, writeKey: String) : KVS {
     private val underlyingProperties: Properties = Properties()
     private val propertiesFileName = "analytics-kotlin-$writeKey.properties"
     private val propertiesFile = File(directory, propertiesFileName)

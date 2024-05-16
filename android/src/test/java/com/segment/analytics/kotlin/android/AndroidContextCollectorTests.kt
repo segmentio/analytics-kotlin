@@ -16,9 +16,11 @@ import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.Assertions
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import sovran.kotlin.Store
 import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
@@ -145,6 +147,25 @@ class AndroidContextCollectorTests {
                 assertEquals("anonId", it["id"].asString())
             }
         }
+    }
+
+
+
+    @Test
+    fun `storage directory can be customized`() {
+        val dir = "test"
+        val androidStorage = AndroidStorage(
+            appContext,
+            Store(),
+            "123",
+            UnconfinedTestDispatcher(),
+            dir
+        )
+
+        Assertions.assertTrue(androidStorage.storageDirectory.name.contains(dir))
+        Assertions.assertTrue(androidStorage.eventsFile.directory.name.contains(dir))
+        Assertions.assertTrue(androidStorage.storageDirectory.exists())
+        Assertions.assertTrue(androidStorage.eventsFile.directory.exists())
     }
 
     private fun JsonElement?.asString(): String? = this?.jsonPrimitive?.content
