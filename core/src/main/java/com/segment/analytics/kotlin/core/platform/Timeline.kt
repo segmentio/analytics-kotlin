@@ -71,7 +71,7 @@ internal class Timeline {
                 Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
                 it["error"] = t.toString()
                 it["plugin"] = "${plugin.type}-${plugin.javaClass}"
-                it["writekey"] = plugin.analytics.configuration.writeKey
+                it["writekey"] = analytics.configuration.writeKey
                 it["message"] = "Exception executing plugin"
             }
         }
