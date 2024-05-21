@@ -23,6 +23,7 @@ data class Settings(
     var edgeFunction: JsonObject = emptyJsonObject,
     var middlewareSettings: JsonObject = emptyJsonObject,
     var metrics: JsonObject = emptyJsonObject,
+    var consentSettings: JsonObject = emptyJsonObject
 ) {
     inline fun <reified T : Any> destinationSettings(
         name: String,
