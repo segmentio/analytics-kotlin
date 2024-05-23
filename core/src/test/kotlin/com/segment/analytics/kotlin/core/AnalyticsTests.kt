@@ -5,6 +5,9 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
 import com.segment.analytics.kotlin.core.utilities.SegmentInstant
+import com.segment.analytics.kotlin.core.utilities.getString
+import com.segment.analytics.kotlin.core.utilities.putInContext
+import com.segment.analytics.kotlin.core.utilities.updateJsonObject
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
@@ -17,6 +20,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.*
@@ -359,6 +363,28 @@ class AnalyticsTests {
                     track.captured
                 )
             }
+
+            @Test
+            fun `track event with enrichment closure`() {
+                val mockPlugin = spyk(object : StubPlugin() {
+                    override val type: Plugin.Type = Plugin.Type.After
+                })
+                analytics.add(mockPlugin)
+                analytics.track("track", buildJsonObject { put("foo", "bar") }) {
+                    val event = it?.let {
+                        it.putInContext("__eventOrigin", buildJsonObject {
+                            put("type", "mobile")
+                        })
+                    }
+                    event
+                }
+                val track = slot<TrackEvent>()
+                verify { mockPlugin.track(capture(track)) }
+                assertEquals(
+                    "mobile",
+                    track.captured.context["__eventOrigin"]?.jsonObject?.getString("type")
+                )
+            }
         }
 
         @Nested
@@ -488,6 +514,28 @@ class AnalyticsTests {
                     ), newUserInfo
                 )
             }
+
+            @Test
+            fun `identify event with enrichment closure`() {
+                val mockPlugin = spyk(object : StubPlugin() {
+                    override val type: Plugin.Type = Plugin.Type.After
+                })
+                analytics.add(mockPlugin)
+                analytics.identify("track", buildJsonObject { put("foo", "bar") }) {
+                    val event = it?.let {
+                        it.putInContext("__eventOrigin", buildJsonObject {
+                            put("type", "mobile")
+                        })
+                    }
+                    event
+                }
+                val track = slot<IdentifyEvent>()
+                verify { mockPlugin.identify(capture(track)) }
+                assertEquals(
+                    "mobile",
+                    track.captured.context["__eventOrigin"]?.jsonObject?.getString("type")
+                )
+            }
         }
 
         @Nested
@@ -571,6 +619,29 @@ class AnalyticsTests {
                     screen.captured
                 )
             }
+
+
+            @Test
+            fun `screen event with enrichment closure`() {
+                val mockPlugin = spyk(object : StubPlugin() {
+                    override val type: Plugin.Type = Plugin.Type.After
+                })
+                analytics.add(mockPlugin)
+                analytics.screen("track", buildJsonObject { put("foo", "bar") }) {
+                    val event = it?.let {
+                        it.putInContext("__eventOrigin", buildJsonObject {
+                            put("type", "mobile")
+                        })
+                    }
+                    event
+                }
+                val track = slot<ScreenEvent>()
+                verify { mockPlugin.screen(capture(track)) }
+                assertEquals(
+                    "mobile",
+                    track.captured.context["__eventOrigin"]?.jsonObject?.getString("type")
+                )
+            }
         }
 
         @Nested
@@ -638,6 +709,28 @@ class AnalyticsTests {
                     group.captured
                 )
             }
+
+            @Test
+            fun `group event with enrichment closure`() {
+                val mockPlugin = spyk(object : StubPlugin() {
+                    override val type: Plugin.Type = Plugin.Type.After
+                })
+                analytics.add(mockPlugin)
+                analytics.group("track", buildJsonObject { put("foo", "bar") }) {
+                    val event = it?.let {
+                        it.putInContext("__eventOrigin", buildJsonObject {
+                            put("type", "mobile")
+                        })
+                    }
+                    event
+                }
+                val track = slot<GroupEvent>()
+                verify { mockPlugin.group(capture(track)) }
+                assertEquals(
+                    "mobile",
+                    track.captured.context["__eventOrigin"]?.jsonObject?.getString("type")
+                )
+            }
         }
 
 
@@ -689,6 +782,28 @@ class AnalyticsTests {
                         traits = emptyJsonObject,
                         anonymousId = "qwerty-qwerty-123"
                     ), newUserInfo
+                )
+            }
+
+            @Test
+            fun `alias event with enrichment closure`() {
+                val mockPlugin = spyk(object : StubPlugin() {
+                    override val type: Plugin.Type = Plugin.Type.After
+                })
+                analytics.add(mockPlugin)
+                analytics.alias("track") {
+                    val event = it?.let {
+                        it.putInContext("__eventOrigin", buildJsonObject {
+                            put("type", "mobile")
+                        })
+                    }
+                    event
+                }
+                val track = slot<AliasEvent>()
+                verify { mockPlugin.alias(capture(track)) }
+                assertEquals(
+                    "mobile",
+                    track.captured.context["__eventOrigin"]?.jsonObject?.getString("type")
                 )
             }
         }

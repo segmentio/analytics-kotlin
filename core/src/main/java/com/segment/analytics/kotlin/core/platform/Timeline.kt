@@ -24,9 +24,12 @@ internal class Timeline {
     lateinit var analytics: Analytics
 
     // initiate the event's lifecycle
-    fun process(incomingEvent: BaseEvent): BaseEvent? {
+    fun process(incomingEvent: BaseEvent, enrichmentClosure: EnrichmentClosure? = null): BaseEvent? {
         val beforeResult = applyPlugins(Plugin.Type.Before, incomingEvent)
-        val enrichmentResult = applyPlugins(Plugin.Type.Enrichment, beforeResult)
+        var enrichmentResult = applyPlugins(Plugin.Type.Enrichment, beforeResult)
+        enrichmentClosure?.let {
+            enrichmentResult = it(enrichmentResult)
+        }
 
         // once the event enters a destination, we don't want
         // to know about changes that happen there
