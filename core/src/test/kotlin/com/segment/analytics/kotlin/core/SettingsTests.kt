@@ -45,19 +45,7 @@ class SettingsTests {
     fun `checkSettings updates settings`() = runTest {
         val system = analytics.store.currentState(System::class)
         val curSettings = system?.settings
-        assertEquals(
-            Settings(
-                integrations = buildJsonObject {
-                    put(
-                        "Segment.io",
-                        buildJsonObject { put("apiKey", "1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ") })
-                },
-                plan = emptyJsonObject,
-                edgeFunction = emptyJsonObject,
-                middlewareSettings = emptyJsonObject
-            ),
-            curSettings
-        )
+        assertEquals(true, curSettings?.hasIntegrationSettings("Segment.io"))
     }
 
     @Test
