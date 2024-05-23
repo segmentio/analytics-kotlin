@@ -169,3 +169,5 @@ abstract class DestinationPlugin : EventPlugin {
         return (enabled && customerEnabled)
     }
 }
+
+typealias EnrichmentClosure = (event: BaseEvent?) -> BaseEvent?

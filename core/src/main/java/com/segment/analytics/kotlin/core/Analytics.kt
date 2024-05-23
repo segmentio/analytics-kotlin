@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
+import com.segment.analytics.kotlin.core.platform.EnrichmentClosure
 import com.segment.analytics.kotlin.core.platform.EventPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.Timeline
@@ -153,12 +154,13 @@ open class Analytics protected constructor(
      *
      * @param name Name of the action
      * @param properties [Properties] to describe the action.
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
     @JvmOverloads
-    fun track(name: String, properties: JsonObject = emptyJsonObject) {
+    fun track(name: String, properties: JsonObject = emptyJsonObject, enrichment: EnrichmentClosure? = null) {
         val event = TrackEvent(event = name, properties = properties)
-        process(event)
+        process(event, enrichment)
     }
 
     /**
@@ -169,14 +171,16 @@ open class Analytics protected constructor(
      * @param name Name of the action
      * @param properties to describe the action. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @param serializationStrategy strategy to serialize [properties]
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
     fun <T> track(
         name: String,
         properties: T,
         serializationStrategy: SerializationStrategy<T>,
+        enrichment: EnrichmentClosure? = null
     ) {
-        track(name, Json.encodeToJsonElement(serializationStrategy, properties).jsonObject)
+        track(name, Json.encodeToJsonElement(serializationStrategy, properties).jsonObject, enrichment)
     }
 
     /**
@@ -186,13 +190,15 @@ open class Analytics protected constructor(
      *
      * @param name Name of the action
      * @param properties to describe the action. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/track/">Track Documentation</a>
      */
     inline fun <reified T> track(
         name: String,
         properties: T,
+        noinline enrichment: EnrichmentClosure? = null
     ) {
-        track(name, properties, JsonAnySerializer.serializersModule.serializer())
+        track(name, properties, JsonAnySerializer.serializersModule.serializer(), enrichment)
     }
 
     /**
@@ -209,15 +215,16 @@ open class Analytics protected constructor(
      *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user.
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
     @JvmOverloads
-    fun identify(userId: String, traits: JsonObject = emptyJsonObject) {
+    fun identify(userId: String, traits: JsonObject = emptyJsonObject, enrichment: EnrichmentClosure? = null) {
         analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.SetUserIdAndTraitsAction(userId, traits), UserInfo::class)
         }
         val event = IdentifyEvent(userId = userId, traits = traits)
-        process(event)
+        process(event, enrichment)
     }
 
     /**
@@ -235,14 +242,16 @@ open class Analytics protected constructor(
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @param serializationStrategy strategy to serialize [traits]
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
     fun <T> identify(
         userId: String,
         traits: T,
         serializationStrategy: SerializationStrategy<T>,
+        enrichment: EnrichmentClosure? = null
     ) {
-        identify(userId, Json.encodeToJsonElement(serializationStrategy, traits).jsonObject)
+        identify(userId, Json.encodeToJsonElement(serializationStrategy, traits).jsonObject, enrichment)
     }
 
     /**
@@ -258,12 +267,14 @@ open class Analytics protected constructor(
      * info.
      *
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
     inline fun <reified T> identify(
         traits: T,
+        noinline enrichment: EnrichmentClosure? = null
     ) {
-        identify(traits, JsonAnySerializer.serializersModule.serializer())
+        identify(traits, JsonAnySerializer.serializersModule.serializer(), enrichment)
     }
 
     /**
@@ -278,10 +289,11 @@ open class Analytics protected constructor(
      * info.
      *
      * @param traits [Traits] about the user.
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
     @JvmOverloads
-    fun identify(traits: JsonObject = emptyJsonObject) {
+    fun identify(traits: JsonObject = emptyJsonObject, enrichment: EnrichmentClosure? = null) {
         analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.SetTraitsAction(traits), UserInfo::class)
         }
@@ -289,7 +301,7 @@ open class Analytics protected constructor(
             userId = "", // using "" for userId, which will get filled down the pipe
             traits = traits
         )
-        process(event)
+        process(event, enrichment)
     }
 
     /**
@@ -306,13 +318,15 @@ open class Analytics protected constructor(
      *
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @param serializationStrategy strategy to serialize [traits]
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
     fun <T> identify(
         traits: T,
         serializationStrategy: SerializationStrategy<T>,
+        enrichment: EnrichmentClosure? = null
     ) {
-        identify(Json.encodeToJsonElement(serializationStrategy, traits).jsonObject)
+        identify(Json.encodeToJsonElement(serializationStrategy, traits).jsonObject, enrichment)
     }
 
     /**
@@ -329,13 +343,15 @@ open class Analytics protected constructor(
      *
      * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
      */
     inline fun <reified T> identify(
         userId: String,
         traits: T,
+        noinline enrichment: EnrichmentClosure? = null
     ) {
-        identify(userId, traits, JsonAnySerializer.serializersModule.serializer())
+        identify(userId, traits, JsonAnySerializer.serializersModule.serializer(), enrichment)
     }
 
     /**
@@ -346,6 +362,7 @@ open class Analytics protected constructor(
      * @param title A name for the screen.
      * @param category A category to describe the screen.
      * @param properties [Properties] to add extra information to this call.
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
     @JvmOverloads
@@ -353,9 +370,10 @@ open class Analytics protected constructor(
         title: String,
         properties: JsonObject = emptyJsonObject,
         category: String = "",
+        enrichment: EnrichmentClosure? = null
     ) {
         val event = ScreenEvent(name = title, category = category, properties = properties)
-        process(event)
+        process(event, enrichment)
     }
 
     /**
@@ -367,6 +385,7 @@ open class Analytics protected constructor(
      * @param category A category to describe the screen.
      * @param properties [Properties] to add extra information to this call. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @param serializationStrategy strategy to serialize [properties]
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
     fun <T> screen(
@@ -374,11 +393,13 @@ open class Analytics protected constructor(
         properties: T,
         serializationStrategy: SerializationStrategy<T>,
         category: String = "",
+        enrichment: EnrichmentClosure? = null
     ) {
         screen(
             title,
             Json.encodeToJsonElement(serializationStrategy, properties).jsonObject,
-            category
+            category,
+            enrichment
         )
     }
 
@@ -390,14 +411,16 @@ open class Analytics protected constructor(
      * @param title A name for the screen.
      * @param category A category to describe the screen.
      * @param properties [Properties] to add extra information to this call. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/screen/">Screen Documentation</a>
      */
     inline fun <reified T> screen(
         title: String,
         properties: T,
         category: String = "",
+        noinline enrichment: EnrichmentClosure? = null
     ) {
-        screen(title, properties, JsonAnySerializer.serializersModule.serializer(), category)
+        screen(title, properties, JsonAnySerializer.serializersModule.serializer(), category, enrichment)
     }
 
     /**
@@ -409,12 +432,13 @@ open class Analytics protected constructor(
      *
      * @param groupId Unique identifier which you recognize a group by in your own database
      * @param traits [Traits] about the group
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/group/">Group Documentation</a>
      */
     @JvmOverloads
-    fun group(groupId: String, traits: JsonObject = emptyJsonObject) {
+    fun group(groupId: String, traits: JsonObject = emptyJsonObject, enrichment: EnrichmentClosure? = null) {
         val event = GroupEvent(groupId = groupId, traits = traits)
-        process(event)
+        process(event, enrichment)
     }
 
     /**
@@ -427,14 +451,16 @@ open class Analytics protected constructor(
      * @param groupId Unique identifier which you recognize a group by in your own database
      * @param traits [Traits] about the group. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
      * @param serializationStrategy strategy to serialize [traits]
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/group/">Group Documentation</a>
      */
     fun <T> group(
         groupId: String,
         traits: T,
         serializationStrategy: SerializationStrategy<T>,
+        enrichment: EnrichmentClosure? = null
     ) {
-        group(groupId, Json.encodeToJsonElement(serializationStrategy, traits).jsonObject)
+        group(groupId, Json.encodeToJsonElement(serializationStrategy, traits).jsonObject, enrichment)
     }
 
     /**
@@ -446,13 +472,15 @@ open class Analytics protected constructor(
      *
      * @param groupId Unique identifier which you recognize a group by in your own database
      * @param traits [Traits] about the group. Needs to be [serializable](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md)
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/group/">Group Documentation</a>
      */
     inline fun <reified T> group(
         groupId: String,
         traits: T,
+        noinline enrichment: EnrichmentClosure? = null
     ) {
-        group(groupId, traits, JsonAnySerializer.serializersModule.serializer())
+        group(groupId, traits, JsonAnySerializer.serializersModule.serializer(), enrichment)
     }
 
     /**
@@ -462,9 +490,10 @@ open class Analytics protected constructor(
      *
      * @param newId The new ID you want to alias the existing ID to. The existing ID will be either
      *     the previousId if you have called identify, or the anonymous ID.
+     * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/tracking-api/alias/">Alias Documentation</a>
      */
-    fun alias(newId: String) {
+    fun alias(newId: String, enrichment: EnrichmentClosure? = null) {
         analyticsScope.launch(analyticsDispatcher) {
             val curUserInfo = store.currentState(UserInfo::class)
             if (curUserInfo != null) {
@@ -475,14 +504,14 @@ open class Analytics protected constructor(
                 launch {
                     store.dispatch(UserInfo.SetUserIdAction(newId), UserInfo::class)
                 }
-                process(event)
+                process(event, enrichment)
             } else {
                 log("failed to fetch current UserInfo state")
             }
         }
     }
 
-    fun process(event: BaseEvent) {
+    fun process(event: BaseEvent, enrichment: EnrichmentClosure? = null) {
         if (!enabled) return
 
         event.applyBaseData()
@@ -491,7 +520,7 @@ open class Analytics protected constructor(
         analyticsScope.launch(analyticsDispatcher) {
             event.applyBaseEventData(store)
             log("processing event on ${Thread.currentThread().name}")
-            timeline.process(event)
+            timeline.process(event, enrichment)
         }
     }
 
