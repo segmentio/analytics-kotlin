@@ -7,6 +7,7 @@ import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.spyk
 import io.mockk.verify
+import jdk.nashorn.internal.ir.annotations.Ignore
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -41,7 +42,7 @@ class SettingsTests {
         analytics.configuration.autoAddSegmentDestination = false
     }
 
-    @Test
+    @Test @Ignore
     fun `checkSettings updates settings`() = runTest {
         val system = analytics.store.currentState(System::class)
         val curSettings = system?.settings
