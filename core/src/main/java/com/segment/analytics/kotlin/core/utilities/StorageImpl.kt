@@ -20,14 +20,15 @@ class StorageImpl(
     private val store: Store,
     writeKey: String,
     private val ioDispatcher: CoroutineDispatcher,
-    directory: String? = null
+    directory: String? = null,
+    subject: String? = null
 ) : Subscriber, Storage {
 
     override val storageDirectory = File(directory ?: "/tmp/analytics-kotlin/$writeKey")
     private val storageDirectoryEvents = File(storageDirectory, "events")
 
     internal val propertiesFile = PropertiesFile(storageDirectory, writeKey)
-    internal val eventsFile = EventsFileManager(storageDirectoryEvents, writeKey, propertiesFile)
+    internal val eventsFile = EventsFileManager(storageDirectoryEvents, writeKey, propertiesFile, subject)
 
     init {
         propertiesFile.load()
