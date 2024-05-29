@@ -58,6 +58,26 @@ internal class EventsFileManagerTest{
     }
 
     @Test
+    fun `check if filename includes subject`() = runTest {
+        val file = EventsFileManager(directory, "123", kvStore, "test")
+        val trackEvent = TrackEvent(
+            event = "clicked",
+            properties = buildJsonObject { put("behaviour", "good") })
+            .apply {
+                messageId = "qwerty-1234"
+                anonymousId = "anonId"
+                integrations = emptyJsonObject
+                context = emptyJsonObject
+                timestamp = epochTimestamp
+            }
+        val eventString = EncodeDefaultsJson.encodeToString(trackEvent)
+        file.storeEvent(eventString)
+        file.rollover()
+
+        assertEquals(1, kvStore.getInt("segment.events.file.index.123.test", -1))
+    }
+
+    @Test
     fun `storeEvent stores in existing file if available`() = runTest {
         val file = EventsFileManager(directory, "123", kvStore)
         val trackEvent = TrackEvent(
