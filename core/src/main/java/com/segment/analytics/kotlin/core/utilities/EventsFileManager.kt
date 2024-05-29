@@ -34,7 +34,8 @@ import java.io.FileOutputStream
 class EventsFileManager(
     val directory: File,
     private val writeKey: String,
-    private val kvs: KVS
+    private val kvs: KVS,
+    subject: String? = null
 ) {
 
     init {
@@ -42,7 +43,7 @@ class EventsFileManager(
         registerShutdownHook()
     }
 
-    private val fileIndexKey = "segment.events.file.index.$writeKey"
+    private val fileIndexKey = if(subject == null) "segment.events.file.index.$writeKey" else "segment.events.file.index.$writeKey.$subject"
 
     private var os: FileOutputStream? = null
 

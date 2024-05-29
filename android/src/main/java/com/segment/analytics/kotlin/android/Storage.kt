@@ -21,14 +21,15 @@ class AndroidStorage(
     private val store: Store,
     writeKey: String,
     private val ioDispatcher: CoroutineDispatcher,
-    directory: String? = null
+    directory: String? = null,
+    subject: String? = null
 ) : Subscriber, Storage {
 
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)
     override val storageDirectory: File = context.getDir(directory ?: "segment-disk-queue", Context.MODE_PRIVATE)
     internal val eventsFile =
-        EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences))
+        EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences), subject)
 
     override suspend fun subscribeToStore() {
         store.subscribe(

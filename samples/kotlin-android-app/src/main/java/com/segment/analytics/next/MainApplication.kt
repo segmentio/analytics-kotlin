@@ -13,6 +13,7 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.utilities.*
+import java.net.HttpURLConnection
 
 class MainApplication : Application() {
     companion object {
@@ -22,7 +23,7 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        analytics = Analytics(BuildConfig.SEGMENT_WRITE_KEY, applicationContext) {
+        analytics = Analytics("tteOFND0bb5ugJfALOJWpF0wu1tcxYgr", applicationContext) {
             this.collectDeviceId = true
             this.trackApplicationLifecycleEvents = true
             this.trackDeepLinks = true
@@ -32,6 +33,15 @@ class MainApplication : Application() {
                 UnmeteredFlushPolicy(applicationContext) // Flush if network is not metered
             )
             this.flushPolicies = listOf(UnmeteredFlushPolicy(applicationContext))
+            this.requestFactory = object : RequestFactory() {
+                override fun upload(apiHost: String): HttpURLConnection {
+                    val connection: HttpURLConnection = openConnection("https://$apiHost/b")
+                    connection.setRequestProperty("Content-Type", "text/plain")
+                    connection.doOutput = true
+                    connection.setChunkedStreamingMode(0)
+                    return connection
+                }
+            }
         }
         analytics.add(AndroidRecordScreenPlugin())
         analytics.add(object : Plugin {
