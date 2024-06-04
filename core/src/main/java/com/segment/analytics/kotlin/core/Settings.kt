@@ -112,6 +112,7 @@ internal fun Analytics.fetchSettings(
     val connection = HTTPClient(writeKey, this.configuration.requestFactory).settings(cdnHost)
     val settingsString =
         connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+    //configuration.defaultSettings = LenientJson.decodeFromString(settingsString)
     log("Fetched Settings: $settingsString")
     LenientJson.decodeFromString(settingsString)
 } catch (ex: Exception) {
@@ -121,5 +122,5 @@ internal fun Analytics.fetchSettings(
         it["writekey"] = writeKey
         it["message"] = "Error retrieving settings"
     }
-    null
+    configuration.defaultSettings
 }
