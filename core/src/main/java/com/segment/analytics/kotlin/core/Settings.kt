@@ -121,5 +121,5 @@ internal fun Analytics.fetchSettings(
         it["writekey"] = writeKey
         it["message"] = "Error retrieving settings"
     }
-    null
+    configuration.defaultSettings
 }
