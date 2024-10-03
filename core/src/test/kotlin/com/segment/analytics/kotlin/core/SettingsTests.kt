@@ -88,9 +88,7 @@ class SettingsTests {
 
         // no settings available, should not be called
         analytics.add(mockPlugin)
-//        verify (exactly = 0){
-//            mockPlugin.update(any(), any())
-//        }
+
 
         // load settings
         mockHTTPClient()
