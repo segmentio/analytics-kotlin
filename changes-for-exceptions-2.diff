@@ -1,0 +1,93 @@
+diff --git a/core/src/main/java/com/segment/analytics/kotlin/core/Analytics.kt b/core/src/main/java/com/segment/analytics/kotlin/core/Analytics.kt
+index 3c6ddbc..cf70141 100644
+--- a/core/src/main/java/com/segment/analytics/kotlin/core/Analytics.kt
++++ b/core/src/main/java/com/segment/analytics/kotlin/core/Analytics.kt
+@@ -8,6 +8,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.ContextPlugin
+ import com.segment.analytics.kotlin.core.platform.plugins.SegmentDestination
+ import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
+ import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
++import com.segment.analytics.kotlin.core.platform.plugins.logger.LogFilterKind
+ import com.segment.analytics.kotlin.core.platform.plugins.logger.SegmentLog
+ import com.segment.analytics.kotlin.core.platform.plugins.logger.log
+ import kotlinx.coroutines.*
+@@ -83,7 +84,10 @@ open class Analytics protected constructor(
+     constructor(configuration: Configuration) : this(configuration,
+         object : CoroutineConfiguration {
+             override val store = Store()
+-            override val analyticsScope = CoroutineScope(SupervisorJob())
++            val exceptionHandler =
++                CoroutineExceptionHandler { coroutineContext, throwable ->
++                    println("From: $coroutineContext caught: $throwable") }
++            override val analyticsScope = CoroutineScope(SupervisorJob()+exceptionHandler)
+             override val analyticsDispatcher : CloseableCoroutineDispatcher =
+                 Executors.newCachedThreadPool().asCoroutineDispatcher()
+             override val networkIODispatcher : CloseableCoroutineDispatcher =
+@@ -95,28 +99,32 @@ open class Analytics protected constructor(
+     // This function provides a default state to the store & attaches the storage and store instances
+     // Initiates the initial call to settings and adds default system plugins
+     internal fun build() {
+-        // because startup queue doesn't depend on a state, we can add it first
+-        add(SegmentLog())
+-        add(StartupQueue())
+-        add(ContextPlugin())
+-        add(UserInfoPlugin())
+-
+-        // Setup store
+-        analyticsScope.launch(analyticsDispatcher) {
+-            store.also {
+-                // load memory with initial value
+-                it.provide(userInfo)
+-                it.provide(System.defaultState(configuration, storage))
++        try {
++            // because startup queue doesn't depend on a state, we can add it first
++            add(SegmentLog())
++            add(StartupQueue())
++            add(ContextPlugin())
++            add(UserInfoPlugin())
++
++            // Setup store
++            analyticsScope.launch(analyticsDispatcher) {
++                store.also {
++                    // load memory with initial value
++                    it.provide(userInfo)
++                    it.provide(System.defaultState(configuration, storage))
++
++                    // subscribe to store after state is provided
++                    storage.subscribeToStore()
++                }
+ 
+-                // subscribe to store after state is provided
+-                storage.subscribeToStore()
+-            }
++                if (configuration.autoAddSegmentDestination) {
++                    add(SegmentDestination())
++                }
+ 
+-            if (configuration.autoAddSegmentDestination) {
+-                add(SegmentDestination())
++                checkSettings()
+             }
+-
+-            checkSettings()
++        } catch (t: Throwable) {
++            log("Error calling build(): $t")
+         }
+     }
+ 
+diff --git a/core/src/main/java/com/segment/analytics/kotlin/core/platform/Mediator.kt b/core/src/main/java/com/segment/analytics/kotlin/core/platform/Mediator.kt
+index c3a599c..55bfecf 100644
+--- a/core/src/main/java/com/segment/analytics/kotlin/core/platform/Mediator.kt
++++ b/core/src/main/java/com/segment/analytics/kotlin/core/platform/Mediator.kt
+@@ -51,7 +51,11 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
+ 
+     fun applyClosure(closure: (Plugin) -> Unit) {
+         plugins.forEach {
+-            closure(it)
++            try {
++                closure(it)
++            } catch (t : Throwable) {
++                Analytics.segmentLog("Caught Exception while applying closure to plugin: $it: $t")
++            }
+         }
+     }
+ 
