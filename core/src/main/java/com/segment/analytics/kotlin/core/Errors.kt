@@ -1,6 +1,26 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+sealed class AnalyticsError(): Throwable() {
+    data class StorageUnableToCreate(override val message: String?): AnalyticsError()
+    data class StorageUnableToWrite(override val message: String?): AnalyticsError()
+    data class StorageUnableToRename(override val message: String?): AnalyticsError()
+    data class StorageUnableToOpen(override val message: String?): AnalyticsError()
+    data class StorageUnableToClose(override val message: String?): AnalyticsError()
+    data class StorageInvalid(override val message: String?): AnalyticsError()
+    data class StorageUnknown(override val message: String?, override val cause: Throwable?): AnalyticsError()
+    data class NetworkUnexpectedHTTPCode(override val message: String?): AnalyticsError()
+    data class NetworkServerLimited(override val message: String?): AnalyticsError()
+    data class NetworkServerRejected(override val message: String?): AnalyticsError()
+    data class NetworkUnknown(override val message: String?, override val cause: Throwable?): AnalyticsError()
+    data class NetworkInvalidData(override val message: String?): AnalyticsError()
+    data class JsonUnableToSerialize(override val message: String?, override val cause: Throwable?): AnalyticsError()
+    data class JsonUnableToDeserialize(override val message: String?, override val cause: Throwable?): AnalyticsError()
+    data class JsonUnknown(override val message: String?, override val cause: Throwable?): AnalyticsError()
+    data class PluginError(override val message: String?, override val cause: Throwable?): AnalyticsError()
+    data class EnrichmentError(override val message: String?): AnalyticsError()
+    data class SettingsFetchError(override val message: String?, override val cause: Throwable?): AnalyticsError()
+}
 
 /**
  * Reports an internal error to the user-defined error handler.
