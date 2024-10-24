@@ -2,9 +2,7 @@ package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.platform.Plugin
-import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
-import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.launch
@@ -15,6 +13,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
 import java.io.BufferedReader
+import java.net.URL
 
 @Serializable
 data class Settings(
@@ -109,17 +108,22 @@ internal fun Analytics.fetchSettings(
     writeKey: String,
     cdnHost: String
 ): Settings? = try {
-    val connection = HTTPClient(writeKey, this.configuration.requestFactory).settings(cdnHost)
-    val settingsString =
-        connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-    log("Fetched Settings: $settingsString")
-    LenientJson.decodeFromString(settingsString)
-} catch (ex: Exception) {
-    reportErrorWithMetrics(this, AnalyticsError.SettingsFetchError(ex.message, ex), "Failed to fetch settings",
-        Telemetry.INVOKE_ERROR_METRIC, ex.stackTraceToString()) {
-        it["error"] = ex.toString()
-        it["writekey"] = writeKey
-        it["message"] = "Error retrieving settings"
+        val connection = HTTPClient(writeKey, this.configuration.requestFactory).settings(cdnHost)
+        val settingsString =
+            connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+        log("Fetched Settings: $settingsString")
+        LenientJson.decodeFromString(settingsString)
+    } catch (ex: Exception) {
+        reportErrorWithMetrics(
+            this,
+            AnalyticsError.SettingsFail(AnalyticsError.NetworkUnknown(URL("https://$cdnHost/projects/$writeKey/settings"), ex)),
+            "Failed to fetch settings",
+            Telemetry.INVOKE_ERROR_METRIC,
+            ex.stackTraceToString()
+        ) {
+            it["error"] = ex.toString()
+            it["writekey"] = writeKey
+            it["message"] = "Error retrieving settings"
+        }
+        configuration.defaultSettings
     }
-    configuration.defaultSettings
-}
