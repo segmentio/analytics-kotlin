@@ -1,6 +1,8 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
+import java.net.URL
+
 sealed class AnalyticsError(): Throwable() {
     data class StorageUnableToCreate(override val message: String?): AnalyticsError()
     data class StorageUnableToWrite(override val message: String?): AnalyticsError()
@@ -8,18 +10,24 @@ sealed class AnalyticsError(): Throwable() {
     data class StorageUnableToOpen(override val message: String?): AnalyticsError()
     data class StorageUnableToClose(override val message: String?): AnalyticsError()
     data class StorageInvalid(override val message: String?): AnalyticsError()
-    data class StorageUnknown(override val message: String?, override val cause: Throwable?): AnalyticsError()
-    data class NetworkUnexpectedHTTPCode(override val message: String?): AnalyticsError()
-    data class NetworkServerLimited(override val message: String?): AnalyticsError()
-    data class NetworkServerRejected(override val message: String?): AnalyticsError()
-    data class NetworkUnknown(override val message: String?, override val cause: Throwable?): AnalyticsError()
+    data class StorageUnknown(override val cause: Throwable?): AnalyticsError()
+
+    data class NetworkUnexpectedHTTPCode(val uri: URL?, val code: Int): AnalyticsError()
+    data class NetworkServerLimited(val uri: URL?, val code: Int): AnalyticsError()
+    data class NetworkServerRejected(val uri: URL?, val code: Int): AnalyticsError()
+    data class NetworkUnknown(val uri: URL?, override val cause: Throwable?): AnalyticsError()
     data class NetworkInvalidData(override val message: String?): AnalyticsError()
-    data class JsonUnableToSerialize(override val message: String?, override val cause: Throwable?): AnalyticsError()
-    data class JsonUnableToDeserialize(override val message: String?, override val cause: Throwable?): AnalyticsError()
-    data class JsonUnknown(override val message: String?, override val cause: Throwable?): AnalyticsError()
-    data class PluginError(override val message: String?, override val cause: Throwable?): AnalyticsError()
-    data class EnrichmentError(override val message: String?): AnalyticsError()
-    data class SettingsFetchError(override val message: String?, override val cause: Throwable?): AnalyticsError()
+
+    data class JsonUnableToSerialize(override val cause: Throwable?): AnalyticsError()
+    data class JsonUnableToDeserialize(override val cause: Throwable?): AnalyticsError()
+    data class JsonUnknown(override val cause: Throwable?): AnalyticsError()
+
+    data class PluginError(override val cause: Throwable?): AnalyticsError()
+
+    data class EnrichmentError(override val message: String): AnalyticsError()
+
+    data class SettingsFail(override val cause: AnalyticsError): AnalyticsError()
+    data class BatchUploadFail(override val cause: AnalyticsError): AnalyticsError()
 }
 
 /**
