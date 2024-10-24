@@ -43,7 +43,7 @@ open class Analytics protected constructor(
     }
 
     // use lazy to avoid the instance being leak before fully initialized
-    val storage: Storage by lazy {
+    internal val storage: Storage by lazy {
         configuration.storageProvider.getStorage(
             analytics = this,
             writeKey = configuration.writeKey,
