@@ -52,8 +52,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-process:2.4.0'
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.4.0'
 
-    implementation 'com.google.android.gms:play-services-ads:20.5.0'
-
     implementation platform('com.google.firebase:firebase-bom:29.0.0')
     implementation 'com.google.firebase:firebase-messaging-ktx'
     implementation 'com.google.firebase:firebase-analytics-ktx'

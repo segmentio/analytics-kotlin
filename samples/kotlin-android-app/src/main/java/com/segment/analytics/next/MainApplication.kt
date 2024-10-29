@@ -6,7 +6,6 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.segment.analytics.kotlin.android.Analytics
 import com.segment.analytics.kotlin.core.*
-import com.segment.analytics.next.plugins.AndroidAdvertisingIdPlugin
 import com.segment.analytics.next.plugins.AndroidRecordScreenPlugin
 import com.segment.analytics.next.plugins.PushNotificationTracking
 import com.segment.analytics.kotlin.core.platform.Plugin
@@ -60,8 +59,6 @@ class MainApplication : Application() {
         })
         analytics.add(PushNotificationTracking)
 
-        analytics.add(AndroidAdvertisingIdPlugin(this))
-
         FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
             if (!task.isSuccessful) {
                 Log.w("SegmentSample", "Fetching FCM registration token failed", task.exception)
@@ -69,7 +66,7 @@ class MainApplication : Application() {
             }
 
             // Get new FCM registration token
-            val token = task.result
+            val token = task.result ?: ""
 
             // Log and toast
             Log.d("SegmentSample", token)
