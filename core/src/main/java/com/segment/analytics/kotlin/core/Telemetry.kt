@@ -40,6 +40,13 @@ fun logError(err: Throwable) {
     Analytics.reportInternalError(err)
 }
 
+/**
+ * A class for sending telemetry data to Segment.
+ * This system is used to gather usage and error data from the SDK for the purpose of improving the SDK.
+ * It can be disabled at any time by setting Telemetry.enable to false.
+ * Errors are sent with a write key, which can be disabled by setting Telemetry.sendWriteKeyOnError to false.
+ * All data is downsampled and no PII is collected.
+ */
 object Telemetry: Subscriber {
     private const val METRICS_BASE_TAG = "analytics_mobile"
     // Metric class for Analytics SDK
@@ -51,7 +58,10 @@ object Telemetry: Subscriber {
     // Metric class for Analytics SDK plugin errors
     const val INTEGRATION_ERROR_METRIC = "$METRICS_BASE_TAG.integration.invoke.error"
 
-    var enable: Boolean = false
+    /**
+     * Enables or disables telemetry.
+     */
+    var enable: Boolean = true
         set(value) {
             field = value
             if(value) {
@@ -62,10 +72,11 @@ object Telemetry: Subscriber {
                 start()
             }
         }
+
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
-    var sampleRate: Double = 0.0
-    var flushTimer: Int = 30 * 1000 // 30s
+    var sampleRate: Double = 1.0
+    var flushTimer: Int = 3 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
     var sendErrorLogData: Boolean = false
@@ -96,6 +107,11 @@ object Telemetry: Subscriber {
     private var telemetryScope: CoroutineScope = CoroutineScope(SupervisorJob() + exceptionHandler)
     private var telemetryDispatcher: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var telemetryJob: Job? = null
+
+    /**
+     * Starts the telemetry if it is enabled and not already started, and the sample rate is greater than 0.
+     * Called automatically when Telemetry.enable is set to true and when configuration data is received from Segment.
+     */
     fun start() {
         if (!enable || started || sampleRate == 0.0) return
         started = true
@@ -126,8 +142,10 @@ object Telemetry: Subscriber {
         }
     }
 
-    fun reset()
-    {
+    /**
+     * Resets the telemetry by canceling the telemetry job, clearing the error queue, and resetting the state.
+     */
+    fun reset() {
         telemetryJob?.cancel()
         resetQueue()
         seenErrors.clear()
@@ -135,6 +153,12 @@ object Telemetry: Subscriber {
         rateLimitEndTime = 0
     }
 
+    /**
+     * Increments a metric with the specified tags.
+     *
+     * @param metric The name of the metric to increment.
+     * @param buildTags A lambda function to build the tags for the metric.
+     */
     fun increment(metric: String, buildTags: (MutableMap<String, String>) -> Unit) {
         val tags = mutableMapOf<String, String>()
         buildTags(tags)
@@ -148,6 +172,13 @@ object Telemetry: Subscriber {
         addRemoteMetric(metric, tags)
     }
 
+    /**
+     * Logs an error metric with the specified tags and log data.
+     *
+     * @param metric The name of the error metric.
+     * @param log The log data associated with the error.
+     * @param buildTags A lambda function to build the tags for the error metric.
+     */
     fun error(metric:String, log: String, buildTags: (MutableMap<String, String>) -> Unit) {
         val tags = mutableMapOf<String, String>()
         buildTags(tags)
@@ -284,7 +315,7 @@ object Telemetry: Subscriber {
             metric = metric,
             value = value,
             log = log?.let { mapOf("timestamp" to SegmentInstant.now(), "trace" to it) },
-            tags = tags + additionalTags
+            tags = fullTags
         )
         val newMetricSize = newMetric.toString().toByteArray().size
         if (queueBytes + newMetricSize <= maxQueueBytes) {

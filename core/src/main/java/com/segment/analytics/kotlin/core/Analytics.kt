@@ -123,6 +123,7 @@ open class Analytics protected constructor(
             it["cdnhost"] = configuration.cdnHost
             it["flush"] =
                 "at:${configuration.flushAt} int:${configuration.flushInterval} pol:${configuration.flushPolicies.count()}"
+            it["config"] = "seg:${configuration.autoAddSegmentDestination}"
         }
 
         // Setup store
