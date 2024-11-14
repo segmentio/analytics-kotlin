@@ -75,8 +75,8 @@ object Telemetry: Subscriber {
 
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
-    var sampleRate: Double = 1.0
-    var flushTimer: Int = 3 * 1000 // 30s
+    var sampleRate: Double = 0.1
+    var flushTimer: Int = 30 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
     var sendErrorLogData: Boolean = false
