@@ -107,6 +107,10 @@ internal class Timeline {
         // remove all plugins with this name in every category
         plugins.forEach { (_, list) ->
             list.remove(plugin)
+            Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
+                it["message"] = "removed"
+                it["plugin"] = "${plugin.type.toString()}-${plugin.javaClass.toString()}"
+            }
         }
     }
 
