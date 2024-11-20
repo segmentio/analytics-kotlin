@@ -37,7 +37,7 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                 try {
                     Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
                         it["message"] = "event-${event.type}"
-                        "plugin" to "${plugin.type}-${plugin.javaClass}"
+                        it["plugin"] = "${plugin.type}-${plugin.javaClass}"
                     }
                     when (plugin) {
                         is DestinationPlugin -> {

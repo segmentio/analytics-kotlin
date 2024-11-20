@@ -80,7 +80,7 @@ internal class Timeline {
         }
         Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
             it["message"] = "added"
-            it["plugin"] = "${plugin.type.toString()}-${plugin.javaClass.toString()}"
+            it["plugin"] = "${plugin.type}-${plugin.javaClass}"
         }
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
@@ -109,7 +109,7 @@ internal class Timeline {
             list.remove(plugin)
             Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
                 it["message"] = "removed"
-                it["plugin"] = "${plugin.type.toString()}-${plugin.javaClass.toString()}"
+                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
             }
         }
     }

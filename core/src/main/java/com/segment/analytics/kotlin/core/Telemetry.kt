@@ -119,6 +119,10 @@ object Telemetry: Subscriber {
         // Assume sampleRate is now set and everything in the queue hasn't had it applied
         if (Math.random() > sampleRate) {
             resetQueue()
+        } else {
+            queue.forEach {
+                it.value = (it.value / sampleRate).roundToInt()
+            }
         }
 
         telemetryJob = telemetryScope.launch(telemetryDispatcher) {
