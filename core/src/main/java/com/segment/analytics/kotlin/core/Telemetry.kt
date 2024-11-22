@@ -75,7 +75,8 @@ object Telemetry: Subscriber {
 
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
-    var sampleRate: Double = 0.1
+    // Values are adjusted by the sampleRate on send
+    var sampleRate: Double = 1.0
     var flushTimer: Int = 30 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
@@ -96,6 +97,7 @@ object Telemetry: Subscriber {
     private val seenErrors = mutableMapOf<String, Int>()
     private var started = false
     private var rateLimitEndTime: Long = 0
+    private var flushFirstError = true
     private val exceptionHandler = CoroutineExceptionHandler { _, t ->
         errorHandler?.let {
             it( Exception(
@@ -116,13 +118,9 @@ object Telemetry: Subscriber {
         if (!enable || started || sampleRate == 0.0) return
         started = true
 
-        // Assume sampleRate is now set and everything in the queue hasn't had it applied
+        // Everything queued was sampled at default 100%, downsample adjustment and send will adjust values
         if (Math.random() > sampleRate) {
             resetQueue()
-        } else {
-            queue.forEach {
-                it.value = (it.value / sampleRate).roundToInt()
-            }
         }
 
         telemetryJob = telemetryScope.launch(telemetryDispatcher) {
@@ -191,9 +189,13 @@ object Telemetry: Subscriber {
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
         if (queue.size >= maxQueueSize) return
+        if (Math.random() > sampleRate) return
 
-        var filteredTags = tags.toMap()
-        if (!sendWriteKeyOnError) filteredTags = tags.filterKeys { it.lowercase() != "writekey" }
+        var filteredTags = if(sendWriteKeyOnError) {
+            tags.toMap()
+        } else {
+            tags.filterKeys { it.lowercase() != "writekey" }
+        }
         var logData: String? = null
         if (sendErrorLogData) {
             logData = if (log.length > errorLogSizeMax) {
@@ -203,23 +205,11 @@ object Telemetry: Subscriber {
             }
         }
 
-        val errorKey = tags["error"]
-        if (errorKey != null) {
-            if (seenErrors.containsKey(errorKey)) {
-                seenErrors[errorKey] = seenErrors[errorKey]!! + 1
-                if (Math.random() > sampleRate) return
-                // Adjust how many we've seen after the first since we know for sure.
-                addRemoteMetric(metric, filteredTags, log=logData,
-                    value = (seenErrors[errorKey]!! * sampleRate).toInt())
-                seenErrors[errorKey] = 0
-            } else {
-                addRemoteMetric(metric, filteredTags, log=logData)
-                flush()
-                seenErrors[errorKey] = 0 // Zero because it's already been sent.
-            }
-        }
-        else {
-            addRemoteMetric(metric, filteredTags, log=logData)
+        addRemoteMetric(metric, filteredTags, log=logData)
+
+        if(flushFirstError) {
+            flushFirstError = false
+            flush()
         }
     }
 
@@ -343,12 +333,12 @@ object Telemetry: Subscriber {
         system.settings?.let { settings ->
             settings.metrics["sampleRate"]?.jsonPrimitive?.double?.let {
                 sampleRate = it
+                // We don't want to start telemetry until two conditions are met:
+                // Telemetry.enable is set to true
+                // Settings from the server have adjusted the sampleRate
+                // start is called in both places
+                start()
             }
-            // We don't want to start telemetry until two conditions are met:
-            // Telemetry.enable is set to true
-            // Settings from the server have adjusted the sampleRate
-            // start is called in both places
-            start()
         }
     }
 

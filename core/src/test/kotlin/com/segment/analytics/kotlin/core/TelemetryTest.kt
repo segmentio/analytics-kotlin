@@ -9,6 +9,11 @@ import java.net.HttpURLConnection
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class TelemetryTest {
+    fun TelemetryResetFlushFirstError() {
+        val field: Field = Telemetry::class.java.getDeclaredField("flushFirstError")
+        field.isAccessible = true
+        field.set(true, true)
+    }
     fun TelemetryQueueSize(): Int {
         val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
         queueField.isAccessible = true
@@ -163,6 +168,7 @@ class TelemetryTest {
     @Test
     fun `Test HTTP Exception`() {
         mockTelemetryHTTPClient(shouldThrow = true)
+        TelemetryResetFlushFirstError()
         Telemetry.enable = true
         Telemetry.start()
         Telemetry.error(Telemetry.INVOKE_METRIC,"log") { it["error"] = "test" }
