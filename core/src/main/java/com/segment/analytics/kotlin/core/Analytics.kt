@@ -98,6 +98,7 @@ open class Analytics protected constructor(
                     Telemetry.INVOKE_ERROR_METRIC, t.stackTraceToString()) {
                     it["error"] = t.toString()
                     it["message"] = "Exception in Analytics Scope"
+                    it["caller"] = t.stackTrace[0].toString()
                 }
             }
             override val analyticsScope = CoroutineScope(SupervisorJob() + exceptionHandler)

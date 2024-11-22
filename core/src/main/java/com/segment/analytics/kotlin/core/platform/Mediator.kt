@@ -62,7 +62,8 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                             it["plugin"] = "${plugin.type}-${plugin.javaClass}"
                         }
                         it["writekey"] = plugin.analytics.configuration.writeKey
-                        it["message"] ="Exception executing plugin"
+                        it["message"] = "Exception executing plugin"
+                        it["caller"] = t.stackTrace[0].toString()
                     }
                 }
             }
@@ -87,6 +88,7 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                     }
                     it["writekey"] = plugin.analytics.configuration.writeKey
                     it["message"] = "Exception executing plugin"
+                    it["caller"] = t.stackTrace[0].toString()
                 }
             }
         }
