@@ -37,7 +37,11 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                 try {
                     Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
                         it["message"] = "event-${event.type}"
-                        "plugin" to "${plugin.type}-${plugin.javaClass}"
+                        if (plugin is DestinationPlugin && plugin.key != "") {
+                            it["plugin"] = "${plugin.type}-${plugin.key}"
+                        } else {
+                            it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                        }
                     }
                     when (plugin) {
                         is DestinationPlugin -> {
@@ -52,9 +56,14 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                     reportErrorWithMetrics(null, t,"Caught Exception in plugin",
                         Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
                         it["error"] = t.toString()
-                        it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                        if (plugin is DestinationPlugin && plugin.key != "") {
+                            it["plugin"] = "${plugin.type}-${plugin.key}"
+                        } else {
+                            it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                        }
                         it["writekey"] = plugin.analytics.configuration.writeKey
-                        it["message"] ="Exception executing plugin"
+                        it["message"] = "Exception executing plugin"
+                        it["caller"] = t.stackTrace[0].toString()
                     }
                 }
             }
@@ -72,9 +81,14 @@ internal class Mediator(internal var plugins: CopyOnWriteArrayList<Plugin> = Cop
                     "Caught Exception applying closure to plugin: $plugin",
                     Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
                     it["error"] = t.toString()
-                    it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                    if (plugin is DestinationPlugin && plugin.key != "") {
+                        it["plugin"] = "${plugin.type}-${plugin.key}"
+                    } else {
+                        it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                    }
                     it["writekey"] = plugin.analytics.configuration.writeKey
                     it["message"] = "Exception executing plugin"
+                    it["caller"] = t.stackTrace[0].toString()
                 }
             }
         }

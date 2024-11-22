@@ -73,14 +73,22 @@ internal class Timeline {
                 "Caught Exception while setting up plugin $plugin",
                 Telemetry.INTEGRATION_ERROR_METRIC, t.stackTraceToString()) {
                 it["error"] = t.toString()
-                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                if (plugin is DestinationPlugin && plugin.key != "") {
+                    it["plugin"] = "${plugin.type}-${plugin.key}"
+                } else {
+                    it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                }
                 it["writekey"] = analytics.configuration.writeKey
                 it["message"] = "Exception executing plugin"
             }
         }
         Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
             it["message"] = "added"
-            it["plugin"] = "${plugin.type.toString()}-${plugin.javaClass.toString()}"
+            if (plugin is DestinationPlugin && plugin.key != "") {
+                it["plugin"] = "${plugin.type}-${plugin.key}"
+            } else {
+                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+            }
         }
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
@@ -109,7 +117,11 @@ internal class Timeline {
             list.remove(plugin)
             Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
                 it["message"] = "removed"
-                it["plugin"] = "${plugin.type.toString()}-${plugin.javaClass.toString()}"
+                if (plugin is DestinationPlugin && plugin.key != "") {
+                    it["plugin"] = "${plugin.type}-${plugin.key}"
+                } else {
+                    it["plugin"] = "${plugin.type}-${plugin.javaClass}"
+                }
             }
         }
     }
