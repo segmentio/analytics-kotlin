@@ -124,7 +124,6 @@ internal fun Analytics.fetchSettings(
             it["error"] = ex.toString()
             it["writekey"] = writeKey
             it["message"] = "Error retrieving settings"
-            it["caller"] = ex.stackTrace[0].toString()
         }
         configuration.defaultSettings
     }

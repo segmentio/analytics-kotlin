@@ -93,8 +93,6 @@ object Telemetry: Subscriber {
 
     private val queue = ConcurrentLinkedQueue<RemoteMetric>()
     private var queueBytes = 0
-    private var queueSizeExceeded = false
-    private val seenErrors = mutableMapOf<String, Int>()
     private var started = false
     private var rateLimitEndTime: Long = 0
     private var flushFirstError = true
@@ -150,7 +148,6 @@ object Telemetry: Subscriber {
     fun reset() {
         telemetryJob?.cancel()
         resetQueue()
-        seenErrors.clear()
         started = false
         rateLimitEndTime = 0
     }
@@ -169,7 +166,6 @@ object Telemetry: Subscriber {
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
         if (Math.random() > sampleRate) return
-        if (queue.size >= maxQueueSize) return
 
         addRemoteMetric(metric, tags)
     }
@@ -188,7 +184,6 @@ object Telemetry: Subscriber {
         if (!enable || sampleRate == 0.0) return
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
-        if (queue.size >= maxQueueSize) return
         if (Math.random() > sampleRate) return
 
         var filteredTags = if(sendWriteKeyOnError) {
@@ -235,7 +230,6 @@ object Telemetry: Subscriber {
         var queueCount = queue.size
         // Reset queue data size counter since all current queue items will be removed
         queueBytes = 0
-        queueSizeExceeded = false
         val sendQueue = mutableListOf<RemoteMetric>()
         while (queueCount-- > 0 && !queue.isEmpty()) {
             val m = queue.poll()
@@ -303,6 +297,9 @@ object Telemetry: Subscriber {
             found.value += value
             return
         }
+        if (queue.size >= maxQueueSize) {
+            return
+        }
 
         val newMetric = RemoteMetric(
             type = METRIC_TYPE,
@@ -315,8 +312,6 @@ object Telemetry: Subscriber {
         if (queueBytes + newMetricSize <= maxQueueBytes) {
             queue.add(newMetric)
             queueBytes += newMetricSize
-        } else {
-            queueSizeExceeded = true
         }
     }
 
@@ -345,6 +340,5 @@ object Telemetry: Subscriber {
     private fun resetQueue() {
         queue.clear()
         queueBytes = 0
-        queueSizeExceeded = false
     }
 }

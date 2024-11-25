@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Test
 import java.lang.reflect.Field
 import java.net.HttpURLConnection
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 class TelemetryTest {
     fun TelemetryResetFlushFirstError() {
@@ -182,7 +186,7 @@ class TelemetryTest {
         Telemetry.start()
         for (i in 1..Telemetry.maxQueueSize + 1) {
             Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" + i }
-            Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error") { it["test"] = "test" + i }
+            Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error") { it["error"] = "test" + i }
         }
         assertEquals(Telemetry.maxQueueSize, TelemetryQueueSize())
     }
@@ -195,6 +199,44 @@ class TelemetryTest {
         Telemetry.sendWriteKeyOnError = false
         Telemetry.sendErrorLogData = false
         Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, longString) { it["writekey"] = longString }
-        assertTrue(TelemetryQueueSize() < 1000)
+        assertTrue(TelemetryQueueBytes() < 1000)
+    }
+
+    @Test
+    fun testConcurrentErrorReportingWithQueuePressure() {
+        val operationCount = 200
+        val latch = CountDownLatch(operationCount)
+        val executor = Executors.newFixedThreadPool(3)
+
+        try {
+            // Launch operations across multiple threads
+            repeat(operationCount) { i ->
+                executor.submit {
+                    try {
+                        Telemetry.error(
+                            metric = Telemetry.INVOKE_ERROR_METRIC,
+                            log = "High pressure test $i"
+                        ) {
+                            it["error"] = "pressure_test_key"
+                            it["iteration"] = "$i"
+                        }
+
+                        // Add random delays to increase race condition probability
+                        if (i % 5 == 0) {
+                            Thread.sleep(Random.nextLong(1, 3))
+                        }
+                    } finally {
+                        latch.countDown()
+                    }
+                }
+            }
+
+            // Wait for all operations to complete
+            latch.await(15, TimeUnit.SECONDS)
+
+        } finally {
+            executor.shutdown()
+        }
+        assertTrue(TelemetryQueueSize() == Telemetry.maxQueueSize)
     }
 }
