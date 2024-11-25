@@ -39,7 +39,6 @@ class HTTPClient(
                 it["error"] = e.toString()
                 it["writekey"] = writeKey
                 it["message"] = "Malformed url"
-                it["caller"] = e.stackTrace[0].toString()
             }
             throw error
         }
