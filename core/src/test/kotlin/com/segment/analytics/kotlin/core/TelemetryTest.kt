@@ -10,13 +10,15 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.random.Random
 
 class TelemetryTest {
     fun TelemetryResetFlushFirstError() {
         val field: Field = Telemetry::class.java.getDeclaredField("flushFirstError")
         field.isAccessible = true
-        field.set(true, true)
+        val atomicBoolean = field.get(Telemetry) as AtomicBoolean
+        atomicBoolean.set(true)
     }
     fun TelemetryQueueSize(): Int {
         val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
@@ -29,11 +31,11 @@ class TelemetryTest {
         queueBytesField.isAccessible = true
         return queueBytesField.get(Telemetry) as Int
     }
-    var TelemetryStarted: Boolean
+    var TelemetryStarted: AtomicBoolean
         get() {
             val startedField: Field = Telemetry::class.java.getDeclaredField("started")
             startedField.isAccessible = true
-            return startedField.get(Telemetry) as Boolean
+            return startedField.get(Telemetry) as AtomicBoolean
         }
         set(value) {
             val startedField: Field = Telemetry::class.java.getDeclaredField("started")
@@ -78,11 +80,11 @@ class TelemetryTest {
         Telemetry.sampleRate = 0.0
         Telemetry.enable = true
         Telemetry.start()
-        assertEquals(false, TelemetryStarted)
+        assertEquals(false, TelemetryStarted.get())
 
         Telemetry.sampleRate = 1.0
         Telemetry.start()
-        assertEquals(true, TelemetryStarted)
+        assertEquals(true, TelemetryStarted.get())
         assertEquals(0,errors.size)
     }
 
