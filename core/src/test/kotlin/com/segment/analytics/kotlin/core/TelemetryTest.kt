@@ -10,13 +10,16 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
 
 class TelemetryTest {
     fun TelemetryResetFlushFirstError() {
         val field: Field = Telemetry::class.java.getDeclaredField("flushFirstError")
         field.isAccessible = true
-        field.set(true, true)
+        val atomicBoolean = field.get(Telemetry) as AtomicBoolean
+        atomicBoolean.set(true)
     }
     fun TelemetryQueueSize(): Int {
         val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
@@ -29,11 +32,27 @@ class TelemetryTest {
         queueBytesField.isAccessible = true
         return queueBytesField.get(Telemetry) as Int
     }
-    var TelemetryStarted: Boolean
+    fun TelemetryMaxQueueSize(): Int {
+        val maxQueueSizeField: Field = Telemetry::class.java.getDeclaredField("maxQueueSize")
+        maxQueueSizeField.isAccessible = true
+        return maxQueueSizeField.get(Telemetry) as Int
+    }
+    var TelemetrySampleRate: Double
+        get() {
+            val sampleRateField: Field = Telemetry::class.java.getDeclaredField("sampleRate")
+            sampleRateField.isAccessible = true
+            return (sampleRateField.get(Telemetry) as AtomicReference<Double>).get()
+        }
+        set(value) {
+            val sampleRateField: Field = Telemetry::class.java.getDeclaredField("sampleRate")
+            sampleRateField.isAccessible = true
+            (sampleRateField.get(Telemetry) as AtomicReference<Double>).set(value)
+        }
+    var TelemetryStarted: AtomicBoolean
         get() {
             val startedField: Field = Telemetry::class.java.getDeclaredField("started")
             startedField.isAccessible = true
-            return startedField.get(Telemetry) as Boolean
+            return startedField.get(Telemetry) as AtomicBoolean
         }
         set(value) {
             val startedField: Field = Telemetry::class.java.getDeclaredField("started")
@@ -67,7 +86,7 @@ class TelemetryTest {
         Telemetry.reset()
         Telemetry.errorHandler = ::errorHandler
         errors.clear()
-        Telemetry.sampleRate = 1.0
+        TelemetrySampleRate = 1.0
         MockKAnnotations.init(this)
         mockTelemetryHTTPClient()
         // Telemetry.enable = true <- this will call start(), so don't do it here
@@ -75,14 +94,14 @@ class TelemetryTest {
 
     @Test
     fun `Test telemetry start`() {
-        Telemetry.sampleRate = 0.0
+        TelemetrySampleRate = 0.0
         Telemetry.enable = true
         Telemetry.start()
-        assertEquals(false, TelemetryStarted)
+        assertEquals(false, TelemetryStarted.get())
 
-        Telemetry.sampleRate = 1.0
+        TelemetrySampleRate = 1.0
         Telemetry.start()
-        assertEquals(true, TelemetryStarted)
+        assertEquals(true, TelemetryStarted.get())
         assertEquals(0,errors.size)
     }
 
@@ -184,11 +203,11 @@ class TelemetryTest {
     fun `Test increment and error methods when queue is full`() {
         Telemetry.enable = true
         Telemetry.start()
-        for (i in 1..Telemetry.maxQueueSize + 1) {
+        for (i in 1..TelemetryMaxQueueSize() + 1) {
             Telemetry.increment(Telemetry.INVOKE_METRIC) { it["test"] = "test" + i }
             Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error") { it["error"] = "test" + i }
         }
-        assertEquals(Telemetry.maxQueueSize, TelemetryQueueSize())
+        assertEquals(TelemetryMaxQueueSize(), TelemetryQueueSize())
     }
 
     @Test
@@ -237,6 +256,6 @@ class TelemetryTest {
         } finally {
             executor.shutdown()
         }
-        assertTrue(TelemetryQueueSize() == Telemetry.maxQueueSize)
+        assertTrue(TelemetryQueueSize() == TelemetryMaxQueueSize())
     }
 }
