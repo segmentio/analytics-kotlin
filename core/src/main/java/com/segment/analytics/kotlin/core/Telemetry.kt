@@ -15,6 +15,9 @@ import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.channels.Channel
 
 class MetricsRequestFactory : RequestFactory() {
     override fun upload(apiHost: String): HttpURLConnection {
@@ -77,21 +80,14 @@ object Telemetry: Subscriber {
     var host: String = Constants.DEFAULT_API_HOST
     // 1.0 is 100%, will get set by Segment setting before start()
     // Values are adjusted by the sampleRate on send
-    @Volatile private var _sampleRate: Double = 1.0
-    var sampleRate: Double
-        get() = _sampleRate
-        set(value) {
-            synchronized(this) {
-                _sampleRate = value
-            }
-        }
-    var flushTimer: Int = 30 * 1000 // 30s
+    private var sampleRate = AtomicReference<Double>(1.0)
+    private var flushTimer: Int = 30 * 1000 // 30s
     var httpClient: HTTPClient = HTTPClient("", MetricsRequestFactory())
     var sendWriteKeyOnError: Boolean = true
     var sendErrorLogData: Boolean = false
     var errorHandler: ((Throwable) -> Unit)? = ::logError
-    var maxQueueSize: Int = 20
-    var errorLogSizeMax: Int = 4000
+    private var maxQueueSize: Int = 20
+    private var errorLogSizeMax: Int = 4000
 
     private const val MAX_QUEUE_BYTES = 28000
     var maxQueueBytes: Int = MAX_QUEUE_BYTES
@@ -100,7 +96,7 @@ object Telemetry: Subscriber {
         }
 
     private val queue = ConcurrentLinkedQueue<RemoteMetric>()
-    private var queueBytes = 0
+    private var queueBytes = AtomicInteger(0)
     private var started = AtomicBoolean(false)
     private var rateLimitEndTime: Long = 0
     private var flushFirstError = AtomicBoolean(true)
@@ -116,16 +112,27 @@ object Telemetry: Subscriber {
     private var telemetryDispatcher: ExecutorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var telemetryJob: Job? = null
 
+    private val flushChannel = Channel<Unit>(Channel.UNLIMITED)
+
+    // Start a coroutine to process flush requests
+    init {
+        telemetryScope.launch(telemetryDispatcher) {
+            for (event in flushChannel) {
+                performFlush()
+            }
+        }
+    }
+
     /**
      * Starts the telemetry if it is enabled and not already started, and the sample rate is greater than 0.
      * Called automatically when Telemetry.enable is set to true and when configuration data is received from Segment.
      */
     fun start() {
-        if (!enable || started.get() || sampleRate == 0.0) return
+        if (!enable || started.get() || sampleRate.get() == 0.0) return
         started.set(true)
 
         // Everything queued was sampled at default 100%, downsample adjustment and send will adjust values
-        if (Math.random() > sampleRate) {
+        if (Math.random() > sampleRate.get()) {
             resetQueue()
         }
 
@@ -170,10 +177,10 @@ object Telemetry: Subscriber {
         val tags = mutableMapOf<String, String>()
         buildTags(tags)
 
-        if (!enable || sampleRate == 0.0) return
+        if (!enable || sampleRate.get() == 0.0) return
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
-        if (Math.random() > sampleRate) return
+        if (Math.random() > sampleRate.get()) return
 
         addRemoteMetric(metric, tags)
     }
@@ -189,10 +196,10 @@ object Telemetry: Subscriber {
         val tags = mutableMapOf<String, String>()
         buildTags(tags)
 
-        if (!enable || sampleRate == 0.0) return
+        if (!enable || sampleRate.get() == 0.0) return
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
-        if (Math.random() > sampleRate) return
+        if (Math.random() > sampleRate.get()) return
 
         var filteredTags = if(sendWriteKeyOnError) {
             tags.toMap()
@@ -216,33 +223,41 @@ object Telemetry: Subscriber {
         }
     }
 
-    @Synchronized
     fun flush() {
+        if (!enable) return
+        flushChannel.trySend(Unit)
+    }
+
+    private fun performFlush() {
         if (!enable || queue.isEmpty()) return
         if (rateLimitEndTime > (System.currentTimeMillis() / 1000).toInt()) {
             return
         }
         rateLimitEndTime = 0
-
+        flushFirstError.set(false)
         try {
             send()
         } catch (error: Throwable) {
             errorHandler?.invoke(error)
-            sampleRate = 0.0
+            sampleRate.set(0.0)
         }
     }
 
     private fun send() {
-        if (sampleRate == 0.0) return
-        val sendQueue: MutableList<RemoteMetric>
-        synchronized(queue) {
-            sendQueue = queue.toMutableList()
-            queue.clear()
-            queueBytes = 0
+        if (sampleRate.get() == 0.0) return
+        val sendQueue = mutableListOf<RemoteMetric>()
+        // Reset queue data size counter since all current queue items will be removed
+        queueBytes.set(0)
+        var queueCount = queue.size
+        while(queueCount > 0 && !queue.isEmpty()) {
+            --queueCount
+            val m = queue.poll()
+            if(m != null) {
+                m.value = (m.value / sampleRate.get()).roundToInt()
+                sendQueue.add(m)
+            }
         }
-        sendQueue.forEach { m ->
-            m.value = (m.value / sampleRate).roundToInt()
-        }
+        assert(queue.size == 0)
         try {
             // Json.encodeToString by default does not include default values
             //  We're using this to leave off the 'log' parameter if unset.
@@ -314,10 +329,12 @@ object Telemetry: Subscriber {
             tags = fullTags
         )
         val newMetricSize = newMetric.toString().toByteArray().size
-        synchronized(queue) {
-            if (queueBytes + newMetricSize <= maxQueueBytes) {
-                queue.add(newMetric)
-                queueBytes += newMetricSize
+        // Avoid synchronization issue by adding the size before checking.
+        if (queueBytes.addAndGet(newMetricSize) <= maxQueueBytes) {
+            queue.add(newMetric)
+        } else {
+            if(queueBytes.addAndGet(-newMetricSize) < 0) {
+                queueBytes.set(0)
             }
         }
     }
@@ -334,7 +351,7 @@ object Telemetry: Subscriber {
     private suspend fun systemUpdate(system: com.segment.analytics.kotlin.core.System) {
         system.settings?.let { settings ->
             settings.metrics["sampleRate"]?.jsonPrimitive?.double?.let {
-                sampleRate = it
+                sampleRate.set(it)
                 // We don't want to start telemetry until two conditions are met:
                 // Telemetry.enable is set to true
                 // Settings from the server have adjusted the sampleRate
@@ -345,9 +362,7 @@ object Telemetry: Subscriber {
     }
 
     private fun resetQueue() {
-        synchronized(queue) {
-            queue.clear()
-            queueBytes = 0
-        }
+        queue.clear()
+        queueBytes.set(0)
     }
 }
