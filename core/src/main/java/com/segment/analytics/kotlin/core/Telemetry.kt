@@ -170,6 +170,22 @@ object Telemetry: Subscriber {
         addRemoteMetric(metric, tags)
     }
 
+    fun cleanErrorValue(value: String): String {
+        var cleanedValue = value
+        // Remove IPs
+        cleanedValue = cleanedValue.replace(Regex("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}[\\d._:port]*"), "_IP")
+        // Remove IPv6
+        cleanedValue = cleanedValue.replace(Regex("[0-9a-fA-F]{2,4}(:[0-9a-fA-F]{0,4}){2,8}[\\d._:port]*"), "_IP")
+        // Remove hex values
+        cleanedValue = cleanedValue.replace(Regex("0x[0-9a-fA-F]+"), "0x00")
+        // Remove hex values that don't have 0x of at least 6 characters
+        cleanedValue = cleanedValue.replace(Regex("[0-9a-fA-F]{6,}"), "0x00")
+        // What even?  Mangled library names probably, e.g. a5.b:_some_error_etc
+        cleanedValue = cleanedValue.replace(Regex("^[a-z][a-z0-9]\\.[a-z]:"), "")
+
+        return cleanedValue
+    }
+
     /**
      * Logs an error metric with the specified tags and log data.
      *
@@ -185,6 +201,10 @@ object Telemetry: Subscriber {
         if (!metric.startsWith(METRICS_BASE_TAG)) return
         if (tags.isEmpty()) return
         if (Math.random() > sampleRate) return
+
+        if (tags.containsKey("error")) {
+            tags["error"] = cleanErrorValue(tags["error"]!!)
+        }
 
         var filteredTags = if(sendWriteKeyOnError) {
             tags.toMap()
