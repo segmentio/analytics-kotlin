@@ -29,6 +29,13 @@ class TelemetryTest {
         queueBytesField.isAccessible = true
         return queueBytesField.get(Telemetry) as Int
     }
+    fun TelemetryQueuePeek(): RemoteMetric {
+        val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
+        queueField.isAccessible = true
+        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
+        return queueValue.peek() as RemoteMetric
+    }
+
     var TelemetryStarted: Boolean
         get() {
             val startedField: Field = Telemetry::class.java.getDeclaredField("started")
@@ -238,5 +245,60 @@ class TelemetryTest {
             executor.shutdown()
         }
         assertTrue(TelemetryQueueSize() == Telemetry.maxQueueSize)
+    }
+
+    @Test
+    fun `Test error tags are cleaned`() {
+        Telemetry.enable = true
+        Telemetry.start()
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error log") {
+            it["error"] = "foo_192.168.0.1:8080"
+        }
+        assertEquals(1, TelemetryQueueSize())
+        assertEquals("foo__IP", TelemetryQueuePeek().tags["error"])
+    }
+
+    @Test
+    fun `Test error tags are cleaned for IPv6`() {
+        Telemetry.enable = true
+        Telemetry.start()
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error log") {
+            it["error"] = "foo_2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        }
+        assertEquals(1, TelemetryQueueSize())
+        assertEquals("foo__IP", TelemetryQueuePeek().tags["error"])
+    }
+
+    @Test
+    fun `Test error tags are cleaned for hex values`() {
+        Telemetry.enable = true
+        Telemetry.start()
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error log") {
+            it["error"] = "foo_0x1234567890abcdef_bar"
+        }
+        assertEquals(1, TelemetryQueueSize())
+        assertEquals("foo_0x00_bar", TelemetryQueuePeek().tags["error"])
+    }
+
+    @Test
+    fun `Test error tags are cleaned for sneaky hex values`() {
+        Telemetry.enable = true
+        Telemetry.start()
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error log") {
+            it["error"] = "address_deadbeef_face"
+        }
+        assertEquals(1, TelemetryQueueSize())
+        assertEquals("address_0x00_face", TelemetryQueuePeek().tags["error"])
+    }
+
+    @Test
+    fun `Test error tags are cleaned for mangled library names`() {
+        Telemetry.enable = true
+        Telemetry.start()
+        Telemetry.error(Telemetry.INVOKE_ERROR_METRIC, "error log") {
+            it["error"] = "a5.b:_some_error_etc"
+        }
+        assertEquals(1, TelemetryQueueSize())
+        assertEquals("_some_error_etc", TelemetryQueuePeek().tags["error"])
     }
 }
