@@ -29,6 +29,13 @@ class TelemetryTest {
         queueBytesField.isAccessible = true
         return queueBytesField.get(Telemetry) as Int
     }
+    fun TelemetryQueuePeek(): RemoteMetric {
+        val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
+        queueField.isAccessible = true
+        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
+        return queueValue.peek() as RemoteMetric
+    }
+
     var TelemetryStarted: Boolean
         get() {
             val startedField: Field = Telemetry::class.java.getDeclaredField("started")
@@ -248,11 +255,7 @@ class TelemetryTest {
             it["error"] = "foo_192.168.0.1:8080"
         }
         assertEquals(1, TelemetryQueueSize())
-        val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
-        queueField.isAccessible = true
-        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
-        val metric = queueValue.peek() as RemoteMetric
-        assertEquals("foo__IP", metric.tags["error"])
+        assertEquals("foo__IP", TelemetryQueuePeek().tags["error"])
     }
 
     @Test
@@ -263,11 +266,7 @@ class TelemetryTest {
             it["error"] = "foo_2001:0db8:85a3:0000:0000:8a2e:0370:7334"
         }
         assertEquals(1, TelemetryQueueSize())
-        val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
-        queueField.isAccessible = true
-        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
-        val metric = queueValue.peek() as RemoteMetric
-        assertEquals("foo__IP", metric.tags["error"])
+        assertEquals("foo__IP", TelemetryQueuePeek().tags["error"])
     }
 
     @Test
@@ -278,11 +277,7 @@ class TelemetryTest {
             it["error"] = "foo_0x1234567890abcdef_bar"
         }
         assertEquals(1, TelemetryQueueSize())
-        val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
-        queueField.isAccessible = true
-        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
-        val metric = queueValue.peek() as RemoteMetric
-        assertEquals("foo_0x00_bar", metric.tags["error"])
+        assertEquals("foo_0x00_bar", TelemetryQueuePeek().tags["error"])
     }
 
     @Test
@@ -293,11 +288,7 @@ class TelemetryTest {
             it["error"] = "address_deadbeef_face"
         }
         assertEquals(1, TelemetryQueueSize())
-        val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
-        queueField.isAccessible = true
-        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
-        val metric = queueValue.peek() as RemoteMetric
-        assertEquals("address_0x00_face", metric.tags["error"])
+        assertEquals("address_0x00_face", TelemetryQueuePeek().tags["error"])
     }
 
     @Test
@@ -308,10 +299,6 @@ class TelemetryTest {
             it["error"] = "a5.b:_some_error_etc"
         }
         assertEquals(1, TelemetryQueueSize())
-        val queueField: Field = Telemetry::class.java.getDeclaredField("queue")
-        queueField.isAccessible = true
-        val queueValue: ConcurrentLinkedQueue<*> = queueField.get(Telemetry) as ConcurrentLinkedQueue<*>
-        val metric = queueValue.peek() as RemoteMetric
-        assertEquals("_some_error_etc", metric.tags["error"])
+        assertEquals("_some_error_etc", TelemetryQueuePeek().tags["error"])
     }
 }
