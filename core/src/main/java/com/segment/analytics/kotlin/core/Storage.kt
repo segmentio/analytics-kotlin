@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
 import java.io.File
+import java.io.InputStream
 
 /**
  * Storage interface that abstracts storage of
@@ -28,6 +29,8 @@ interface Storage {
          * is not present in payloads themselves, but is added later, such as `sentAt`, `integrations` and other json tokens.
          */
         const val MAX_BATCH_SIZE = 475000 // 475KB.
+
+        const val MAX_FILE_SIZE = 475_000
     }
 
     enum class Constants(val rawVal: String) {
@@ -42,11 +45,11 @@ interface Storage {
         DeviceId("segment.device.id")
     }
 
-    val storageDirectory: File
-
     suspend fun subscribeToStore()
     suspend fun write(key: Constants, value: String)
+    fun writePrefs(key: Constants, value: String)
     fun read(key: Constants): String?
+    fun readAsStream(source: String): InputStream?
     fun remove(key: Constants): Boolean
     fun removeFile(filePath: String): Boolean
 
@@ -98,11 +101,16 @@ fun parseFilePaths(filePathStr: String?): List<String> {
  *  provider via this interface
  */
 interface StorageProvider {
+    @Deprecated("Deprecated in favor of the one takes vararg params",
+        ReplaceWith("createStorage(analytics, store, writeKey, ioDispatcher, application)")
+    )
     fun getStorage(
         analytics: Analytics,
         store: Store,
         writeKey: String,
         ioDispatcher: CoroutineDispatcher,
         application: Any
-    ): Storage
+    ): Storage = createStorage(analytics, store, writeKey, ioDispatcher, application)
+
+    fun createStorage(vararg params: Any): Storage
 }
