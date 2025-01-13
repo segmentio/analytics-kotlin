@@ -33,8 +33,8 @@ object AndroidStorageProvider : StorageProvider {
 
         if (params.size < 2 || params[0] !is Analytics || params[1] !is Context) {
             throw IllegalArgumentException("""
-                Invalid parameters for ConcreteStorageProvider. 
-                ConcreteStorageProvider requires at least 2 parameters.
+                Invalid parameters for AndroidStorageProvider. 
+                AndroidStorageProvider requires at least 2 parameters.
                  The first argument has to be an instance of Analytics,
                  an the second argument has to be an instance of Context
             """.trimIndent())
