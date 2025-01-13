@@ -5,17 +5,13 @@ import android.content.SharedPreferences
 import com.segment.analytics.kotlin.android.utilities.AndroidKVS
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Storage
-import com.segment.analytics.kotlin.core.Storage.Companion.MAX_PAYLOAD_SIZE
 import com.segment.analytics.kotlin.core.StorageProvider
-import com.segment.analytics.kotlin.core.System
-import com.segment.analytics.kotlin.core.UserInfo
-import com.segment.analytics.kotlin.core.utilities.EventsFileManager
+import com.segment.analytics.kotlin.core.utilities.FileEventStream
+import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
-import sovran.kotlin.Subscriber
-import java.io.File
 
-// Android specific
+@Deprecated("Use StorageProvider to create storage for Android instead")
 class AndroidStorage(
     context: Context,
     private val store: Store,
@@ -23,107 +19,38 @@ class AndroidStorage(
     private val ioDispatcher: CoroutineDispatcher,
     directory: String? = null,
     subject: String? = null
-) : Subscriber, Storage {
-
-    private val sharedPreferences: SharedPreferences =
-        context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)
-    override val storageDirectory: File = context.getDir(directory ?: "segment-disk-queue", Context.MODE_PRIVATE)
-    internal val eventsFile =
-        EventsFileManager(storageDirectory, writeKey, AndroidKVS(sharedPreferences), subject)
-
-    override suspend fun subscribeToStore() {
-        store.subscribe(
-            this,
-            UserInfo::class,
-            initialState = true,
-            handler = ::userInfoUpdate,
-            queue = ioDispatcher
-        )
-        store.subscribe(
-            this,
-            System::class,
-            initialState = true,
-            handler = ::systemUpdate,
-            queue = ioDispatcher
-        )
-    }
-
-    override suspend fun write(key: Storage.Constants, value: String) {
-        when (key) {
-            Storage.Constants.Events -> {
-                if (value.length < MAX_PAYLOAD_SIZE) {
-                    // write to disk
-                    eventsFile.storeEvent(value)
-                } else {
-                    throw Exception("enqueued payload is too large")
-                }
-            }
-            else -> {
-                sharedPreferences.edit().putString(key.rawVal, value).apply()
-            }
-        }
-    }
-
-    /**
-     * @returns the String value for the associated key
-     * for Constants.Events it will return a file url that can be used to read the contents of the events
-     */
-    override fun read(key: Storage.Constants): String? {
-        return when (key) {
-            Storage.Constants.Events -> {
-                eventsFile.read().joinToString()
-            }
-            Storage.Constants.LegacyAppBuild -> {
-                // The legacy app build number was stored as an integer so we have to get it
-                // as an integer and convert it to a String.
-                val noBuild = -1
-                val build = sharedPreferences.getInt(key.rawVal, noBuild)
-                if (build != noBuild) {
-                    return build.toString()
-                } else {
-                    return null
-                }
-            }
-            else -> {
-                sharedPreferences.getString(key.rawVal, null)
-            }
-        }
-    }
-
-    override fun remove(key: Storage.Constants): Boolean {
-        return when (key) {
-            Storage.Constants.Events -> {
-                true
-            }
-            else -> {
-                sharedPreferences.edit().putString(key.rawVal, null).apply()
-                true
-            }
-        }
-    }
-
-    override fun removeFile(filePath: String): Boolean {
-        return eventsFile.remove(filePath)
-    }
-
-    override suspend fun rollover() {
-        eventsFile.rollover()
-    }
-}
+) : StorageImpl(
+    propertiesFile = AndroidKVS(context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)),
+    eventStream = FileEventStream(context.getDir(directory ?: "segment-disk-queue", Context.MODE_PRIVATE)),
+    store = store,
+    writeKey = writeKey,
+    fileIndexKey = if(subject == null) "segment.events.file.index.$writeKey" else "segment.events.file.index.$writeKey.$subject",
+    ioDispatcher = ioDispatcher
+)
 
 object AndroidStorageProvider : StorageProvider {
-    override fun getStorage(
-        analytics: Analytics,
-        store: Store,
-        writeKey: String,
-        ioDispatcher: CoroutineDispatcher,
-        application: Any
-    ): Storage {
-        return AndroidStorage(
-            store = store,
-            writeKey = writeKey,
-            ioDispatcher = ioDispatcher,
-            context = application as Context,
-        )
+    override fun createStorage(vararg params: Any): Storage {
+
+        if (params.size < 2 || params[0] !is Analytics || params[1] !is Context) {
+            throw IllegalArgumentException("""
+                Invalid parameters for ConcreteStorageProvider. 
+                ConcreteStorageProvider requires at least 2 parameters.
+                 The first argument has to be an instance of Analytics,
+                 an the second argument has to be an instance of Context
+            """.trimIndent())
+        }
+
+        val analytics = params[0] as Analytics
+        val context = params[1] as Context
+        val config = analytics.configuration
+
+        val eventDirectory = context.getDir("segment-disk-queue", Context.MODE_PRIVATE)
+        val fileIndexKey = "segment.events.file.index.${config.writeKey}"
+        val sharedPreferences: SharedPreferences =
+            context.getSharedPreferences("analytics-android-${config.writeKey}", Context.MODE_PRIVATE)
+
+        val propertiesFile = AndroidKVS(sharedPreferences)
+        val eventStream = FileEventStream(eventDirectory)
+        return StorageImpl(propertiesFile, eventStream, analytics.store, config.writeKey, fileIndexKey, analytics.fileIODispatcher)
     }
 }

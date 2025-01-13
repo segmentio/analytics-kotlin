@@ -20,7 +20,7 @@ import java.io.InputStream
  * for key-value storage and {@link com.segment.analytics.kotlin.core.utilities.EventsFileManager}
  * for events storage
  */
-class StorageImpl(
+open class StorageImpl(
     internal val propertiesFile: KVS,
     private val eventStream: EventStream,
     private val store: Store,
