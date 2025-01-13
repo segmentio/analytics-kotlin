@@ -188,3 +188,21 @@ object ConcreteStorageProvider : StorageProvider {
         return StorageImpl(propertiesFile, eventStream, analytics.store, config.writeKey, fileIndexKey, analytics.fileIODispatcher)
     }
 }
+
+object InMemoryStorageProvider: StorageProvider {
+    override fun createStorage(vararg params: Any): Storage {
+        if (params.isEmpty() || params[0] !is Analytics) {
+            throw IllegalArgumentException("Invalid parameters for ConcreteStorageProvider. ConcreteStorageProvider requires at least 1 parameter and the first argument has to be an instance of Analytics")
+        }
+
+        val analytics = params[0] as Analytics
+        val config = analytics.configuration
+
+        val userPrefs = InMemoryPrefs()
+        val eventStream = InMemoryEventStream()
+        val fileIndexKey = "segment.events.file.index.${config.writeKey}"
+
+        return StorageImpl(userPrefs, eventStream, analytics.store, config.writeKey, fileIndexKey, analytics.fileIODispatcher)
+    }
+
+}
