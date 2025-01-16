@@ -92,7 +92,16 @@ suspend fun Analytics.checkSettings() {
         val settingsObj: Settings? = fetchSettings(writeKey, cdnHost)
 
         withContext(analyticsDispatcher) {
-            settingsObj?.let {
+
+            val systemState = store.currentState(System::class)
+            val defaultSettings = systemState?.settings
+
+
+            if (settingsObj == null) {
+                defaultSettings?.let {
+                    update(defaultSettings)
+                }
+            } else {
                 log("Dispatching update settings on ${Thread.currentThread().name}")
                 store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
                 update(settingsObj)
@@ -125,5 +134,5 @@ internal fun Analytics.fetchSettings(
             it["writekey"] = writeKey
             it["message"] = "Error retrieving settings"
         }
-        configuration.defaultSettings
+        null
     }
