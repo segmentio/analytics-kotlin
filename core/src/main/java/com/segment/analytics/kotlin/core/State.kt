@@ -31,7 +31,30 @@ data class System(
                     storage.read(Storage.Constants.Settings) ?: ""
                 )
             } catch (ignored: Exception) {
-                configuration.defaultSettings
+
+                // This could be an empty Settings...
+                if (configuration.defaultSettings.integrations.contains("Segment.io")) {
+                    configuration.defaultSettings
+                } else {
+                    Settings(
+                        integrations = buildJsonObject {
+                            put(
+                                "Segment.io",
+                                buildJsonObject {
+                                    put(
+                                        "apiKey",
+                                        configuration.writeKey
+                                    )
+                                    put("apiHost", Constants.DEFAULT_API_HOST)
+                                })
+                        },
+                        plan = emptyJsonObject,
+                        edgeFunction = emptyJsonObject,
+                        middlewareSettings = emptyJsonObject
+                    )
+                }
+
+
             }
             return System(
                 configuration = configuration,
