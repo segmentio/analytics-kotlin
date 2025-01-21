@@ -58,12 +58,7 @@ internal class EventPipelineTest {
 
         analytics = mockAnalytics(testScope, testDispatcher)
         clearPersistentStorage(analytics.configuration.writeKey)
-        storage = spyk(ConcreteStorageProvider.getStorage(
-            analytics,
-            analytics.store,
-            analytics.configuration.writeKey,
-            analytics.fileIODispatcher,
-            this))
+        storage = spyk(ConcreteStorageProvider.createStorage(analytics))
         every { analytics.storage } returns storage
 
         pipeline = EventPipeline(analytics,

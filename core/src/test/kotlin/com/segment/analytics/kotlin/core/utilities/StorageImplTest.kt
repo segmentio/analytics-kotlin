@@ -190,7 +190,8 @@ internal class StorageImplTest {
         val eventStream = storage.eventStream as FileEventStream
         val propertiesFile = (storage.propertiesFile as PropertiesFile).file
 
-        assertEquals("/tmp/test", eventStream.directory.path)
+        // we don't cache storage directory, but we can use the parent of the event storage to verify
+        assertEquals("/tmp/test", eventStream.directory.parent)
         assertTrue(eventStream.directory.path.contains("/tmp/test"))
         assertTrue(propertiesFile.path.contains("/tmp/test"))
         assertTrue(eventStream.directory.exists())
