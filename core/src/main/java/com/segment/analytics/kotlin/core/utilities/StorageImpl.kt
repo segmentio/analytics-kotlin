@@ -22,7 +22,7 @@ import java.io.InputStream
  */
 open class StorageImpl(
     internal val propertiesFile: KVS,
-    private val eventStream: EventStream,
+    internal val eventStream: EventStream,
     private val store: Store,
     private val writeKey: String,
     private  val fileIndexKey: String,

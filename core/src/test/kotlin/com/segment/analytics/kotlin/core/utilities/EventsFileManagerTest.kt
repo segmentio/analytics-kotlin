@@ -22,7 +22,7 @@ import java.util.Date
 internal class EventsFileManagerTest{
     private val epochTimestamp = Date(0).toInstant().toString()
     private val directory = File("/tmp/analytics-android-test/events")
-    private val kvStore = PropertiesFile(directory.parentFile, "123")
+    private val kvStore = PropertiesFile(File(directory.parentFile, "123"))
 
     init {
         mockkObject(SegmentInstant)

@@ -116,7 +116,7 @@ class InMemoryEventStream: EventStream {
 }
 
 class FileEventStream(
-    private val directory: File
+    internal val directory: File
 ): EventStream {
 
     init {

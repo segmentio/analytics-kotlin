@@ -100,8 +100,8 @@ class SegmentDestinationTests {
         val expectedStringPayload = Json.encodeToString(expectedEvent)
 
         (analytics.storage as StorageImpl).run {
-            eventsFile.rollover()
-            val storagePath = eventsFile.read()[0]
+            rollover()
+            val storagePath = eventStream.read()[0]
             val storageContents = File(storagePath).readText()
             assertTrue(
                 storageContents.contains(
@@ -260,8 +260,8 @@ class SegmentDestinationTests {
         verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
-            eventsFile.rollover()
-            assertEquals(1, eventsFile.read().size)
+            rollover()
+            assertEquals(1, eventStream.read().size)
         }
     }
 
@@ -303,8 +303,8 @@ class SegmentDestinationTests {
         verify { errorUploading.set(true) }
         (analytics.storage as StorageImpl).run {
             // batch file doesn't get deleted
-            eventsFile.rollover()
-            assertEquals(1, eventsFile.read().size)
+            rollover()
+            assertEquals(1, eventStream.read().size)
         }
     }
 

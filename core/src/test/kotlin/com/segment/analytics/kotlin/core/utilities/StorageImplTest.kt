@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core.utilities
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.Storage
+import com.segment.analytics.kotlin.core.StorageProvider
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.UserInfo
@@ -60,11 +61,20 @@ internal class StorageImplTest {
             )
         )
 
-        storage = StorageImpl(
-            store,
-            "123",
-            UnconfinedTestDispatcher()
-        )
+        val storageProvider = object : StorageProvider {
+            override fun createStorage(vararg params: Any): Storage {
+                val writeKey = "123"
+                val directory = File("/tmp/analytics-kotlin/${writeKey}")
+                val eventDirectory = File(directory, "events")
+                val fileIndexKey = "segment.events.file.index.${writeKey}"
+                val userPrefs = File(directory, "analytics-kotlin-${writeKey}.properties")
+
+                val propertiesFile = PropertiesFile(userPrefs)
+                val eventStream = FileEventStream(eventDirectory)
+                return StorageImpl(propertiesFile, eventStream, store, writeKey, fileIndexKey, UnconfinedTestDispatcher())
+            }
+        }
+        storage = storageProvider.createStorage() as StorageImpl
         storage.subscribeToStore()
     }
 
@@ -163,19 +173,28 @@ internal class StorageImplTest {
 
     @Test
     fun `storage directory can be customized`() {
-        storage = StorageImpl(
-            store,
-            "123",
-            UnconfinedTestDispatcher(),
-            "/tmp/test"
-        )
+        val storageProvider = object : StorageProvider {
+            override fun createStorage(vararg params: Any): Storage {
+                val writeKey = "123"
+                val directory = File("/tmp/test")
+                val eventDirectory = File(directory, "events")
+                val fileIndexKey = "segment.events.file.index.${writeKey}"
+                val userPrefs = File(directory, "analytics-kotlin-${writeKey}.properties")
 
-        assertEquals("/tmp/test", storage.storageDirectory.path)
-        assertTrue(storage.eventsFile.directory.path.contains("/tmp/test"))
-        assertTrue(storage.propertiesFile.directory.path.contains("/tmp/test"))
-        assertTrue(storage.storageDirectory.exists())
-        assertTrue(storage.eventsFile.directory.exists())
-        assertTrue(storage.propertiesFile.directory.exists())
+                val propertiesFile = PropertiesFile(userPrefs)
+                val eventStream = FileEventStream(eventDirectory)
+                return StorageImpl(propertiesFile, eventStream, store, writeKey, fileIndexKey, UnconfinedTestDispatcher())
+            }
+        }
+        storage = storageProvider.createStorage() as StorageImpl
+        val eventStream = storage.eventStream as FileEventStream
+        val propertiesFile = (storage.propertiesFile as PropertiesFile).file
+
+        assertEquals("/tmp/test", eventStream.directory.path)
+        assertTrue(eventStream.directory.path.contains("/tmp/test"))
+        assertTrue(propertiesFile.path.contains("/tmp/test"))
+        assertTrue(eventStream.directory.exists())
+        assertTrue(propertiesFile.exists())
     }
 
     @Nested
@@ -196,7 +215,7 @@ internal class StorageImplTest {
             val stringified: String = Json.encodeToString(event)
             storage.write(Storage.Constants.Events, stringified)
             storage.rollover()
-            val storagePath = storage.eventsFile.read()[0]
+            val storagePath = storage.eventStream.read()[0]
             val storageContents = File(storagePath).readText()
             val jsonFormat = Json.decodeFromString(JsonObject.serializer(), storageContents)
             assertEquals(1, jsonFormat["batch"]!!.jsonArray.size)
@@ -216,7 +235,7 @@ internal class StorageImplTest {
                 e
             }
             assertNotNull(exception)
-            assertTrue(storage.eventsFile.read().isEmpty())
+            assertTrue(storage.eventStream.read().isEmpty())
         }
 
         @Test
