@@ -93,15 +93,7 @@ suspend fun Analytics.checkSettings() {
 
         withContext(analyticsDispatcher) {
 
-            val systemState = store.currentState(System::class)
-            val defaultSettings = systemState?.settings
-
-
-            if (settingsObj == null) {
-                defaultSettings?.let {
-                    update(defaultSettings)
-                }
-            } else {
+            settingsObj?.let {
                 log("Dispatching update settings on ${Thread.currentThread().name}")
                 store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
                 update(settingsObj)
@@ -117,22 +109,27 @@ internal fun Analytics.fetchSettings(
     writeKey: String,
     cdnHost: String
 ): Settings? = try {
-        val connection = HTTPClient(writeKey, this.configuration.requestFactory).settings(cdnHost)
-        val settingsString =
-            connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
-        log("Fetched Settings: $settingsString")
-        LenientJson.decodeFromString(settingsString)
-    } catch (ex: Exception) {
-        reportErrorWithMetrics(
-            this,
-            AnalyticsError.SettingsFail(AnalyticsError.NetworkUnknown(URL("https://$cdnHost/projects/$writeKey/settings"), ex)),
-            "Failed to fetch settings",
-            Telemetry.INVOKE_ERROR_METRIC,
-            ex.stackTraceToString()
-        ) {
-            it["error"] = ex.toString()
-            it["writekey"] = writeKey
-            it["message"] = "Error retrieving settings"
-        }
-        null
+    val connection = HTTPClient(writeKey, this.configuration.requestFactory).settings(cdnHost)
+    val settingsString =
+        connection.inputStream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+    log("Fetched Settings: $settingsString")
+    LenientJson.decodeFromString(settingsString)
+} catch (ex: Exception) {
+    reportErrorWithMetrics(
+        this,
+        AnalyticsError.SettingsFail(
+            AnalyticsError.NetworkUnknown(
+                URL("https://$cdnHost/projects/$writeKey/settings"),
+                ex
+            )
+        ),
+        "Failed to fetch settings",
+        Telemetry.INVOKE_ERROR_METRIC,
+        ex.stackTraceToString()
+    ) {
+        it["error"] = ex.toString()
+        it["writekey"] = writeKey
+        it["message"] = "Error retrieving settings"
     }
+    null
+}
