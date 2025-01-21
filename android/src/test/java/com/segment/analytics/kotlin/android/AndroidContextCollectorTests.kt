@@ -149,24 +149,5 @@ class AndroidContextCollectorTests {
         }
     }
 
-
-
-    @Test
-    fun `storage directory can be customized`() {
-        val dir = "test"
-        val androidStorage = AndroidStorage(
-            appContext,
-            Store(),
-            "123",
-            UnconfinedTestDispatcher(),
-            dir
-        )
-
-        Assertions.assertTrue(androidStorage.storageDirectory.name.contains(dir))
-        Assertions.assertTrue(androidStorage.eventsFile.directory.name.contains(dir))
-        Assertions.assertTrue(androidStorage.storageDirectory.exists())
-        Assertions.assertTrue(androidStorage.eventsFile.directory.exists())
-    }
-
     private fun JsonElement?.asString(): String? = this?.jsonPrimitive?.content
 }

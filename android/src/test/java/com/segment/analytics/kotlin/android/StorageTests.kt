@@ -41,7 +41,7 @@ class StorageTests {
     @Nested
     inner class Android {
         private var store = Store()
-        private lateinit var androidStorage: AndroidStorage
+        private lateinit var androidStorage: Storage
         private var mockContext: Context = mockContext()
 
         init {
@@ -208,9 +208,12 @@ class StorageTests {
                     }
                 val stringified: String = Json.encodeToString(event)
                 androidStorage.write(Storage.Constants.Events, stringified)
-                androidStorage.eventsFile.rollover()
-                val storagePath = androidStorage.eventsFile.read()[0]
-                val storageContents = File(storagePath).readText()
+                androidStorage.rollover()
+                val storagePath = androidStorage.read(Storage.Constants.Events)?.let{
+                    it.split(',')[0]
+                }
+                assertNotNull(storagePath)
+                val storageContents = File(storagePath!!).readText()
                 val jsonFormat = Json.decodeFromString(JsonObject.serializer(), storageContents)
                 assertEquals(1, jsonFormat["batch"]!!.jsonArray.size)
             }
@@ -229,8 +232,8 @@ class StorageTests {
                     e
                 }
                 assertNotNull(exception)
-                androidStorage.eventsFile.rollover()
-                assertTrue(androidStorage.eventsFile.read().isEmpty())
+                androidStorage.rollover()
+                assertTrue(androidStorage.read(Storage.Constants.Events).isNullOrEmpty())
             }
 
             @Test
@@ -248,7 +251,7 @@ class StorageTests {
                 val stringified: String = Json.encodeToString(event)
                 androidStorage.write(Storage.Constants.Events, stringified)
 
-                androidStorage.eventsFile.rollover()
+                androidStorage.rollover()
                 val fileUrl = androidStorage.read(Storage.Constants.Events)
                 assertNotNull(fileUrl)
                 fileUrl!!.let {
@@ -270,7 +273,7 @@ class StorageTests {
 
             @Test
             fun `reading events with empty storage return empty list`() = runTest {
-                androidStorage.eventsFile.rollover()
+                androidStorage.rollover()
                 val fileUrls = androidStorage.read(Storage.Constants.Events)
                 assertTrue(fileUrls!!.isEmpty())
             }
