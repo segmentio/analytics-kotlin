@@ -72,4 +72,6 @@ class PropertiesFile(val file: File) : KVS {
         save()
         return true
     }
+
+    override fun contains(key: String) = properties.containsKey(key)
 }

@@ -17,6 +17,7 @@ interface KVS {
     fun get(key: String, defaultVal: String?): String?
     fun put(key: String, value: String): Boolean
     fun remove(key: String): Boolean
+    fun contains(key: String): Boolean
 }
 
 class InMemoryPrefs: KVS {
@@ -44,5 +45,7 @@ class InMemoryPrefs: KVS {
         cache.remove(key)
         return true
     }
+
+    override fun contains(key: String) = cache.containsKey(key)
 
 }
