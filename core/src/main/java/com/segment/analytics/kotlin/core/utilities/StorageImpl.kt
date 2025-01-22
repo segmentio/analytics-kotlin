@@ -25,7 +25,7 @@ open class StorageImpl(
     internal val eventStream: EventStream,
     private val store: Store,
     private val writeKey: String,
-    private  val fileIndexKey: String,
+    internal  val fileIndexKey: String,
     private val ioDispatcher: CoroutineDispatcher
 ) : Subscriber, Storage {
 

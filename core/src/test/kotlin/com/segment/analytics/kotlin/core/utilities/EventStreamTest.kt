@@ -27,19 +27,19 @@ class EventStreamTest {
 
             assertEquals(0, eventStream.length)
 
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             eventStream.write(str1)
-            assertEquals(str1.length, eventStream.length)
+            assertEquals(str1.length * 1L, eventStream.length)
 
             eventStream.write(str2)
-            assertEquals(str1.length + str2.length, eventStream.length)
+            assertEquals(str1.length + str2.length * 1L, eventStream.length)
         }
 
         @Test
         fun isOpenTest() {
             assertFalse(eventStream.isOpened)
 
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             assertTrue(eventStream.isOpened)
 
             eventStream.close()
@@ -48,16 +48,16 @@ class EventStreamTest {
 
         @Test
         fun openOrCreateTest() {
-            var actual = eventStream.openOrCreate("test")
+            var actual = eventStream.openOrCreate("test.tmp")
             assertTrue(actual)
 
-            actual = eventStream.openOrCreate("test")
+            actual = eventStream.openOrCreate("test.tmp")
             assertFalse(actual)
         }
 
         @Test
         fun writeAndReadStreamTest() {
-            val file = "test"
+            val file = "test.tmp"
             eventStream.openOrCreate(file)
             val str1 = "abc"
             val str2 = "defgh"
@@ -65,27 +65,27 @@ class EventStreamTest {
             assertEquals(0, eventStream.length)
 
             eventStream.write(str1)
-            assertEquals(str1.toByteArray(), eventStream.readAsStream(file)!!.readBytes())
+            assertEquals(str1, eventStream.readAsStream(file)!!.bufferedReader().use { it.readText() })
             eventStream.write(str2)
-            assertEquals((str1 + str2).toByteArray(), eventStream.readAsStream(file)!!.readBytes())
+            assertEquals((str1 + str2), eventStream.readAsStream(file)!!.bufferedReader().use { it.readText() })
         }
 
         @Test
         fun readTest() {
             val files = arrayOf("test1.tmp", "test2", "test3.tmp")
 
-            eventStream.openOrCreate("test1")
+            eventStream.openOrCreate("test1.tmp")
 
             // open test2 without finish test1
-            eventStream.openOrCreate("test2")
+            eventStream.openOrCreate("test2.tmp")
             eventStream.finishAndClose {
                 removeFileExtension(it)
             }
 
             // open test3 after finish test2
-            eventStream.openOrCreate("test3")
+            eventStream.openOrCreate("test3.tmp")
             // open test3 again
-            eventStream.openOrCreate("test3")
+            eventStream.openOrCreate("test3.tmp")
 
             val actual = HashSet<String>(eventStream.read())
             assertEquals(files.size, actual.size)
@@ -96,19 +96,19 @@ class EventStreamTest {
 
         @Test
         fun removeTest() {
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             eventStream.finishAndClose {
                 removeFileExtension(it)
             }
             eventStream.remove("test")
-            val newFile = eventStream.openOrCreate("test")
+            val newFile = eventStream.openOrCreate("test.tmp")
 
             assertTrue(newFile)
         }
 
         @Test
         fun closeTest() {
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             assertTrue(eventStream.isOpened)
 
             eventStream.close()
@@ -117,7 +117,7 @@ class EventStreamTest {
 
         @Test
         fun finishAndCloseTest() {
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             eventStream.finishAndClose {
                 removeFileExtension(it)
             }
@@ -154,19 +154,19 @@ class EventStreamTest {
 
             assertEquals(0, eventStream.length)
 
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             eventStream.write(str1)
-            assertEquals(str1.length, eventStream.length)
+            assertEquals(str1.length * 1L, eventStream.length)
 
             eventStream.write(str2)
-            assertEquals(str1.length + str2.length, eventStream.length)
+            assertEquals(str1.length + str2.length * 1L, eventStream.length)
         }
 
         @Test
         fun isOpenTest() {
             assertFalse(eventStream.isOpened)
 
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             assertTrue(eventStream.isOpened)
 
             eventStream.close()
@@ -175,10 +175,10 @@ class EventStreamTest {
 
         @Test
         fun openOrCreateTest() {
-            var actual = eventStream.openOrCreate("test")
+            var actual = eventStream.openOrCreate("test.tmp")
             assertTrue(actual)
 
-            actual = eventStream.openOrCreate("test")
+            actual = eventStream.openOrCreate("test.tmp")
             assertFalse(actual)
         }
 
@@ -187,41 +187,41 @@ class EventStreamTest {
             val str1 = "abc"
             val str2 = "defgh"
 
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             assertEquals(0, eventStream.length)
             var files = eventStream.read()
             assertEquals(1, files.size)
             eventStream.write(str1)
             eventStream.close()
-            assertEquals(str1.toByteArray(), eventStream.readAsStream(files[0])!!.readBytes())
+            assertEquals(str1, eventStream.readAsStream(files[0])!!.bufferedReader().use { it.readText() })
 
-            eventStream.openOrCreate("test")
-            assertEquals(str1.length, eventStream.length)
+            eventStream.openOrCreate("test.tmp")
+            assertEquals(str1.length * 1L, eventStream.length)
             files = eventStream.read()
             assertEquals(1, files.size)
             eventStream.write(str2)
             eventStream.close()
-            assertEquals((str1 + str2).toByteArray(), eventStream.readAsStream(files[0])!!.readBytes())
+            assertEquals((str1 + str2), eventStream.readAsStream(files[0])!!.bufferedReader().use { it.readText() })
         }
 
         @Test
         fun readTest() {
             val files = arrayOf("test1.tmp", "test2", "test3.tmp")
 
-            eventStream.openOrCreate("test1")
+            eventStream.openOrCreate("test1.tmp")
 
             // open test2 without finish test1
-            eventStream.openOrCreate("test2")
+            eventStream.openOrCreate("test2.tmp")
             eventStream.finishAndClose {
                 removeFileExtension(it)
             }
 
             // open test3 after finish test2
-            eventStream.openOrCreate("test3")
+            eventStream.openOrCreate("test3.tmp")
             // open test3 again
-            eventStream.openOrCreate("test3")
+            eventStream.openOrCreate("test3.tmp")
 
-            val actual = HashSet<String>(eventStream.read())
+            val actual = HashSet<String>(eventStream.read().map { it.substring(it.lastIndexOf('/') + 1) })
             assertEquals(files.size, actual.size)
             assertTrue(actual.contains(files[0]))
             assertTrue(actual.contains(files[1]))
@@ -230,19 +230,19 @@ class EventStreamTest {
 
         @Test
         fun removeTest() {
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             eventStream.finishAndClose {
                 removeFileExtension(it)
             }
             eventStream.remove("test")
-            val newFile = eventStream.openOrCreate("test")
+            val newFile = eventStream.openOrCreate("test.tmp")
 
             assertTrue(newFile)
         }
 
         @Test
         fun closeTest() {
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             assertTrue(eventStream.isOpened)
 
             eventStream.close()
@@ -251,12 +251,12 @@ class EventStreamTest {
 
         @Test
         fun finishAndCloseTest() {
-            eventStream.openOrCreate("test")
+            eventStream.openOrCreate("test.tmp")
             eventStream.finishAndClose {
                 removeFileExtension(it)
             }
 
-            val files = eventStream.read()
+            val files = eventStream.read().map { it.substring(it.lastIndexOf('/') + 1) }
             assertEquals(1, files.size)
             assertEquals("test", files[0])
             assertFalse(eventStream.isOpened)
