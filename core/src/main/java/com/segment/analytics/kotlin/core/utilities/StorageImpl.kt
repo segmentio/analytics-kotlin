@@ -152,7 +152,9 @@ open class StorageImpl(
         if (!eventStream.isOpened) return
 
         eventStream.write(end)
-        eventStream.finishAndClose()
+        eventStream.finishAndClose {
+            removeFileExtension(it)
+        }
         incrementFileIndex()
     }
 

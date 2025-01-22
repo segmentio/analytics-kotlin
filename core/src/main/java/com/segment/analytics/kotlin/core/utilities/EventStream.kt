@@ -31,7 +31,7 @@ interface EventStream {
 
     fun close()
 
-    fun finishAndClose()
+    fun finishAndClose(withRename: ((name: String) -> String)? = null)
 
     fun readAsStream(source: String): InputStream?
 }
@@ -80,28 +80,20 @@ class InMemoryEventStream: EventStream {
         currFile = null
     }
 
-    override fun finishAndClose() {
+    override fun finishAndClose(withRename: ((name: String) -> String)?) {
         currFile ?: return
 
         currFile?.let {
-            val nameWithoutExtension = removeFileExtension(it.name)
-            directory.remove(it.name)
-            directory[nameWithoutExtension] = it
+            withRename?.let { rename ->
+                directory.remove(it.name)
+                directory[rename(it.name)] = it
+            }
         }
 
         currFile = null
     }
 
     override fun readAsStream(source: String): InputStream? = directory[source]?.toStream()
-
-    private fun removeFileExtension(fileName: String): String {
-        val lastDotIndex = fileName.lastIndexOf('.')
-        return if (lastDotIndex != -1 && lastDotIndex > 0) {
-            fileName.substring(0, lastDotIndex)
-        } else {
-            fileName
-        }
-    }
 
     class InMemoryFile(val name: String) {
         val fileStream: StringBuilder = StringBuilder()
@@ -176,12 +168,14 @@ class FileEventStream(
         currFile = null
     }
 
-    override fun finishAndClose() {
+    override fun finishAndClose(withRename: ((name: String) -> String)?) {
         fs?.close()
         fs = null
 
         currFile?.let {
-            it.renameTo(File(directory, it.nameWithoutExtension))
+            withRename?.let { rename ->
+                it.renameTo(File(directory, rename(it.name)))
+            }
         }
 
         currFile = null

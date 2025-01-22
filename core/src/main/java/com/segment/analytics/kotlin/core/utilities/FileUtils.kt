@@ -13,3 +13,12 @@ fun createDirectory(location: File) {
         throw IOException("Could not create directory at $location")
     }
 }
+
+fun removeFileExtension(fileName: String): String {
+    val lastDotIndex = fileName.lastIndexOf('.')
+    return if (lastDotIndex != -1 && lastDotIndex > 0) {
+        fileName.substring(0, lastDotIndex)
+    } else {
+        fileName
+    }
+}
