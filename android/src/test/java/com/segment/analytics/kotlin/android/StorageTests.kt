@@ -74,7 +74,7 @@ class StorageTests {
                 "123",
                 UnconfinedTestDispatcher()
             )
-            androidStorage.subscribeToStore()
+            androidStorage.initialize()
         }
 
 

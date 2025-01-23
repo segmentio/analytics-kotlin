@@ -4,20 +4,16 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
-import java.io.File
 import java.io.InputStream
 
 /**
- * Storage interface that abstracts storage of
- * - user data
- * - segment settings
- * - segment events
- * - other configs
- *
- * Constraints:
- * - Segment Events must be stored on a file, following the batch format
- * - all storage is in terms of String (to make API simple)
- * - storage is restricted to keys declared in `Storage.Constants`
+ *     The protocol of how events are read and stored.
+ *     Implement this interface if you wanna your events
+ *     to be read and stored in the way you want (for
+ *     example: from/to remote server, from/to local database
+ *     from/to encrypted source).
+ *     By default, we have implemented read and store events
+ *     from/to memory and file storage.
  */
 interface Storage {
     companion object {
@@ -45,45 +41,64 @@ interface Storage {
         DeviceId("segment.device.id")
     }
 
-    suspend fun subscribeToStore()
+    /**
+     *  Initialization of the storage.
+     *  All prerequisite setups should be done in this method.
+     */
+    suspend fun initialize()
+
+    /**
+     * Write a value of the Storage.Constants type to storage
+     *
+     * @param key The type of the value
+     * @param value Value
+     */
     suspend fun write(key: Constants, value: String)
+
+    /**
+     * Write a key/value pair to prefs
+     *
+     * @param key Key
+     * @param value Value
+     */
     fun writePrefs(key: Constants, value: String)
+
+    /**
+     * Read the value of a given type
+     *
+     * @param key The type of the value
+     * @return value of the given type
+     */
     fun read(key: Constants): String?
+
+    /**
+     * Read the given source stream as an InputStream
+     *
+     * @param source stream to read
+     * @return result as InputStream
+     */
     fun readAsStream(source: String): InputStream?
+
+    /**
+     * Remove the data of a given type
+     *
+     * @param key type of the data to remove
+     * @return status of the operation
+     */
     fun remove(key: Constants): Boolean
+
+    /**
+     * Remove a stream
+     *
+     * @param filePath the fullname/identifier of a stream
+     * @return status of the operation
+     */
     fun removeFile(filePath: String): Boolean
 
     /**
-     * Direct writes to a new file, and close the current file.
-     * This function is useful in cases such as `flush`, that
-     * we want to finish writing the current file, and have it
-     * flushed to server.
+     * Close and finish the current stream and start a new one
      */
     suspend fun rollover()
-
-    suspend fun userInfoUpdate(userInfo: UserInfo) {
-        write(Constants.AnonymousId, userInfo.anonymousId)
-
-        userInfo.userId?.let {
-            write(Constants.UserId, it)
-        } ?: run {
-            remove(Constants.UserId)
-        }
-
-        userInfo.traits?.let {
-            write(Constants.Traits, Json.encodeToString(JsonObject.serializer(), it))
-        } ?: run {
-            remove(Constants.Traits)
-        }
-    }
-
-    suspend fun systemUpdate(system: System) {
-        system.settings?.let {
-            write(Constants.Settings, Json.encodeToString(Settings.serializer(), it))
-        } ?: run {
-            remove(Constants.Settings)
-        }
-    }
 }
 
 fun parseFilePaths(filePathStr: String?): List<String> {

@@ -128,7 +128,7 @@ open class Analytics protected constructor(
                 it.provide(System.defaultState(configuration, storage))
 
                 // subscribe to store after state is provided
-                storage.subscribeToStore()
+                storage.initialize()
                 Telemetry.subscribe(store)
             }
 

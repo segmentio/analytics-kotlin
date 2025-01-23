@@ -7,32 +7,81 @@ import java.io.InputStream
 import java.lang.StringBuilder
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ *     The protocol of how events are read and stored.
+ *     Implement this interface if you wanna your events
+ *     to be read and stored in the way you want (for
+ *     example: from/to remote server, from/to local database
+ *     from/to encrypted source).
+ *     By default, we have implemented read and store events
+ *     from/to memory and file storage.
+ *
+ *     A stream is defined as something that contains a batch of
+ *     events. It can be in the form of any of the following:
+ *      * a file
+ *      * an in-memory entry
+ *      * a table entry in database
+ */
 interface EventStream {
+    /**
+     * Length of current stream
+     */
     val length: Long
 
+    /**
+     * Check if a stream is opened
+     */
     val isOpened: Boolean
 
     /**
-     * open or create a file
-     * @param file name of file
-     * @return true if a new file is created
+     * Open the stream with the given name. Creates a new one if not already exists.
+     *
+     * @param file name of the stream
+     * @return true if a new stream is created
      */
     fun openOrCreate(file: String): Boolean
 
+    /**
+     * Append content to the opening stream
+     *
+     * @param content Content to append
+     */
     fun write(content: String)
 
     /**
-     * read the list of files in directory
-     * @return a list of file names in directory
+     * Read the list of streams in directory
+     * @return a list of stream names in directory
      */
     fun read(): List<String>
 
+    /**
+     * Remove the stream with the given name
+     *
+     * @param file name of stream to be removed
+     */
     fun remove(file: String)
 
+    /**
+     * Close the current opening stream without finish it,
+     * so that the stream can be opened for future appends.
+     */
     fun close()
 
+    /**
+     * Close and finish the current opening stream.
+     * Pass a withRename closure if you want to distinguish completed
+     * streams from ongoing stream
+     *
+     * @param withRename a callback that renames a finished stream
+     */
     fun finishAndClose(withRename: ((name: String) -> String)? = null)
 
+    /**
+     * Read the stream with the given name as an InputStream.
+     * Needed for HTTPClient to upload data
+     *
+     * @param source the full name of a stream
+     */
     fun readAsStream(source: String): InputStream?
 }
 
@@ -81,16 +130,14 @@ class InMemoryEventStream: EventStream {
     }
 
     override fun finishAndClose(withRename: ((name: String) -> String)?) {
-        currFile ?: return
-
         currFile?.let {
             withRename?.let { rename ->
                 directory.remove(it.name)
                 directory[rename(it.name)] = it
             }
+            currFile = null
         }
 
-        currFile = null
     }
 
     override fun readAsStream(source: String): InputStream? = directory[source]?.toStream()
@@ -158,6 +205,13 @@ class FileEventStream(
 
     override fun read(): List<String> = (directory.listFiles() ?: emptyArray()).map { it.absolutePath }
 
+    /**
+     * Remove the given file from disk
+     *
+     * NOTE: file string has to be the full path of the file
+     *
+     * @param file full path of the file to be deleted
+     */
     override fun remove(file: String) {
         File(file).delete()
     }

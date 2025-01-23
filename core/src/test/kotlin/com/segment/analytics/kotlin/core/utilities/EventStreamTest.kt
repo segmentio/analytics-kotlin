@@ -177,6 +177,7 @@ class EventStreamTest {
         fun openOrCreateTest() {
             var actual = eventStream.openOrCreate("test.tmp")
             assertTrue(actual)
+            assertTrue(File(dir, "test.tmp").exists())
 
             actual = eventStream.openOrCreate("test.tmp")
             assertFalse(actual)
@@ -234,7 +235,11 @@ class EventStreamTest {
             eventStream.finishAndClose {
                 removeFileExtension(it)
             }
-            eventStream.remove("test")
+            assertTrue(File(dir, "test").exists())
+
+            eventStream.remove(File(dir, "test").absolutePath)
+            assertFalse(File(dir, "test").exists())
+
             val newFile = eventStream.openOrCreate("test.tmp")
 
             assertTrue(newFile)

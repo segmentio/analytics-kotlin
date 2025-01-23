@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.core.utilities
 
 import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.Storage.Companion.MAX_FILE_SIZE
 import com.segment.analytics.kotlin.core.Storage.Companion.MAX_PAYLOAD_SIZE
@@ -10,6 +11,8 @@ import com.segment.analytics.kotlin.core.UserInfo
 import com.segment.analytics.kotlin.core.reportInternalError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Store
 import sovran.kotlin.Subscriber
 import java.io.File
@@ -41,7 +44,7 @@ open class StorageImpl(
     private val currentFile
         get() = "$writeKey-${propertiesFile.get(fileIndexKey, 0)}.$ext"
 
-    override suspend fun subscribeToStore() {
+    override suspend fun initialize() {
         store.subscribe(
             this,
             UserInfo::class,
@@ -56,6 +59,30 @@ open class StorageImpl(
             handler = ::systemUpdate,
             queue = ioDispatcher
         )
+    }
+
+    suspend fun userInfoUpdate(userInfo: UserInfo) {
+        write(Storage.Constants.AnonymousId, userInfo.anonymousId)
+
+        userInfo.userId?.let {
+            write(Storage.Constants.UserId, it)
+        } ?: run {
+            remove(Storage.Constants.UserId)
+        }
+
+        userInfo.traits?.let {
+            write(Storage.Constants.Traits, Json.encodeToString(JsonObject.serializer(), it))
+        } ?: run {
+            remove(Storage.Constants.Traits)
+        }
+    }
+
+    suspend fun systemUpdate(system: System) {
+        system.settings?.let {
+            write(Storage.Constants.Settings, Json.encodeToString(Settings.serializer(), it))
+        } ?: run {
+            remove(Storage.Constants.Settings)
+        }
     }
 
     override suspend fun write(key: Storage.Constants, value: String) {

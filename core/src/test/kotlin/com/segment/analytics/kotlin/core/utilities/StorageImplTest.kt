@@ -75,7 +75,7 @@ internal class StorageImplTest {
             }
         }
         storage = storageProvider.createStorage() as StorageImpl
-        storage.subscribeToStore()
+        storage.initialize()
     }
 
 

@@ -12,11 +12,52 @@ interface KVS {
     @Deprecated("Deprecated in favor of `put`", ReplaceWith("put(key, value)"))
     fun putInt(key: String, value: Int): Boolean = put(key, value)
 
+    /**
+     * Read the value of a given key as integer
+     * @param key Key
+     * @param defaultVal Fallback value to use
+     * @return Value
+     */
     fun get(key: String, defaultVal: Int): Int
+
+    /**
+     * Store the key value pair
+     * @param key Key
+     * @param value Fallback value to use
+     * @return Status of the operation
+     */
     fun put(key: String, value: Int): Boolean
+
+    /**
+     * Read the value of a given key as integer
+     * @param key Key
+     * @param defaultVal Fallback value to use
+     * @return Value
+     */
     fun get(key: String, defaultVal: String?): String?
+
+    /**
+     * Store the key value pair
+     * @param key Key
+     * @param value Fallback value to use
+     * @return Status of the operation
+     */
     fun put(key: String, value: String): Boolean
+
+    /**
+     * Remove a key/value pair by key
+     *
+     * @param key Key
+     * @return Status of the operation
+     */
     fun remove(key: String): Boolean
+
+    /**
+     * checks if a given key exists
+     *
+     * @param Key
+     * @return Status of the operation
+     */
     fun contains(key: String): Boolean
 }
 
