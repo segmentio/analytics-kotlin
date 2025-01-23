@@ -30,7 +30,7 @@ interface Storage {
          */
         const val MAX_BATCH_SIZE = 475000 // 475KB.
 
-        const val MAX_FILE_SIZE = 475_000
+        const val MAX_FILE_SIZE = 475_000 // 475KB
     }
 
     enum class Constants(val rawVal: String) {
@@ -101,7 +101,7 @@ fun parseFilePaths(filePathStr: String?): List<String> {
  *  provider via this interface
  */
 interface StorageProvider {
-    @Deprecated("Deprecated in favor of the one takes vararg params",
+    @Deprecated("Deprecated in favor of create which takes vararg params",
         ReplaceWith("createStorage(analytics, store, writeKey, ioDispatcher, application)")
     )
     fun getStorage(
