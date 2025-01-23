@@ -19,10 +19,6 @@ class KVSTest {
 
         @Test
         fun getTest() {
-            val keyNotExists = "keyNotExists"
-            val expectedInt = 100
-            val expectedString = "string"
-
             assertEquals(1, prefs.get("int", 0))
             assertEquals("string", prefs.get("string", null))
             assertEquals(0, prefs.get("keyNotExists", 0))
