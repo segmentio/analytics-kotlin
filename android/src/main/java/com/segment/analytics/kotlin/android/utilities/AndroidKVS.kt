@@ -23,4 +23,6 @@ class AndroidKVS(val sharedPreferences: SharedPreferences): KVS  {
 
     override fun remove(key: String): Boolean =
         sharedPreferences.edit().remove(key).commit()
+
+    override fun contains(key: String) = sharedPreferences.contains(key)
 }
