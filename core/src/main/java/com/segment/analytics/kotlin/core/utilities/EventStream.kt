@@ -85,10 +85,10 @@ interface EventStream {
     fun readAsStream(source: String): InputStream?
 }
 
-class InMemoryEventStream: EventStream {
-    private val directory = ConcurrentHashMap<String, InMemoryFile>()
+open class InMemoryEventStream: EventStream {
+    protected val directory = ConcurrentHashMap<String, InMemoryFile>()
 
-    private var currFile: InMemoryFile? = null
+    protected open var currFile: InMemoryFile? = null
 
     override val length: Long
         get() = (currFile?.length ?: 0).toLong()
@@ -154,7 +154,7 @@ class InMemoryEventStream: EventStream {
     }
 }
 
-class FileEventStream(
+open class FileEventStream(
     internal val directory: File
 ): EventStream {
 
@@ -163,9 +163,9 @@ class FileEventStream(
         registerShutdownHook()
     }
 
-    private var fs: FileOutputStream? = null
+    protected open var fs: FileOutputStream? = null
 
-    private var currFile: File? = null
+    protected open var currFile: File? = null
 
     override val length: Long
         get() = currFile?.length() ?: 0
