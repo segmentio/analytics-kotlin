@@ -58,15 +58,14 @@ class EncryptedEventStream(
     }
 }
 
-object EncryptedStorageProvider : StorageProvider {
+class EncryptedStorageProvider(val key: Key) : StorageProvider {
 
     override fun createStorage(vararg params: Any): Storage {
-        if (params.isEmpty() || params[0] !is Analytics || params[1] !is Key) {
+        if (params.isEmpty() || params[0] !is Analytics) {
             throw IllegalArgumentException("Invalid parameters for ConcreteStorageProvider. ConcreteStorageProvider requires at least 1 parameter and the first argument has to be an instance of Analytics")
         }
 
         val analytics = params[0] as Analytics
-        val key = params[1] as Key
         val config = analytics.configuration
 
         val directory = File("/tmp/analytics-kotlin/${config.writeKey}")

@@ -68,7 +68,7 @@ class StorageTest {
 
         @Test
         fun inMemoryStorageProviderTest() {
-            val storage = InMemoryStorageProvider.createStorage(analytics) as StorageImpl
+            val storage = InMemoryStorageProvider().createStorage(analytics) as StorageImpl
             assertTrue(storage.eventStream is InMemoryEventStream)
             assertTrue(storage.propertiesFile is InMemoryPrefs)
         }

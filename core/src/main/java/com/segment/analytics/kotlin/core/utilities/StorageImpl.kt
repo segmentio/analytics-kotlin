@@ -218,7 +218,7 @@ object ConcreteStorageProvider : StorageProvider {
     }
 }
 
-object InMemoryStorageProvider: StorageProvider {
+class InMemoryStorageProvider: StorageProvider {
     override fun createStorage(vararg params: Any): Storage {
         if (params.isEmpty() || params[0] !is Analytics) {
             throw IllegalArgumentException("Invalid parameters for InMemoryStorageProvider. InMemoryStorageProvider requires at least 1 parameter and the first argument has to be an instance of Analytics")

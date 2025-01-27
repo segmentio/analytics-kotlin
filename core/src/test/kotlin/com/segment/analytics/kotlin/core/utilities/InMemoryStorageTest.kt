@@ -49,7 +49,7 @@ internal class InMemoryStorageTest {
         )
         val analytics = testAnalytics(config, testScope, testDispatcher)
         store = analytics.store
-        storage = InMemoryStorageProvider.createStorage(analytics) as StorageImpl
+        storage = InMemoryStorageProvider().createStorage(analytics) as StorageImpl
         storage.initialize()
     }
 
