@@ -25,14 +25,38 @@ data class System(
 
     companion object {
         fun defaultState(configuration: Configuration, storage: Storage): System {
-            val settings = try {
-                Json.decodeFromString(
-                    Settings.serializer(),
-                    storage.read(Storage.Constants.Settings) ?: ""
-                )
-            } catch (ignored: Exception) {
-                configuration.defaultSettings
+            val storedSettings = storage.read(Storage.Constants.Settings)
+            val defaultSettings = configuration.defaultSettings ?: Settings(
+                integrations = buildJsonObject {
+                    put(
+                        "Segment.io",
+                        buildJsonObject {
+                            put(
+                                "apiKey",
+                                configuration.writeKey
+                            )
+                            put("apiHost", Constants.DEFAULT_API_HOST)
+                        })
+                },
+                plan = emptyJsonObject,
+                edgeFunction = emptyJsonObject,
+                middlewareSettings = emptyJsonObject
+            )
+
+            // Use stored settings or fallback to default settings
+            val settings = if (storedSettings == null || storedSettings == "" || storedSettings == "{}") {
+                defaultSettings
+            } else {
+                try {
+                    Json.decodeFromString(
+                        Settings.serializer(),
+                        storedSettings
+                    )
+                } catch (ignored: Exception) {
+                    defaultSettings
+                }
             }
+
             return System(
                 configuration = configuration,
                 settings = settings,

@@ -88,7 +88,9 @@ class SettingsTests {
 
         // no settings available, should not be called
         analytics.add(mockPlugin)
-
+        verify (exactly = 0){
+            mockPlugin.update(any(), any())
+        }
 
         // load settings
         mockHTTPClient()
@@ -102,7 +104,7 @@ class SettingsTests {
         // load settings again
         mockHTTPClient()
         analytics.checkSettings()
-        verify (exactly =  2) {
+        verify (exactly =  1) {
             mockPlugin.update(any(), Plugin.UpdateType.Refresh)
         }
     }
@@ -230,69 +232,67 @@ class SettingsTests {
 
     @Test
     fun `fetchSettings returns null when Settings string is invalid`() {
-        val emptySettings = analytics.fetchSettings("emptySettingsObject", "cdn-settings.segment.com/v1")
         // Null on invalid JSON
         mockHTTPClient("")
         var settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("hello")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("#! /bin/sh")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("<!DOCTYPE html>")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("true")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("[]")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("}{")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("{{{{}}}}")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null on invalid JSON
         mockHTTPClient("{null:\"bar\"}")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
     }
 
     @Test
     fun `fetchSettings returns null when parameters are invalid`() {
-        val emptySettings = analytics.fetchSettings("emptySettingsObject", "cdn-settings.segment.com/v1")
         mockHTTPClient("{\"integrations\":{}, \"plan\":{}, \"edgeFunction\": {}, \"middlewareSettings\": {}}")
 
         // empty host
         var settings = analytics.fetchSettings("foo", "")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // not a host name
         settings = analytics.fetchSettings("foo", "http://blah")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // emoji
         settings = analytics.fetchSettings("foo", "😃")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
     }
 
     @Test
@@ -300,32 +300,27 @@ class SettingsTests {
         // Null if integrations is null
         mockHTTPClient("{\"integrations\":null}")
         var settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertTrue(settings?.integrations?.isEmpty() ?: true, "Integrations should be empty")
-        assertTrue(settings?.plan?.isEmpty() ?: true, "Plan should be empty")
-        assertTrue(settings?.edgeFunction?.isEmpty() ?: true, "EdgeFunction should be empty")
-        assertTrue(settings?.middlewareSettings?.isEmpty() ?: true, "MiddlewareSettings should be empty")
-        assertTrue(settings?.metrics?.isEmpty() ?: true, "Metrics should be empty")
-        assertTrue(settings?.consentSettings?.isEmpty() ?: true, "ConsentSettings should be empty")
+        assertNull(settings)
 
-//        // Null if plan is null
-//        mockHTTPClient("{\"plan\":null}")
-//        settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-//        assertNull(settings)
-//
-//        // Null if edgeFunction is null
-//        mockHTTPClient("{\"edgeFunction\":null}")
-//        settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-//        assertNull(settings)
-//
-//        // Null if middlewareSettings is null
-//        mockHTTPClient("{\"middlewareSettings\":null}")
-//        settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-//        assertNull(settings)
+        // Null if plan is null
+        mockHTTPClient("{\"plan\":null}")
+        settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
+        assertNull(settings)
+
+        // Null if edgeFunction is null
+        mockHTTPClient("{\"edgeFunction\":null}")
+        settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
+        assertNull(settings)
+
+        // Null if middlewareSettings is null
+        mockHTTPClient("{\"middlewareSettings\":null}")
+        settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
+        assertNull(settings)
     }
 
     @Test
     fun `known Settings property types must match json type`() {
-        val emptySettings = analytics.fetchSettings("emptySettingsObject", "cdn-settings.segment.com/v1")
+
         // integrations must be a JSON object
         mockHTTPClient("{\"integrations\":{}}")
         var settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
@@ -334,21 +329,21 @@ class SettingsTests {
         // Null if integrations is a number
         mockHTTPClient("{\"integrations\":123}")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null if integrations is a string
         mockHTTPClient("{\"integrations\":\"foo\"}")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null if integrations is an array
         mockHTTPClient("{\"integrations\":[\"foo\"]}")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
 
         // Null if integrations is an emoji (UTF-8 string)
         mockHTTPClient("{\"integrations\": 😃}")
         settings = analytics.fetchSettings("foo", "cdn-settings.segment.com/v1")
-        assertEquals(emptySettings, settings)
+        assertNull(settings)
     }
 }

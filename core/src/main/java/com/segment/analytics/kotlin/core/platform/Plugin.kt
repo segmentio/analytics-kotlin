@@ -89,7 +89,7 @@ abstract class DestinationPlugin : EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Destination
     private val timeline: Timeline = Timeline()
     override lateinit var analytics: Analytics
-    internal var enabled = false
+    internal var enabled = true
     abstract val key: String
 
     override fun setup(analytics: Analytics) {
