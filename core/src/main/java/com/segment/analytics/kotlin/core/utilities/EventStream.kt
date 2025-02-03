@@ -155,7 +155,7 @@ open class InMemoryEventStream: EventStream {
 }
 
 open class FileEventStream(
-    internal val directory: File
+    val directory: File
 ): EventStream {
 
     init {
