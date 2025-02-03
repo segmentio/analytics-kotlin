@@ -31,6 +31,7 @@ import java.io.FileOutputStream
  *
  * remove() will delete the file path specified
  */
+@Deprecated("Deprecated in favor of EventStream")
 class EventsFileManager(
     val directory: File,
     private val writeKey: String,
@@ -183,12 +184,4 @@ class EventsFileManager(
         block()
         semaphore.release()
     }
-}
-
-/**
- * Key-value store interface used by eventsFile
- */
-interface KVS {
-    fun getInt(key: String, defaultVal: Int): Int
-    fun putInt(key: String, value: Int): Boolean
 }

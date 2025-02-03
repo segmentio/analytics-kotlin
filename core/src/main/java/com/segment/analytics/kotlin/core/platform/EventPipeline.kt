@@ -16,8 +16,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.io.File
-import java.io.FileInputStream
 
 open class EventPipeline(
     private val analytics: Analytics,
@@ -136,31 +134,29 @@ open class EventPipeline(
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
                 // upload event file
-                val file = File(url)
-                if (!file.exists()) continue
+                storage.readAsStream(url)?.let { data ->
+                    var shouldCleanup = true
+                    try {
+                        val connection = httpClient.upload(apiHost)
+                        connection.outputStream?.let {
+                            // Write the payloads into the OutputStream
+                            data.copyTo(connection.outputStream)
+                            data.close()
+                            connection.outputStream.close()
 
-                var shouldCleanup = true
-                try {
-                    val connection = httpClient.upload(apiHost)
-                    connection.outputStream?.let {
-                        // Write the payloads into the OutputStream.
-                        val fileInputStream = FileInputStream(file)
-                        fileInputStream.copyTo(connection.outputStream)
-                        fileInputStream.close()
-                        connection.outputStream.close()
-
-                        // Upload the payloads.
-                        connection.close()
+                            // Upload the payloads.
+                            connection.close()
+                        }
+                        // Cleanup uploaded payloads
+                        analytics.log("$logTag uploaded $url")
+                    } catch (e: Exception) {
+                        analytics.reportInternalError(e)
+                        shouldCleanup = handleUploadException(e, url)
                     }
-                    // Cleanup uploaded payloads
-                    analytics.log("$logTag uploaded $url")
-                } catch (e: Exception) {
-                    analytics.reportInternalError(e)
-                    shouldCleanup = handleUploadException(e, file)
-                }
 
-                if (shouldCleanup) {
-                    storage.removeFile(file.path)
+                    if (shouldCleanup) {
+                        storage.removeFile(url)
+                    }
                 }
             }
         }
@@ -176,7 +172,7 @@ open class EventPipeline(
 
 
 
-    private fun handleUploadException(e: Exception, file: File): Boolean {
+    private fun handleUploadException(e: Exception, file: String): Boolean {
         var shouldCleanup = false
         if (e is HTTPException) {
             analytics.log("$logTag exception while uploading, ${e.message}")
@@ -198,7 +194,7 @@ open class EventPipeline(
             Analytics.segmentLog(
                 """
                     | Error uploading events from batch file
-                    | fileUrl="${file.path}"
+                    | fileUrl="${file}"
                     | msg=${e.message}
                 """.trimMargin(), kind = LogKind.ERROR
             )

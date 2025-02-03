@@ -25,7 +25,7 @@ import sovran.kotlin.Store
 data class Configuration(
     val writeKey: String,
     var application: Any? = null,
-    val storageProvider: StorageProvider = ConcreteStorageProvider,
+    var storageProvider: StorageProvider = ConcreteStorageProvider,
     var collectDeviceId: Boolean = false,
     var trackApplicationLifecycleEvents: Boolean = false,
     var useLifecycleObserver: Boolean = false,

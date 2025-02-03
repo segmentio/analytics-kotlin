@@ -43,14 +43,8 @@ open class Analytics protected constructor(
     }
 
     // use lazy to avoid the instance being leak before fully initialized
-    val storage: Storage by lazy {
-        configuration.storageProvider.getStorage(
-            analytics = this,
-            writeKey = configuration.writeKey,
-            ioDispatcher = fileIODispatcher,
-            store = store,
-            application = configuration.application!!
-        )
+    open val storage: Storage by lazy {
+        configuration.storageProvider.createStorage(this, configuration.application!!)
     }
 
     internal var userInfo: UserInfo = UserInfo.defaultState(storage)
@@ -134,7 +128,7 @@ open class Analytics protected constructor(
                 it.provide(System.defaultState(configuration, storage))
 
                 // subscribe to store after state is provided
-                storage.subscribeToStore()
+                storage.initialize()
                 Telemetry.subscribe(store)
             }
 

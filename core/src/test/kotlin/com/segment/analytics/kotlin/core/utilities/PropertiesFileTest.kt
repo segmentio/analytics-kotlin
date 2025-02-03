@@ -9,7 +9,7 @@ import java.io.File
 internal class PropertiesFileTest {
 
     private val directory = File("/tmp/analytics-test/123")
-    private val kvStore = PropertiesFile(directory, "123")
+    private val kvStore = PropertiesFile(File(directory, "123"))
 
     @BeforeEach
     internal fun setUp() {
@@ -22,10 +22,10 @@ internal class PropertiesFileTest {
         kvStore.putString("string", "test")
         kvStore.putInt("int", 1)
 
-        assertEquals(kvStore.getString("string", ""), "test")
-        assertEquals(kvStore.getInt("int", 0), 1)
+        assertEquals(kvStore.get("string", ""), "test")
+        assertEquals(kvStore.get("int", 0), 1)
 
         kvStore.remove("int")
-        assertEquals(kvStore.getInt("int", 0), 0)
+        assertEquals(kvStore.get("int", 0), 0)
     }
 }

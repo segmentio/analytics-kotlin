@@ -22,16 +22,18 @@ class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // Replace it with your key to the encrypted storage
+        val secretKey = ByteArray(32) { 1 }
+
         analytics = Analytics("tteOFND0bb5ugJfALOJWpF0wu1tcxYgr", applicationContext) {
             this.collectDeviceId = true
             this.trackApplicationLifecycleEvents = true
             this.trackDeepLinks = true
             this.flushPolicies = listOf(
-                CountBasedFlushPolicy(3), // Flush after 3 events
-                FrequencyFlushPolicy(5000), // Flush after 5 secs
-                UnmeteredFlushPolicy(applicationContext) // Flush if network is not metered
+                CountBasedFlushPolicy(100), // Flush after 3 events
+//                FrequencyFlushPolicy(60000), // Flush after 5 secs
+//                UnmeteredFlushPolicy(applicationContext) // Flush if network is not metered
             )
-            this.flushPolicies = listOf(UnmeteredFlushPolicy(applicationContext))
             this.requestFactory = object : RequestFactory() {
                 override fun upload(apiHost: String): HttpURLConnection {
                     val connection: HttpURLConnection = openConnection("https://$apiHost/b")
@@ -41,6 +43,7 @@ class MainApplication : Application() {
                     return connection
                 }
             }
+            this.storageProvider = EncryptedStorageProvider(secretKey)
         }
         analytics.add(AndroidRecordScreenPlugin())
         analytics.add(object : Plugin {

@@ -3,13 +3,11 @@ package com.segment.analytics.kotlin.core.utilities
 import com.segment.analytics.kotlin.core.Configuration
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.Storage
-import com.segment.analytics.kotlin.core.StorageProvider
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.UserInfo
 import com.segment.analytics.kotlin.core.emptyJsonObject
-import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.core.utils.spyStore
+import com.segment.analytics.kotlin.core.utils.testAnalytics
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -27,10 +25,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import sovran.kotlin.Action
-import java.io.File
+import sovran.kotlin.Store
 import java.util.Date
 
-internal class StorageImplTest {
+internal class InMemoryStorageTest {
 
     private val epochTimestamp = Date(0).toInstant().toString()
 
@@ -38,43 +36,20 @@ internal class StorageImplTest {
 
     private val testScope = TestScope(testDispatcher)
 
-    private var store = spyStore(testScope, testDispatcher)
+    private lateinit var store: Store
+
     private lateinit var storage: StorageImpl
 
     @BeforeEach
     fun setup() = runTest  {
-        clearPersistentStorage()
-        store.provide(
-            UserInfo(
-                anonymousId = "oldAnonId",
-                userId = "oldUserId",
-                traits = buildJsonObject { put("behaviour", "bad") }
-            ))
-
-        store.provide(
-            System(
-                configuration = Configuration("123"),
-                settings = Settings(),
-                running = false,
-                initializedPlugins = setOf(),
-                enabled = true
-            )
+        val config = Configuration(
+            writeKey = "123",
+            application = "Test",
+            apiHost = "local",
         )
-
-        val storageProvider = object : StorageProvider {
-            override fun createStorage(vararg params: Any): Storage {
-                val writeKey = "123"
-                val directory = File("/tmp/analytics-kotlin/${writeKey}")
-                val eventDirectory = File(directory, "events")
-                val fileIndexKey = "segment.events.file.index.${writeKey}"
-                val userPrefs = File(directory, "analytics-kotlin-${writeKey}.properties")
-
-                val propertiesFile = PropertiesFile(userPrefs)
-                val eventStream = FileEventStream(eventDirectory)
-                return StorageImpl(propertiesFile, eventStream, store, writeKey, fileIndexKey, UnconfinedTestDispatcher())
-            }
-        }
-        storage = storageProvider.createStorage() as StorageImpl
+        val analytics = testAnalytics(config, testScope, testDispatcher)
+        store = analytics.store
+        storage = InMemoryStorageProvider().createStorage(analytics) as StorageImpl
         storage.initialize()
     }
 
@@ -171,33 +146,6 @@ internal class StorageImplTest {
         assertEquals(null, settings)
     }
 
-    @Test
-    fun `storage directory can be customized`() {
-        val storageProvider = object : StorageProvider {
-            override fun createStorage(vararg params: Any): Storage {
-                val writeKey = "123"
-                val directory = File("/tmp/test")
-                val eventDirectory = File(directory, "events")
-                val fileIndexKey = "segment.events.file.index.${writeKey}"
-                val userPrefs = File(directory, "analytics-kotlin-${writeKey}.properties")
-
-                val propertiesFile = PropertiesFile(userPrefs)
-                val eventStream = FileEventStream(eventDirectory)
-                return StorageImpl(propertiesFile, eventStream, store, writeKey, fileIndexKey, UnconfinedTestDispatcher())
-            }
-        }
-        storage = storageProvider.createStorage() as StorageImpl
-        val eventStream = storage.eventStream as FileEventStream
-        val propertiesFile = (storage.propertiesFile as PropertiesFile).file
-
-        // we don't cache storage directory, but we can use the parent of the event storage to verify
-        assertEquals("/tmp/test", eventStream.directory.parent)
-        assertTrue(eventStream.directory.path.contains("/tmp/test"))
-        assertTrue(propertiesFile.path.contains("/tmp/test"))
-        assertTrue(eventStream.directory.exists())
-        assertTrue(propertiesFile.exists())
-    }
-
     @Nested
     inner class EventsStorage() {
 
@@ -217,8 +165,9 @@ internal class StorageImplTest {
             storage.write(Storage.Constants.Events, stringified)
             storage.rollover()
             val storagePath = storage.eventStream.read()[0]
-            val storageContents = File(storagePath).readText()
-            val jsonFormat = Json.decodeFromString(JsonObject.serializer(), storageContents)
+            val storageContents = (storage.eventStream as InMemoryEventStream).readAsStream(storagePath)
+            assertNotNull(storageContents)
+            val jsonFormat = Json.decodeFromString(JsonObject.serializer(), storageContents!!.bufferedReader().use { it.readText() })
             assertEquals(1, jsonFormat["batch"]!!.jsonArray.size)
         }
 
@@ -258,7 +207,9 @@ internal class StorageImplTest {
             val fileUrl = storage.read(Storage.Constants.Events)
             assertNotNull(fileUrl)
             fileUrl!!.let {
-                val contentsStr = File(it).inputStream().readBytes().toString(Charsets.UTF_8)
+                val storageContents = (storage.eventStream as InMemoryEventStream).readAsStream(it)
+                assertNotNull(storageContents)
+                val contentsStr = storageContents!!.bufferedReader().use { it.readText() }
                 val contentsJson: JsonObject = Json.decodeFromString(contentsStr)
                 assertEquals(3, contentsJson.size) // batch, sentAt, writeKey
                 assertTrue(contentsJson.containsKey("batch"))
@@ -311,7 +262,9 @@ internal class StorageImplTest {
             val fileUrl = storage.read(Storage.Constants.Events)
             assertNotNull(fileUrl)
             fileUrl!!.let {
-                val contentsStr = File(it).inputStream().readBytes().toString(Charsets.UTF_8)
+                val storageContents = (storage.eventStream as InMemoryEventStream).readAsStream(it)
+                assertNotNull(storageContents)
+                val contentsStr = storageContents!!.bufferedReader().use { it.readText() }
                 val contentsJson: JsonObject = Json.decodeFromString(contentsStr)
                 assertEquals(3, contentsJson.size) // batch, sentAt, writeKey
                 assertTrue(contentsJson.containsKey("batch"))
