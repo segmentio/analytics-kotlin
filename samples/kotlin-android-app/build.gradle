@@ -11,7 +11,7 @@ android {
     defaultConfig {
         multiDexEnabled true
         applicationId "com.segment.analytics.next"
-        minSdkVersion 19
+        minSdkVersion 33
         targetSdkVersion 33
         versionCode 3
         versionName "2.0"
