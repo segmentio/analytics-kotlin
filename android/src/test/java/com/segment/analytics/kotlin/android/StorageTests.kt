@@ -189,6 +189,12 @@ class StorageTests {
                 androidStorage.remove(Storage.Constants.AppVersion)
                 assertEquals(null, map["segment.app.version"])
             }
+
+            @Test
+            fun `test legacy app build`() = runTest {
+                map["build"] = 100
+                assertEquals("100", androidStorage.read(Storage.Constants.LegacyAppBuild))
+            }
         }
 
         @Nested
