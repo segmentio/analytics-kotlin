@@ -6,7 +6,9 @@ import com.segment.analytics.kotlin.android.utilities.AndroidKVS
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.StorageProvider
+import com.segment.analytics.kotlin.core.utilities.EventStream
 import com.segment.analytics.kotlin.core.utilities.FileEventStream
+import com.segment.analytics.kotlin.core.utilities.KVS
 import com.segment.analytics.kotlin.core.utilities.StorageImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import sovran.kotlin.Store
@@ -14,12 +16,12 @@ import sovran.kotlin.Store
 @Deprecated("Use StorageProvider to create storage for Android instead")
 class AndroidStorage(
     context: Context,
-    private val store: Store,
+    store: Store,
     writeKey: String,
-    private val ioDispatcher: CoroutineDispatcher,
+    ioDispatcher: CoroutineDispatcher,
     directory: String? = null,
     subject: String? = null
-) : StorageImpl(
+) : AndroidStorageImpl(
     propertiesFile = AndroidKVS(context.getSharedPreferences("analytics-android-$writeKey", Context.MODE_PRIVATE)),
     eventStream = FileEventStream(context.getDir(directory ?: "segment-disk-queue", Context.MODE_PRIVATE)),
     store = store,
@@ -27,6 +29,38 @@ class AndroidStorage(
     fileIndexKey = if(subject == null) "segment.events.file.index.$writeKey" else "segment.events.file.index.$writeKey.$subject",
     ioDispatcher = ioDispatcher
 )
+
+open class AndroidStorageImpl(
+    propertiesFile: KVS,
+    eventStream: EventStream,
+    store: Store,
+    writeKey: String,
+    fileIndexKey: String,
+    ioDispatcher: CoroutineDispatcher
+) : StorageImpl(
+    propertiesFile = propertiesFile,
+    eventStream = eventStream,
+    store = store,
+    writeKey = writeKey,
+    fileIndexKey = fileIndexKey,
+    ioDispatcher = ioDispatcher
+) {
+    override fun read(key: Storage.Constants): String? {
+        return if (key == Storage.Constants.LegacyAppBuild) {
+            // The legacy app build number was stored as an integer so we have to get it
+            // as an integer and convert it to a String.
+            val noBuild = -1
+            val build = propertiesFile.get(key.rawVal, noBuild)
+            if (build != noBuild) {
+                build.toString()
+            } else {
+                null
+            }
+        } else {
+            super.read(key)
+        }
+    }
+}
 
 object AndroidStorageProvider : StorageProvider {
     override fun createStorage(vararg params: Any): Storage {
@@ -51,6 +85,6 @@ object AndroidStorageProvider : StorageProvider {
 
         val propertiesFile = AndroidKVS(sharedPreferences)
         val eventStream = FileEventStream(eventDirectory)
-        return StorageImpl(propertiesFile, eventStream, analytics.store, config.writeKey, fileIndexKey, analytics.fileIODispatcher)
+        return AndroidStorageImpl(propertiesFile, eventStream, analytics.store, config.writeKey, fileIndexKey, analytics.fileIODispatcher)
     }
 }

@@ -24,7 +24,7 @@ import java.io.InputStream
  * for events storage
  */
 open class StorageImpl(
-    internal val propertiesFile: KVS,
+    val propertiesFile: KVS,
     internal val eventStream: EventStream,
     private val store: Store,
     private val writeKey: String,
