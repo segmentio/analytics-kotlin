@@ -16,9 +16,9 @@ import sovran.kotlin.Store
 @Deprecated("Use StorageProvider to create storage for Android instead")
 class AndroidStorage(
     context: Context,
-    private val store: Store,
+    store: Store,
     writeKey: String,
-    private val ioDispatcher: CoroutineDispatcher,
+    ioDispatcher: CoroutineDispatcher,
     directory: String? = null,
     subject: String? = null
 ) : AndroidStorageImpl(
