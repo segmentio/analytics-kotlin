@@ -40,7 +40,7 @@ class DeepLinkUtils(val analytics: Analytics) {
                 put("referrer", it)
             }
 
-            if (uri != null) {
+            uri?.let {
                 if (uri.isHierarchical) {
                     for (parameter in uri.queryParameterNames) {
                         val value = uri.getQueryParameter(parameter)
