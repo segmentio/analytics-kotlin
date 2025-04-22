@@ -82,16 +82,16 @@ sealed class BaseEvent {
         internal const val ALL_INTEGRATIONS_KEY = "All"
     }
 
-    internal fun applyBaseData() {
+    internal fun applyBaseData(enrichment: EnrichmentClosure?) {
+        this.enrichment = enrichment
         this.timestamp = SegmentInstant.now()
         this.context = emptyJsonObject
         this.messageId = UUID.randomUUID().toString()
     }
 
-    internal suspend fun applyBaseEventData(store: Store, enrichment: EnrichmentClosure?) {
+    internal suspend fun applyBaseEventData(store: Store) {
         val userInfo = store.currentState(UserInfo::class) ?: return
 
-        this.enrichment = enrichment
         this.anonymousId = userInfo.anonymousId
         this.integrations = emptyJsonObject
 
@@ -123,6 +123,7 @@ sealed class BaseEvent {
             integrations = original.integrations
             userId = original.userId
             _metadata = original._metadata
+            enrichment = original.enrichment
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
