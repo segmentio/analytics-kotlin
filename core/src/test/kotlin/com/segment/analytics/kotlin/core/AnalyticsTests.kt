@@ -8,6 +8,8 @@ import com.segment.analytics.kotlin.core.utilities.SegmentInstant
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.putInContext
 import com.segment.analytics.kotlin.core.utilities.updateJsonObject
+import com.segment.analytics.kotlin.core.utilities.set
+import com.segment.analytics.kotlin.core.utils.StubAfterPlugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.TestRunPlugin
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
@@ -17,7 +19,6 @@ import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -34,6 +35,7 @@ import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.Semaphore
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AnalyticsTests {
@@ -978,5 +980,175 @@ class AnalyticsTests {
         timestamp = epochTimestamp
         context = baseContext
         integrations = emptyJsonObject
+    }
+}
+
+class AsyncAnalyticsTests {
+    private lateinit var analytics: Analytics
+
+    private lateinit var afterPlugin: StubAfterPlugin
+
+    private lateinit var httpSemaphore: Semaphore
+
+    private lateinit var assertSemaphore: Semaphore
+
+    private lateinit var actual: CapturingSlot<BaseEvent>
+
+    init {
+        httpSemaphore = Semaphore(0)
+        assertSemaphore = Semaphore(0)
+
+        val settings = """
+                {"integrations":{"Segment.io":{"apiKey":"1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ"}},"plan":{},"edgeFunction":{}}
+            """.trimIndent()
+        mockkConstructor(HTTPClient::class)
+        val settingsStream = ByteArrayInputStream(
+            settings.toByteArray()
+        )
+        val httpConnection: HttpURLConnection = mockk()
+        val connection = object : Connection(httpConnection, settingsStream, null) {}
+        every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } answers {
+            // suspend http calls until we tracked events
+            // this will force events get into startup queue
+            httpSemaphore.acquire()
+            connection
+        }
+
+        afterPlugin = spyk(StubAfterPlugin())
+        actual = slot<BaseEvent>()
+        every { afterPlugin.execute(capture(actual)) } answers {
+            val input = firstArg<BaseEvent?>()
+            // since this is an after plugin, when its execute function is called,
+            // it is guaranteed that the enrichment closure has been called.
+            // so we can release the semaphore on assertions.
+            assertSemaphore.release()
+            input
+        }
+
+    }
+
+
+    @BeforeEach
+    fun setup() {
+        clearPersistentStorage()
+        analytics = Analytics(Configuration(writeKey = "123", application = "Test"))
+    }
+
+    @Test
+    fun `startup queue should replay with track enrichment closure`() {
+        val expectedEvent = "foo"
+        val expectedAnonymousId = "bar"
+
+        analytics.add(afterPlugin)
+        analytics.track(expectedEvent) {
+            it?.anonymousId = expectedAnonymousId
+            it
+        }
+
+        // now we have tracked event, i.e. event added to startup queue
+        // release the semaphore put on http client, so we startup queue will replay the events
+        httpSemaphore.release()
+        // now we need to wait for events being fully replayed before making assertions
+        assertSemaphore.acquire()
+
+        assertTrue(actual.isCaptured)
+        actual.captured.let {
+            assertTrue(it is TrackEvent)
+            val e = it as TrackEvent
+            assertTrue(e.properties.isEmpty())
+            assertEquals(expectedEvent, e.event)
+            assertEquals(expectedAnonymousId, e.anonymousId)
+        }
+    }
+
+    @Test
+    fun `startup queue should replay with identify enrichment closure`() {
+        val expected = buildJsonObject {
+            put("foo", "baz")
+        }
+        val expectedUserId = "newUserId"
+
+        analytics.add(afterPlugin)
+        analytics.identify(expectedUserId) {
+            if (it is IdentifyEvent) {
+                it.traits = updateJsonObject(it.traits) {
+                    it["foo"] = "baz"
+                }
+            }
+            it
+        }
+
+        // now we have tracked event, i.e. event added to startup queue
+        // release the semaphore put on http client, so we startup queue will replay the events
+        httpSemaphore.release()
+        // now we need to wait for events being fully replayed before making assertions
+        assertSemaphore.acquire()
+
+        val actualUserId = analytics.userId()
+
+        assertTrue(actual.isCaptured)
+        actual.captured.let {
+            assertTrue(it is IdentifyEvent)
+            val e = it as IdentifyEvent
+            assertEquals(expected, e.traits)
+            assertEquals(expectedUserId, actualUserId)
+        }
+    }
+
+    @Test
+    fun `startup queue should replay with group enrichment closure`() {
+        val expected = buildJsonObject {
+            put("foo", "baz")
+        }
+        val expectedGroupId = "foo"
+
+        analytics.add(afterPlugin)
+        analytics.group(expectedGroupId) {
+            if (it is GroupEvent) {
+                it.traits = updateJsonObject(it.traits) {
+                    it["foo"] = "baz"
+                }
+            }
+            it
+        }
+
+        // now we have tracked event, i.e. event added to startup queue
+        // release the semaphore put on http client, so we startup queue will replay the events
+        httpSemaphore.release()
+        // now we need to wait for events being fully replayed before making assertions
+        assertSemaphore.acquire()
+
+        assertTrue(actual.isCaptured)
+        actual.captured.let {
+            assertTrue(it is GroupEvent)
+            val e = it as GroupEvent
+            assertEquals(expected, e.traits)
+            assertEquals(expectedGroupId, e.groupId)
+        }
+    }
+
+    @Test
+    fun `startup queue should replay with alias enrichment closure`() {
+        val expected = "bar"
+
+        analytics.add(afterPlugin)
+        analytics.alias(expected) {
+            it?.anonymousId = "test"
+            it
+        }
+
+        // now we have tracked event, i.e. event added to startup queue
+        // release the semaphore put on http client, so we startup queue will replay the events
+        httpSemaphore.release()
+        // now we need to wait for events being fully replayed before making assertions
+        assertSemaphore.acquire()
+
+        assertTrue(actual.isCaptured)
+        actual.captured.let {
+            assertTrue(it is AliasEvent)
+            val e = it as AliasEvent
+            assertEquals(expected, e.userId)
+            assertEquals("test", e.anonymousId)
+        }
     }
 }
