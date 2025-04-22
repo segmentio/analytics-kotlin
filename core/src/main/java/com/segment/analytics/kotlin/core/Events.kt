@@ -12,6 +12,7 @@ typealias AnalyticsContext = JsonObject
 typealias Integrations = JsonObject
 typealias Properties = JsonObject
 typealias Traits = JsonObject
+typealias EnrichmentClosure = (event: BaseEvent?) -> BaseEvent?
 
 val emptyJsonObject = JsonObject(emptyMap())
 val emptyJsonArray = JsonArray(emptyList())
@@ -75,6 +76,8 @@ sealed class BaseEvent {
 
     abstract var _metadata: DestinationMetadata
 
+    var enrichment: EnrichmentClosure? = null
+
     companion object {
         internal const val ALL_INTEGRATIONS_KEY = "All"
     }
@@ -85,9 +88,10 @@ sealed class BaseEvent {
         this.messageId = UUID.randomUUID().toString()
     }
 
-    internal suspend fun applyBaseEventData(store: Store) {
+    internal suspend fun applyBaseEventData(store: Store, enrichment: EnrichmentClosure?) {
         val userInfo = store.currentState(UserInfo::class) ?: return
 
+        this.enrichment = enrichment
         this.anonymousId = userInfo.anonymousId
         this.integrations = emptyJsonObject
 

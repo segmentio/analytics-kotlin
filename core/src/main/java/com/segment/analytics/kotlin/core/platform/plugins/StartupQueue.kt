@@ -72,7 +72,7 @@ class StartupQueue : Plugin, Subscriber {
             // after checking if the queue is empty so we only process if the event
             // if it is indeed not NULL.
             event?.let {
-                analytics.process(it)
+                analytics.process(it, it.enrichment)
             }
         }
     }

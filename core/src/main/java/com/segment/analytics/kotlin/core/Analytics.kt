@@ -513,9 +513,9 @@ open class Analytics protected constructor(
 
         log("applying base attributes on ${Thread.currentThread().name}")
         analyticsScope.launch(analyticsDispatcher) {
-            event.applyBaseEventData(store)
+            event.applyBaseEventData(store, enrichment)
             log("processing event on ${Thread.currentThread().name}")
-            timeline.process(event, enrichment)
+            timeline.process(event)
         }
     }
 

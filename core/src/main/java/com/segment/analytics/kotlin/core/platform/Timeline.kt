@@ -24,10 +24,10 @@ internal class Timeline {
     lateinit var analytics: Analytics
 
     // initiate the event's lifecycle
-    fun process(incomingEvent: BaseEvent, enrichmentClosure: EnrichmentClosure? = null): BaseEvent? {
+    fun process(incomingEvent: BaseEvent): BaseEvent? {
         val beforeResult = applyPlugins(Plugin.Type.Before, incomingEvent)
         var enrichmentResult = applyPlugins(Plugin.Type.Enrichment, beforeResult)
-        enrichmentClosure?.let {
+        enrichmentResult?.enrichment?.let {
             enrichmentResult = it(enrichmentResult)
         }
 
