@@ -983,6 +983,7 @@ class AnalyticsTests {
     }
 }
 
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class AsyncAnalyticsTests {
     private lateinit var analytics: Analytics
 
