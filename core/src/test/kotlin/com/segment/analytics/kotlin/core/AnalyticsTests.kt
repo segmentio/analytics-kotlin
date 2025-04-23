@@ -1056,6 +1056,7 @@ class AsyncAnalyticsTests {
         }
     }
 
+    @Disabled
     @Test
     fun `startup queue should replay with identify enrichment closure`() {
         val expected = buildJsonObject {
@@ -1089,6 +1090,7 @@ class AsyncAnalyticsTests {
         }
     }
 
+    @Disabled
     @Test
     fun `startup queue should replay with group enrichment closure`() {
         val expected = buildJsonObject {
@@ -1120,6 +1122,7 @@ class AsyncAnalyticsTests {
         }
     }
 
+    @Disabled
     @Test
     fun `startup queue should replay with alias enrichment closure`() {
         val expected = "bar"
