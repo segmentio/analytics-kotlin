@@ -24,10 +24,10 @@ internal class Timeline {
     lateinit var analytics: Analytics
 
     // initiate the event's lifecycle
-    fun process(incomingEvent: BaseEvent, enrichmentClosure: EnrichmentClosure? = null): BaseEvent? {
+    fun process(incomingEvent: BaseEvent): BaseEvent? {
         val beforeResult = applyPlugins(Plugin.Type.Before, incomingEvent)
         var enrichmentResult = applyPlugins(Plugin.Type.Enrichment, beforeResult)
-        enrichmentClosure?.let {
+        enrichmentResult?.enrichment?.let {
             enrichmentResult = it(enrichmentResult)
         }
 
@@ -82,14 +82,6 @@ internal class Timeline {
                 it["message"] = "Exception executing plugin"
             }
         }
-        Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
-            it["message"] = "added"
-            if (plugin is DestinationPlugin && plugin.key != "") {
-                it["plugin"] = "${plugin.type}-${plugin.key}"
-            } else {
-                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
-            }
-        }
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {
@@ -106,6 +98,15 @@ internal class Timeline {
                         )
                     }
                 }
+            }
+        }
+
+        Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
+            it["message"] = "added"
+            if (plugin is DestinationPlugin && plugin.key != "") {
+                it["plugin"] = "${plugin.type}-${plugin.key}"
+            } else {
+                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
             }
         }
     }

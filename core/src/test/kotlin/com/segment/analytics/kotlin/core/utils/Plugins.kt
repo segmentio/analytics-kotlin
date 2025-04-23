@@ -69,3 +69,8 @@ open class StubPlugin : EventPlugin {
     override val type: Plugin.Type = Plugin.Type.Before
     override lateinit var analytics: Analytics
 }
+
+open class StubAfterPlugin : EventPlugin {
+    override val type: Plugin.Type = Plugin.Type.After
+    override lateinit var analytics: Analytics
+}

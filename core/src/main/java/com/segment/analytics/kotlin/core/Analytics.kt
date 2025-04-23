@@ -509,13 +509,13 @@ open class Analytics protected constructor(
     fun process(event: BaseEvent, enrichment: EnrichmentClosure? = null) {
         if (!enabled) return
 
-        event.applyBaseData()
+        event.applyBaseData(enrichment)
 
         log("applying base attributes on ${Thread.currentThread().name}")
         analyticsScope.launch(analyticsDispatcher) {
             event.applyBaseEventData(store)
             log("processing event on ${Thread.currentThread().name}")
-            timeline.process(event, enrichment)
+            timeline.process(event)
         }
     }
 

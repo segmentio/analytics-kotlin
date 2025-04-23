@@ -12,6 +12,7 @@ typealias AnalyticsContext = JsonObject
 typealias Integrations = JsonObject
 typealias Properties = JsonObject
 typealias Traits = JsonObject
+typealias EnrichmentClosure = (event: BaseEvent?) -> BaseEvent?
 
 val emptyJsonObject = JsonObject(emptyMap())
 val emptyJsonArray = JsonArray(emptyList())
@@ -75,11 +76,14 @@ sealed class BaseEvent {
 
     abstract var _metadata: DestinationMetadata
 
+    var enrichment: EnrichmentClosure? = null
+
     companion object {
         internal const val ALL_INTEGRATIONS_KEY = "All"
     }
 
-    internal fun applyBaseData() {
+    internal fun applyBaseData(enrichment: EnrichmentClosure?) {
+        this.enrichment = enrichment
         this.timestamp = SegmentInstant.now()
         this.context = emptyJsonObject
         this.messageId = UUID.randomUUID().toString()
@@ -119,6 +123,7 @@ sealed class BaseEvent {
             integrations = original.integrations
             userId = original.userId
             _metadata = original._metadata
+            enrichment = original.enrichment
         }
         @Suppress("UNCHECKED_CAST")
         return copy as T // This is ok because resultant type will be same as input type
