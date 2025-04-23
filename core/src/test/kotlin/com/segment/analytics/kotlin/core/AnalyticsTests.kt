@@ -994,7 +994,10 @@ class AsyncAnalyticsTests {
 
     private lateinit var actual: CapturingSlot<BaseEvent>
 
-    init {
+    @BeforeEach
+    fun setup() {
+        clearPersistentStorage()
+
         httpSemaphore = Semaphore(0)
         assertSemaphore = Semaphore(0)
 
@@ -1024,13 +1027,6 @@ class AsyncAnalyticsTests {
             assertSemaphore.release()
             input
         }
-
-    }
-
-
-    @BeforeEach
-    fun setup() {
-        clearPersistentStorage()
         analytics = Analytics(Configuration(writeKey = "123", application = "Test"))
     }
 
