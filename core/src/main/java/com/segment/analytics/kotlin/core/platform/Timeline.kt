@@ -82,14 +82,6 @@ internal class Timeline {
                 it["message"] = "Exception executing plugin"
             }
         }
-        Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
-            it["message"] = "added"
-            if (plugin is DestinationPlugin && plugin.key != "") {
-                it["plugin"] = "${plugin.type}-${plugin.key}"
-            } else {
-                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
-            }
-        }
         plugins[plugin.type]?.add(plugin)
         with(analytics) {
             analyticsScope.launch(analyticsDispatcher) {
@@ -106,6 +98,15 @@ internal class Timeline {
                         )
                     }
                 }
+            }
+        }
+
+        Telemetry.increment(Telemetry.INTEGRATION_METRIC) {
+            it["message"] = "added"
+            if (plugin is DestinationPlugin && plugin.key != "") {
+                it["plugin"] = "${plugin.type}-${plugin.key}"
+            } else {
+                it["plugin"] = "${plugin.type}-${plugin.javaClass}"
             }
         }
     }
