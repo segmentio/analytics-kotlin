@@ -1056,41 +1056,41 @@ class AsyncAnalyticsTests {
             assertEquals(expectedAnonymousId, e.anonymousId)
         }
     }
-//
-//    @Test
-//    fun `startup queue should replay with identify enrichment closure`() {
-//        val expected = buildJsonObject {
-//            put("foo", "baz")
-//        }
-//        val expectedUserId = "newUserId"
-//
-//        analytics.add(afterPlugin)
-//        analytics.identify(expectedUserId) {
-//            if (it is IdentifyEvent) {
-//                it.traits = updateJsonObject(it.traits) {
-//                    it["foo"] = "baz"
-//                }
-//            }
-//            it
-//        }
-//
-//        // now we have tracked event, i.e. event added to startup queue
-//        // release the semaphore put on http client, so we startup queue will replay the events
-//        httpSemaphore.release()
-//        // now we need to wait for events being fully replayed before making assertions
-//        assertSemaphore.acquire()
-//
-//        val actualUserId = analytics.userId()
-//
-//        assertTrue(actual.isCaptured)
-//        actual.captured.let {
-//            assertTrue(it is IdentifyEvent)
-//            val e = it as IdentifyEvent
-//            assertEquals(expected, e.traits)
-//            assertEquals(expectedUserId, actualUserId)
-//        }
-//    }
-//
+
+    @Test
+    fun `startup queue should replay with identify enrichment closure`() {
+        val expected = buildJsonObject {
+            put("foo", "baz")
+        }
+        val expectedUserId = "newUserId"
+
+        analytics.add(afterPlugin)
+        analytics.identify(expectedUserId) {
+            if (it is IdentifyEvent) {
+                it.traits = updateJsonObject(it.traits) {
+                    it["foo"] = "baz"
+                }
+            }
+            it
+        }
+
+        // now we have tracked event, i.e. event added to startup queue
+        // release the semaphore put on http client, so we startup queue will replay the events
+        httpSemaphore.release()
+        // now we need to wait for events being fully replayed before making assertions
+        assertSemaphore.acquire()
+
+        val actualUserId = analytics.userId()
+
+        assertTrue(actual.isCaptured)
+        actual.captured.let {
+            assertTrue(it is IdentifyEvent)
+            val e = it as IdentifyEvent
+            assertEquals(expected, e.traits)
+            assertEquals(expectedUserId, actualUserId)
+        }
+    }
+
 //    @Test
 //    fun `startup queue should replay with group enrichment closure`() {
 //        val expected = buildJsonObject {
