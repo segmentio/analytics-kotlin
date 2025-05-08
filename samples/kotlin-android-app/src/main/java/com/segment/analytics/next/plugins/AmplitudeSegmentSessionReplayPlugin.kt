@@ -86,7 +86,7 @@ class AmplitudeSegmentSessionReplayPlugin(
             1L)
 
         val additionalEventProperties = sessionReplay.getSessionReplayProperties().toJsonElement()
-        if (additionalEventProperties is JsonObject) {
+        if (additionalEventProperties is JsonObject && additionalEventProperties.size > 0) {
             val properties = updateJsonObject(eventProperties ?: emptyJsonObject) {
                 it.putAll(additionalEventProperties)
             }
