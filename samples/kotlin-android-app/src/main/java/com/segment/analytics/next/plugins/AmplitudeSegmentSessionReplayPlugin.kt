@@ -23,8 +23,8 @@ import kotlinx.serialization.json.JsonObject
 class AmplitudeSegmentSessionReplayPlugin(
     amplitudeApiKey: String,
     context: Context,
-    deviceId: String,
-    sessionId: Long,
+    deviceId: String = "",
+    sessionId: Long = -1L,
     optOut: Boolean = false,
     sampleRate: Number = 0.0,
     logger: Logger? = LogcatLogger(),
