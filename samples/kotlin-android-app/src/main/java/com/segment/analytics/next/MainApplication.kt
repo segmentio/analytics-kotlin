@@ -49,7 +49,7 @@ class MainApplication : Application() {
         }
         analytics.add(AmplitudeSession())
         analytics.add(AmplitudeSegmentSessionReplayPlugin(
-            amplitudeApiKey = "528acce178db73a4b6a74daf4d0b4081",
+            amplitudeApiKey = "YOUR AMPLITUDE API KEY",
             context = applicationContext,
             sampleRate = 0.1,
         ))

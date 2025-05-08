@@ -7,12 +7,12 @@ import com.amplitude.android.sessionreplay.internal.InternalOptions
 import com.amplitude.common.Logger
 import com.amplitude.common.android.LogcatLogger
 import com.amplitude.core.ServerZone
-import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
+import com.segment.analytics.kotlin.core.IdentifyEvent
 import com.segment.analytics.kotlin.core.ScreenEvent
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.emptyJsonObject
-import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.DestinationPlugin
 import com.segment.analytics.kotlin.core.utilities.getLong
 import com.segment.analytics.kotlin.core.utilities.getString
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
@@ -24,7 +24,7 @@ class AmplitudeSegmentSessionReplayPlugin(
     amplitudeApiKey: String,
     context: Context,
     deviceId: String = "",
-    sessionId: Long = -1L,
+    sessionId: Long = 1L,
     optOut: Boolean = false,
     sampleRate: Number = 0.0,
     logger: Logger? = LogcatLogger(),
@@ -36,10 +36,8 @@ class AmplitudeSegmentSessionReplayPlugin(
     internalOptions: InternalOptions = InternalOptions(),
     privacyConfig: PrivacyConfig = PrivacyConfig(),
     library: String = "${SessionReplay.Library}/${SessionReplay.Version}"
-): Plugin {
-
-    override val type = Plugin.Type.Enrichment
-    override lateinit var analytics: Analytics
+): DestinationPlugin() {
+    override val key: String = "Amplitude Session Replay"
 
     private val sessionReplay: SessionReplay
 
@@ -65,7 +63,15 @@ class AmplitudeSegmentSessionReplayPlugin(
         // SessionReplay in kotlin always auto starts
     }
 
-    override fun execute(event: BaseEvent): BaseEvent? {
+    override fun track(payload: TrackEvent): BaseEvent? {
+        return enrich(payload)
+    }
+
+    override fun identify(payload: IdentifyEvent): BaseEvent? {
+        return enrich(payload)
+    }
+
+    private fun enrich(event: BaseEvent): BaseEvent? {
         val amplitudeProperties = event.integrations["Actions Amplitude"]
         val eventProperties = when(event) {
             is TrackEvent -> event.properties
@@ -77,7 +83,7 @@ class AmplitudeSegmentSessionReplayPlugin(
         sessionReplay.setSessionId(
             amplitudeProperties?.safeJsonObject?.getLong("session_id") ?:
             eventProperties?.getLong("session_id") ?:
-            -1)
+            1L)
 
         val additionalEventProperties = sessionReplay.getSessionReplayProperties().toJsonElement()
         if (additionalEventProperties is JsonObject) {
@@ -93,5 +99,9 @@ class AmplitudeSegmentSessionReplayPlugin(
         }
 
         return event
+    }
+
+    override fun flush() {
+        sessionReplay.flush()
     }
 }
