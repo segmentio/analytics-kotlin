@@ -12,6 +12,8 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.utilities.*
+import com.segment.analytics.kotlin.destinations.amplitude.AmplitudeSession
+import com.segment.analytics.next.plugins.AmplitudeSegmentSessionReplayPlugin
 import java.net.HttpURLConnection
 
 class MainApplication : Application() {
@@ -45,6 +47,13 @@ class MainApplication : Application() {
             }
             this.storageProvider = EncryptedStorageProvider(secretKey)
         }
+        analytics.add(AmplitudeSession())
+        analytics.add(AmplitudeSegmentSessionReplayPlugin(
+            amplitudeApiKey = "528acce178db73a4b6a74daf4d0b4081",
+            context = applicationContext,
+            sampleRate = 0.1,
+        ))
+
         analytics.add(AndroidRecordScreenPlugin())
         analytics.add(object : Plugin {
             override val type: Plugin.Type = Plugin.Type.Enrichment

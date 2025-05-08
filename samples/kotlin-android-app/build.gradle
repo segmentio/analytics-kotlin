@@ -56,6 +56,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging-ktx'
     implementation 'com.google.firebase:firebase-analytics-ktx'
     implementation 'com.amplitude:session-replay-android:0.18.0'
+    implementation 'com.segment.analytics.kotlin.destinations:amplitude:1.5.4'
 
 
     testImplementation 'junit:junit:4.13.2'
