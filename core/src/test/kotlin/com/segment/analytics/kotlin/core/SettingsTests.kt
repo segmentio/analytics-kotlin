@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.platform.Plugin
 import com.segment.analytics.kotlin.core.utils.StubPlugin
 import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.testAnalytics
+import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.TestScope
@@ -75,6 +76,34 @@ class SettingsTests {
     }
 
     @Test
+    fun `cached settings propagates to plugins when network error`() = runTest {
+        every { anyConstructed<HTTPClient>().settings("cdn-settings.segment.com/v1") } throws Exception()
+        val mockPlugin = spyk(StubPlugin())
+
+        val settings = Settings(
+            integrations = buildJsonObject {
+                put(
+                    "cachedSettings",
+                    buildJsonObject {
+                        put(
+                            "apiKey",
+                            "1vNgUqwJeCHmqgI9S1sOm9UHCyfYqbaQ"
+                        )
+                    })
+            },
+            plan = emptyJsonObject,
+            edgeFunction = emptyJsonObject,
+            middlewareSettings = emptyJsonObject
+        )
+        analytics.store.dispatch(System.UpdateSettingsAction(settings), System::class)
+        analytics.add(mockPlugin)
+        verify {
+            mockPlugin.update(settings, Plugin.UpdateType.Initial)
+        }
+    }
+
+    // Disabled because now we always propagate settings regardless network status
+    @Test @Disabled
     fun `plugin added before settings is available updates plugin correctly`() = runTest {
         // forces settings to fail
         mockHTTPClient("")

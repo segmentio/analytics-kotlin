@@ -3,12 +3,18 @@ package com.segment.analytics.kotlin.android
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.segment.analytics.kotlin.android.plugins.AndroidContextPlugin
 import com.segment.analytics.kotlin.android.plugins.AndroidLifecyclePlugin
 import com.segment.analytics.kotlin.android.utilities.DeepLinkUtils
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.checkSettings
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 // A set of functions tailored to the Android implementation of analytics
 
@@ -67,6 +73,25 @@ public fun Analytics(
 private fun Analytics.startup() {
     add(AndroidContextPlugin())
     add(AndroidLifecyclePlugin())
+    registerLifecycle()
+}
+
+private fun Analytics.registerLifecycle() {
+    analyticsScope.launch(Dispatchers.Main) {
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            var lastCheckSettings = java.lang.System.currentTimeMillis()
+            val CHECK_SETTINGS_INTERVAL = 10 * 1000L
+
+            override fun onStart(owner: LifecycleOwner) {
+                analyticsScope.launch(analyticsDispatcher) {
+                    if (java.lang.System.currentTimeMillis() - lastCheckSettings > CHECK_SETTINGS_INTERVAL) {
+                        checkSettings()
+                        lastCheckSettings = java.lang.System.currentTimeMillis()
+                    }
+                }
+            }
+        })
+    }
 }
 
 /**
