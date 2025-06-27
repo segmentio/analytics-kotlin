@@ -48,7 +48,8 @@ internal class StorageImplTest {
             UserInfo(
                 anonymousId = "oldAnonId",
                 userId = "oldUserId",
-                traits = buildJsonObject { put("behaviour", "bad") }
+                traits = buildJsonObject { put("behaviour", "bad") },
+                referrer = "oldReferrer"
             ))
 
         store.provide(
@@ -86,7 +87,8 @@ internal class StorageImplTest {
                 return UserInfo(
                     anonymousId = "newAnonId",
                     userId = "newUserId",
-                    traits = emptyJsonObject
+                    traits = emptyJsonObject,
+                    referrer = "newReferrer"
                 )
             }
         }
@@ -341,7 +343,8 @@ internal class StorageImplTest {
                     return UserInfo(
                         anonymousId = "newAnonId",
                         userId = "newUserId",
-                        traits = emptyJsonObject
+                        traits = emptyJsonObject,
+                        referrer = "newReferrer"
                     )
                 }
             }

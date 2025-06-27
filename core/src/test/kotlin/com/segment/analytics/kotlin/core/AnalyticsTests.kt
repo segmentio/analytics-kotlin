@@ -472,8 +472,8 @@ class AnalyticsTests {
                     UserInfo(
                         userId = "oldUserId",
                         traits = buildJsonObject { put("behaviour", "bad") },
-                        anonymousId = "qwerty-qwerty-123"
-                    ), curUserInfo
+                        anonymousId = "qwerty-qwerty-123",
+                        referrer = null), curUserInfo
                 )
 
                 analytics.identify("newUserId", buildJsonObject { put("behaviour", "good") })
@@ -483,7 +483,8 @@ class AnalyticsTests {
                     UserInfo(
                         userId = "newUserId",
                         traits = buildJsonObject { put("behaviour", "good") },
-                        anonymousId = "qwerty-qwerty-123"
+                        anonymousId = "qwerty-qwerty-123",
+                        referrer = null
                     ), newUserInfo
                 )
             }
@@ -501,7 +502,8 @@ class AnalyticsTests {
                     UserInfo(
                         userId = "oldUserId",
                         traits = buildJsonObject { put("behaviour", "bad") },
-                        anonymousId = "qwerty-qwerty-123"
+                        anonymousId = "qwerty-qwerty-123",
+                        referrer = null
                     ), curUserInfo
                 )
 
@@ -512,7 +514,8 @@ class AnalyticsTests {
                     UserInfo(
                         userId = "oldUserId",
                         traits = buildJsonObject { put("behaviour", "good") },
-                        anonymousId = "qwerty-qwerty-123"
+                        anonymousId = "qwerty-qwerty-123",
+                        referrer = null
                     ), newUserInfo
                 )
             }
@@ -782,7 +785,8 @@ class AnalyticsTests {
                     UserInfo(
                         userId = "newId",
                         traits = emptyJsonObject,
-                        anonymousId = "qwerty-qwerty-123"
+                        anonymousId = "qwerty-qwerty-123",
+                        referrer = null
                     ), newUserInfo
                 )
             }
@@ -890,6 +894,25 @@ class AnalyticsTests {
         }
     }
 
+    @Nested
+    inner class Referrer {
+        @Test
+        fun `updateReferrer non-null update`() = runTest {
+            analytics.updateReferrer("https://example.com")
+            val newUserInfo = analytics.store.currentState(UserInfo::class)
+            assertEquals(analytics.userInfo.referrer, "https://example.com")
+            assertEquals(newUserInfo?.referrer, "https://example.com")
+        }
+
+        @Test
+        fun `updateReferrer null update`() = runTest {
+            analytics.updateReferrer(null)
+            val newUserInfo = analytics.store.currentState(UserInfo::class)
+            assertEquals(analytics.userInfo.referrer, null)
+            assertEquals(newUserInfo?.referrer, null)
+        }
+    }
+    
     @Test
     fun `settings fetches current Analytics Settings`() = runTest {
         val settings = Settings(

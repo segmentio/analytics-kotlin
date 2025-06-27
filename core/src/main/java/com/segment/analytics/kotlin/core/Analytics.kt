@@ -580,7 +580,7 @@ open class Analytics protected constructor(
      */
     fun reset() {
         val newAnonymousId = UUID.randomUUID().toString()
-        userInfo = UserInfo(newAnonymousId, null, null)
+        userInfo = UserInfo(newAnonymousId, null, null, null)
 
         analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.ResetAction(newAnonymousId), UserInfo::class)
@@ -738,6 +738,16 @@ open class Analytics protected constructor(
                 storage.removeFile(filePath)
             }
             catch (ignored: Exception) {}
+        }
+    }
+
+    fun updateReferrer(referrerUrl: String?) {
+        userInfo.referrer = referrerUrl
+        analyticsScope.launch {
+            store.dispatch(
+                UserInfo.SetReferrerAction(referrerUrl),
+                UserInfo::class
+            )
         }
     }
 }

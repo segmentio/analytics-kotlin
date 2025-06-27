@@ -61,7 +61,8 @@ internal class InMemoryStorageTest {
                 return UserInfo(
                     anonymousId = "newAnonId",
                     userId = "newUserId",
-                    traits = emptyJsonObject
+                    traits = emptyJsonObject,
+                    referrer = "newReferrer"
                 )
             }
         }
@@ -294,7 +295,8 @@ internal class InMemoryStorageTest {
                     return UserInfo(
                         anonymousId = "newAnonId",
                         userId = "newUserId",
-                        traits = emptyJsonObject
+                        traits = emptyJsonObject,
+                        referrer = "newReferrer"
                     )
                 }
             }
