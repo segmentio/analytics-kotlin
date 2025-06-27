@@ -7,7 +7,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import sovran.kotlin.Action
 import sovran.kotlin.State
-import java.util.*
+import java.util.UUID
 
 /**
  * Stores state related to the analytics system
@@ -143,11 +143,13 @@ data class System(
  * - anonymousId (String)
  * - userId (String)
  * - traits (Map)
+ * - referrer (String)
  */
 data class UserInfo(
     var anonymousId: String,
     var userId: String?,
-    var traits: JsonObject?
+    var traits: JsonObject?,
+    var referrer: String?,
 ) : State {
 
     companion object {
@@ -160,25 +162,33 @@ data class UserInfo(
             val anonymousId: String =
                 storage.read(Storage.Constants.AnonymousId) ?: UUID.randomUUID().toString()
 
-            return UserInfo(anonymousId, userId, traits)
+            return UserInfo(anonymousId, userId, traits, null)
         }
     }
 
     class ResetAction(var anonymousId: String = UUID.randomUUID().toString()) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(anonymousId, null, null)
+            return UserInfo(anonymousId, null, null, null)
         }
     }
 
     class SetUserIdAction(var userId: String) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(state.anonymousId, userId, state.traits)
+            return state.copy(
+                userId = userId
+            )
         }
     }
 
     class SetAnonymousIdAction(var anonymousId: String) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(anonymousId, state.userId, state.traits)
+            return state.copy(anonymousId = anonymousId)
+        }
+    }
+
+    class SetReferrerAction(var referrer: String?) : Action<UserInfo> {
+        override fun reduce(state: UserInfo): UserInfo {
+            return state.copy(referrer = referrer)
         }
     }
 
@@ -190,7 +200,10 @@ data class UserInfo(
 
     class SetUserIdAndTraitsAction(var userId: String, var traits: JsonObject) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(state.anonymousId, userId, traits)
+            return state.copy(
+                userId = userId,
+                traits = traits
+            )
         }
     }
 }

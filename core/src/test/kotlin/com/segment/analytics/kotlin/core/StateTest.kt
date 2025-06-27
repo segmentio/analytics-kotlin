@@ -99,4 +99,25 @@ internal class StateTest {
             assertEquals(traits, (analytics.store.currentState(UserInfo::class))?.traits)
         }
     }
+    
+        @Test
+        fun setReferrerAction() = runTest  {
+            analytics.store.dispatch(UserInfo.SetReferrerAction("oldReferrer"), UserInfo::class)
+            assertEquals("oldReferrer", (analytics.store.currentState(UserInfo::class))?.referrer)
+
+            analytics.store.dispatch(UserInfo.SetReferrerAction("newReferrer"), UserInfo::class)
+            assertEquals("newReferrer", (analytics.store.currentState(UserInfo::class))?.referrer)
+        }
+
+
+        @Test
+        fun `setReferrerAction state change`() = runTest  {
+            val traits = buildJsonObject { put("behaviour", "bad") }
+            analytics.store.dispatch(UserInfo.SetReferrerAction("newReferrer"), UserInfo::class)
+            analytics.store.dispatch(UserInfo.SetUserIdAction("oldUserId"), UserInfo::class)
+            analytics.store.dispatch(UserInfo.SetAnonymousIdAction("anonymous"), UserInfo::class)
+            analytics.store.dispatch(UserInfo.SetTraitsAction(traits), UserInfo::class)
+
+            assertEquals("newReferrer", (analytics.store.currentState(UserInfo::class))?.referrer)
+        }
 }
