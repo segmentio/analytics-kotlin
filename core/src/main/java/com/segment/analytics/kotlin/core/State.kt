@@ -194,7 +194,7 @@ data class UserInfo(
 
     class SetTraitsAction(var traits: JsonObject) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(state.anonymousId, state.userId, traits)
+            return state.copy(traits = traits)
         }
     }
 
