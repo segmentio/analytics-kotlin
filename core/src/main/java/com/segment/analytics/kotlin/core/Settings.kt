@@ -96,7 +96,13 @@ suspend fun Analytics.checkSettings() {
             settingsObj?.let {
                 log("Dispatching update settings on ${Thread.currentThread().name}")
                 store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
-                update(settingsObj)
+            }
+
+            store.currentState(System::class)?.let { system ->
+                system.settings?.let { settings ->
+                    log("Propagating settings on ${Thread.currentThread().name}")
+                    update(settings)
+                }
             }
 
             // we're good to go back to a running state.
