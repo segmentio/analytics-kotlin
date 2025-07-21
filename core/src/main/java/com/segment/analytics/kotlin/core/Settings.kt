@@ -84,31 +84,27 @@ suspend fun Analytics.checkSettings() {
     val writeKey = configuration.writeKey
     val cdnHost = configuration.cdnHost
 
-    store.currentState(System::class) ?: return
-    store.dispatch(System.ToggleRunningAction(running = false), System::class)
+    pauseEventProcessing()
 
-    withContext(networkIODispatcher) {
+    val settingsObj = withContext(networkIODispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
-        val settingsObj: Settings? = fetchSettings(writeKey, cdnHost)
+        return@withContext fetchSettings(writeKey, cdnHost)
+    }
 
-        withContext(analyticsDispatcher) {
+    settingsObj?.let {
+        log("Dispatching update settings on ${Thread.currentThread().name}")
+        store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
+    }
 
-            settingsObj?.let {
-                log("Dispatching update settings on ${Thread.currentThread().name}")
-                store.dispatch(System.UpdateSettingsAction(settingsObj), System::class)
-            }
-
-            store.currentState(System::class)?.let { system ->
-                system.settings?.let { settings ->
-                    log("Propagating settings on ${Thread.currentThread().name}")
-                    update(settings)
-                }
-            }
-
-            // we're good to go back to a running state.
-            store.dispatch(System.ToggleRunningAction(running = true), System::class)
+    store.currentState(System::class)?.let { system ->
+        system.settings?.let { settings ->
+            log("Propagating settings on ${Thread.currentThread().name}")
+            update(settings)
         }
     }
+
+    // we're good to go back to a running state.
+    resumeEventProcessing()
 }
 
 internal fun Analytics.fetchSettings(
