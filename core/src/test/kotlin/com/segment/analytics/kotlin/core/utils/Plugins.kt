@@ -74,3 +74,8 @@ open class StubAfterPlugin : EventPlugin {
     override val type: Plugin.Type = Plugin.Type.After
     override lateinit var analytics: Analytics
 }
+
+open class StubDestinationPlugin : DestinationPlugin() {
+    override val key: String = "StubDestination"
+    override fun isDestinationEnabled(event: BaseEvent?) = true
+}

@@ -18,9 +18,10 @@ import java.util.*
 data class System(
     var configuration: Configuration = Configuration(""),
     var settings: Settings?,
-    var running: Boolean,
-    var initializedPlugins: Set<Int>,
-    var enabled: Boolean
+    var running: Boolean = false,
+    var initializedPlugins: Set<Int> = emptySet(),
+    var waitingPlugins: Set<Int> = emptySet(),
+    var enabled: Boolean = true
 ) : State {
 
     companion object {
@@ -62,6 +63,7 @@ data class System(
                 settings = settings,
                 running = false,
                 initializedPlugins = setOf(),
+                waitingPlugins = setOf(),
                 enabled = true
             )
         }
@@ -74,6 +76,7 @@ data class System(
                 settings,
                 state.running,
                 state.initializedPlugins,
+                state.waitingPlugins,
                 state.enabled
             )
         }
@@ -81,11 +84,29 @@ data class System(
 
     class ToggleRunningAction(var running: Boolean) : Action<System> {
         override fun reduce(state: System): System {
+            if (running && state.waitingPlugins.isNotEmpty()) {
+                running = false
+            }
+
             return System(
                 state.configuration,
                 state.settings,
                 running,
                 state.initializedPlugins,
+                state.waitingPlugins,
+                state.enabled
+            )
+        }
+    }
+
+    class ForceRunningAction : Action<System> {
+        override fun reduce(state: System): System {
+            return System(
+                state.configuration,
+                state.settings,
+                true,
+                state.initializedPlugins,
+                state.waitingPlugins,
                 state.enabled
             )
         }
@@ -105,6 +126,7 @@ data class System(
                 newSettings,
                 state.running,
                 state.initializedPlugins,
+                state.waitingPlugins,
                 state.enabled
             )
         }
@@ -120,6 +142,7 @@ data class System(
                 state.settings,
                 state.running,
                 initializedPlugins,
+                state.waitingPlugins,
                 state.enabled
             )
         }
@@ -132,7 +155,36 @@ data class System(
                 state.settings,
                 state.running,
                 state.initializedPlugins,
+                state.waitingPlugins,
                 enabled
+            )
+        }
+    }
+
+    class AddWaitingPlugin(val plugin: Int): Action<System> {
+        override fun reduce(state: System): System {
+            val waitingPlugins = state.waitingPlugins + plugin
+            return System(
+                state.configuration,
+                state.settings,
+                state.running,
+                state.initializedPlugins,
+                waitingPlugins,
+                state.enabled
+            )
+        }
+    }
+
+    class RemoveWaitingPlugin(val plugin: Int): Action<System> {
+        override fun reduce(state: System): System {
+            val waitingPlugins = state.waitingPlugins - plugin
+            return System(
+                state.configuration,
+                state.settings,
+                state.running,
+                state.initializedPlugins,
+                waitingPlugins,
+                state.enabled
             )
         }
     }
