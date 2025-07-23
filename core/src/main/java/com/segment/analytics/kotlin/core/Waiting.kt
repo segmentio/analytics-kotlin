@@ -27,13 +27,15 @@ interface WaitingPlugin: Plugin {
     }
 }
 
-fun Analytics.pauseEventProcessing(plugin: WaitingPlugin) = analyticsScope.launch {
+fun Analytics.pauseEventProcessing(plugin: WaitingPlugin) = analyticsScope.launch(analyticsDispatcher) {
     store.dispatch(System.AddWaitingPlugin(plugin.hashCode()), System::class)
+    pauseEventProcessing()
 }
 
 
-fun Analytics.resumeEventProcessing(plugin: WaitingPlugin) = analyticsScope.launch {
+fun Analytics.resumeEventProcessing(plugin: WaitingPlugin) = analyticsScope.launch(analyticsDispatcher) {
     store.dispatch(System.RemoveWaitingPlugin(plugin.hashCode()), System::class)
+    resumeEventProcessing()
 }
 
 internal suspend fun Analytics.running(): Boolean {
@@ -41,11 +43,11 @@ internal suspend fun Analytics.running(): Boolean {
     return system?.running ?: false
 }
 
-internal suspend fun Analytics.pauseEventProcessing() {
+internal suspend fun Analytics.pauseEventProcessing(timeout: Long = 30_000) {
     if (!running()) return
 
     store.dispatch(System.ToggleRunningAction(false), System::class)
-    startProcessingAfterTimeout()
+    startProcessingAfterTimeout(timeout)
 }
 
 internal suspend fun Analytics.resumeEventProcessing() {
@@ -53,8 +55,8 @@ internal suspend fun Analytics.resumeEventProcessing() {
     store.dispatch(System.ToggleRunningAction(true), System::class)
 }
 
-internal fun Analytics.startProcessingAfterTimeout() = analyticsScope.launch {
-    delay(30_000)
+internal fun Analytics.startProcessingAfterTimeout(timeout: Long) = analyticsScope.launch(analyticsDispatcher) {
+    delay(timeout)
     store.dispatch(System.ForceRunningAction(), System::class)
 }
 
