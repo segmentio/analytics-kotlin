@@ -161,7 +161,7 @@ abstract class DestinationPlugin : EventPlugin {
 
     final override fun execute(event: BaseEvent): BaseEvent? = process(event)
 
-    internal fun isDestinationEnabled(event: BaseEvent?): Boolean {
+    open fun isDestinationEnabled(event: BaseEvent?): Boolean {
         // if event payload has integration marked false then its disabled by customer
         val customerEnabled = event?.integrations?.getBoolean(key) ?: true // default to true when missing
 

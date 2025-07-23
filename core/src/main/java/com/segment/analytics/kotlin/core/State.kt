@@ -84,7 +84,7 @@ data class System(
 
     class ToggleRunningAction(var running: Boolean) : Action<System> {
         override fun reduce(state: System): System {
-            if (running && state.waitingPlugins.size > 0) {
+            if (running && state.waitingPlugins.isNotEmpty()) {
                 running = false
             }
 
