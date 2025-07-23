@@ -158,7 +158,7 @@ class StorageTests {
         fun `system reset action removes system`() = runTest {
             val action = object : Action<System> {
                 override fun reduce(state: System): System {
-                    return System(state.configuration, null, state.running, state.initializedPlugins, state.enabled)
+                    return System(state.configuration, null, state.running, state.initializedPlugins, state.waitingPlugins, state.enabled)
                 }
             }
             store.dispatch(action, System::class)

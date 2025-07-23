@@ -87,6 +87,7 @@ class WaitingTests {
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
+        advanceTimeBy(6000)
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -103,6 +104,7 @@ class WaitingTests {
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
+        advanceTimeBy(6000)
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -130,6 +132,8 @@ class WaitingTests {
 
         plugin2.resume()
         advanceUntilIdle()
+        advanceTimeBy(6000)
+
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
         assertTrue(plugin2.tracked)
@@ -148,6 +152,7 @@ class WaitingTests {
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
+        advanceTimeBy(6000)
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -166,6 +171,7 @@ class WaitingTests {
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
+        advanceTimeBy(6000)
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -195,6 +201,8 @@ class WaitingTests {
 
         plugin2.resume()
         advanceUntilIdle()
+        advanceTimeBy(6000)
+
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
         assertTrue(plugin2.tracked)
