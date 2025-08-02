@@ -11,6 +11,8 @@ import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.JsonAnySerializer
+import com.segment.analytics.kotlin.core.utilities.StorageImpl
+import com.segment.analytics.kotlin.core.utilities.FileEventStream
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
@@ -598,14 +600,38 @@ open class Analytics protected constructor(
      * Should only be called in containerized environments where you need to free resources like
      * CoroutineDispatchers and ExecutorService instances so they allow the container to shutdown
      * properly.
+     *
+     * @param waitForTasks if true, waits for all analyticsScope coroutines to complete before shutdown
      */
+    @JvmOverloads
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun shutdown() {
+    fun shutdown(waitForTasks: Boolean = false) {
+        timeline.applyClosure {
+            if (it is com.segment.analytics.kotlin.core.platform.EventPipeline) {
+                it.stop()
+            }
+        }
+
+        val job = analyticsScope.coroutineContext[Job]
+        job?.cancel()
+        if (waitForTasks) {
+            runBlocking {
+                job?.join()
+            }
+        }
+
         (analyticsDispatcher as CloseableCoroutineDispatcher).close()
         (networkIODispatcher as CloseableCoroutineDispatcher).close()
         (fileIODispatcher as CloseableCoroutineDispatcher).close()
 
-        store.shutdown();
+        store.shutdown()
+
+        if (storage is StorageImpl) {
+            val s = storage as StorageImpl
+            if (s.eventStream is FileEventStream) {
+                (s.eventStream as FileEventStream).close()
+            }
+        }
     }
 
     /**

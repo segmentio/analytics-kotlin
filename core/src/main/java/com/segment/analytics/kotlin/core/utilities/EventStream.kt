@@ -160,7 +160,6 @@ open class FileEventStream(
 
     init {
         createDirectory(directory)
-        registerShutdownHook()
     }
 
     protected open var fs: FileOutputStream? = null
@@ -238,14 +237,5 @@ open class FileEventStream(
     override fun readAsStream(source: String): InputStream? {
         val file = File(source)
         return if (file.exists()) FileInputStream(file) else null
-    }
-
-    private fun registerShutdownHook() {
-        // close the stream if the app shuts down
-        Runtime.getRuntime().addShutdownHook(object : Thread() {
-            override fun run() {
-                fs?.close()
-            }
-        })
     }
 }
