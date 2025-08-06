@@ -15,6 +15,7 @@ class DeepLinkUtils(val analytics: Analytics) {
             return
         }
 
+        analytics.updateReferrer(intent.data.toString())
         val properties = extractLinkProperties(referrer, intent.data)
         analytics.track("Deep Link Opened", properties)
     }

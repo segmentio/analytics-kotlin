@@ -8,7 +8,7 @@ import com.segment.analytics.kotlin.core.utilities.putAll
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.util.*
+import java.util.UUID
 
 /**
  * Analytics plugin used to populate events with basic context data.
@@ -27,6 +27,8 @@ class ContextPlugin : Plugin {
         const val LIBRARY_NAME_KEY = "name"
         const val LIBRARY_VERSION_KEY = "version"
         const val INSTANCE_ID_KEY = "instanceId"
+        const val REFERRER_KEY = "referrer"
+        const val URL_KEY = "url"
     }
 
     override fun setup(analytics: Analytics) {
@@ -45,6 +47,13 @@ class ContextPlugin : Plugin {
             // putLibrary
             put(LIBRARY_KEY, library)
             put(INSTANCE_ID_KEY, instanceId)
+
+            // add additional context data
+            analytics.userInfo.referrer?.let {  referrer ->
+                put(REFERRER_KEY, buildJsonObject {
+                    put(URL_KEY, referrer)
+                })
+            }
         }
         event.context = newContext
     }

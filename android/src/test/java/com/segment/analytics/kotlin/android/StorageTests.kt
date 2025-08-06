@@ -55,7 +55,8 @@ class StorageTests {
                 UserInfo(
                     anonymousId = "oldAnonId",
                     userId = "oldUserId",
-                    traits = buildJsonObject { put("behaviour", "bad") }
+                    traits = buildJsonObject { put("behaviour", "bad") },
+                    referrer = "oldReferrer",
                 ))
 
             store.provide(
@@ -85,7 +86,8 @@ class StorageTests {
                     return UserInfo(
                         anonymousId = "newAnonId",
                         userId = "newUserId",
-                        traits = emptyJsonObject
+                        traits = emptyJsonObject,
+                        referrer = "newReferrer"
                     )
                 }
             }
