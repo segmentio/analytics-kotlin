@@ -701,6 +701,69 @@ open class Analytics protected constructor(
     }
 
     /**
+     *  Subscribes to UserInfo state changes.
+     * 
+     *  The handler is called immediately with the current UserInfo, then again whenever
+     *  the user's identity, traits, or referrer changes. The subscription remains active
+     *  for the lifetime of the Analytics instance unless explicitly unsubscribed.
+     * 
+     *  - Parameter handler: A closure called on the main queue with updated UserInfo.
+     * 
+     *  - Returns: A subscription ID that can be passed to `unsubscribe(_:)` to stop
+     *    receiving updates. If you don't need to unsubscribe, you can ignore the return value.
+     * 
+     *  - Note: Multiple calls create multiple independent subscriptions.
+     * 
+     *  ## Example
+     *  ```kotlin
+     *  // Subscribe for the lifetime of Analytics
+     *  analytics.subscribeToUserInfo { userInfo ->
+     *      print("User: ${userInfo.userId ?: userInfo.anonymousId}")
+     *  }
+     * 
+     *  // Subscribe with manual cleanup
+     *  val subscriptionId = analytics.subscribeToUserInfo { userInfo ->
+     *      // ... handle update
+     *  }
+     *  // Later, when you're done...
+     *  analytics.unsubscribe(subscriptionId)
+     *  ```
+     *
+     */
+    suspend fun subscribeToUserInfo(handler: (UserInfo) -> Unit) =
+        store.subscribe(
+            this,
+            UserInfo::class,
+            initialState = true,
+            handler = handler,
+            queue = fileIODispatcher
+        )
+
+    /**
+     *  Unsubscribes from state updates.
+     * 
+     *  Stops receiving updates for the subscription associated with the given ID.
+     *  After calling this, the handler will no longer be invoked for state changes.
+     * 
+     *  - Parameter id: The subscription ID returned from a previous subscribe call.
+     * 
+     *  - Note: Unsubscribing an already-unsubscribed or invalid ID is a no-op.
+     * 
+     *  ## Example
+     *  ```kotlin
+     *  val id = analytics.subscribeToUserInfo { userInfo ->
+     *      print("User changed: ${userInfo.userId ?: "anonymous"}")
+     *  }
+     * 
+     *  // Later, stop listening
+     *  analytics.unsubscribe(id)
+     *  ```
+     */
+    suspend fun unsubscribe(id: Int) {
+        store.unsubscribe(id)
+    }
+
+    /**
      * Retrieve the version of this library in use.
      * - Returns: A string representing the version in "BREAKING.FEATURE.FIX" format.
      */
