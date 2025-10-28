@@ -279,45 +279,23 @@ open class RequestFactory {
         .build()
 
     open fun settings(cdnHost: String, writeKey: String): HttpURLConnection {
-        return try {
-            val connection = OkHttpURLConnection(URL("https://$cdnHost/projects/$writeKey/settings"), okHttpClient)
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            connection.setRequestProperty("User-Agent", "analytics-kotlin/$LIBRARY_VERSION")
-            val responseCode = connection.responseCode
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                connection.disconnect()
-                throw IOException("HTTP $responseCode: ${connection.responseMessage}")
-            }
-            connection
-        } catch (e: Exception) {
-            val connection: HttpURLConnection = openConnection("https://$cdnHost/projects/$writeKey/settings")
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            val responseCode = connection.responseCode
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                connection.disconnect()
-                throw IOException("HTTP " + responseCode + ": " + connection.responseMessage)
-            }
-            connection
+        val connection: HttpURLConnection = openConnection("https://$cdnHost/projects/$writeKey/settings")
+        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        val responseCode = connection.responseCode
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            connection.disconnect()
+            throw IOException("HTTP " + responseCode + ": " + connection.responseMessage)
         }
+        return connection
     }
 
     open fun upload(apiHost: String): HttpURLConnection {
-        return try {
-            val connection = OkHttpURLConnection(URL("https://$apiHost/b"), okHttpClient)
-            connection.setRequestProperty("Content-Type", "text/plain")
-            connection.setRequestProperty("Content-Encoding", "gzip")
-            connection.setRequestProperty("User-Agent", "analytics-kotlin/$LIBRARY_VERSION")
-            connection.doOutput = true
-            connection.setChunkedStreamingMode(0)
-            connection
-        } catch (e: Exception) {
-            val connection: HttpURLConnection = openConnection("https://$apiHost/b")
-            connection.setRequestProperty("Content-Type", "text/plain")
-            connection.setRequestProperty("Content-Encoding", "gzip")
-            connection.doOutput = true
-            connection.setChunkedStreamingMode(0)
-            connection
-        }
+        val connection: HttpURLConnection = openConnection("https://$apiHost/b")
+        connection.setRequestProperty("Content-Type", "text/plain")
+        connection.setRequestProperty("Content-Encoding", "gzip")
+        connection.doOutput = true
+        connection.setChunkedStreamingMode(0)
+        return connection
     }
 
     /**
@@ -331,7 +309,7 @@ open class RequestFactory {
             Analytics.reportInternalError(error)
             throw error
         }
-        val connection = requestedURL.openConnection() as HttpURLConnection
+        val connection = requestedURL.openOkHttpConnection() as HttpURLConnection
         connection.connectTimeout = 15_000 // 15s
         connection.readTimeout = 20_000 // 20s
 
@@ -341,5 +319,9 @@ open class RequestFactory {
         )
         connection.doInput = true
         return connection
+    }
+
+    private fun URL.openOkHttpConnection(): OkHttpURLConnection {
+        return OkHttpURLConnection(this, okHttpClient)
     }
 }
