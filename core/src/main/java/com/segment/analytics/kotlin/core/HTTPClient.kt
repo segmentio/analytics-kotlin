@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.Buffer
 import okio.GzipSink
@@ -518,8 +519,10 @@ internal class OkHttpURLConnection(
     }
 }
 
-open class RequestFactory {
-    private val okHttpClient = OkHttpClient.Builder()
+open class RequestFactory(
+    httpClient: OkHttpClient? = null
+) {
+    private val okHttpClient = httpClient ?: OkHttpClient.Builder()
         .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
