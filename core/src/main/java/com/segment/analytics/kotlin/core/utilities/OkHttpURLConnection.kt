@@ -62,7 +62,7 @@ internal class OkHttpURLConnection(
         }
     }
 
-    private fun buildRequest(): Request {
+    internal fun buildRequest(): Request {
         val builder = requestBuilder
 
         requestProperties.forEach { (key, values) ->
@@ -121,6 +121,11 @@ internal class OkHttpURLConnection(
 
     @Throws(IOException::class)
     override fun getOutputStream(): OutputStream {
+        // Automatically switch to POST if method is GET (mimics standard HttpURLConnection behavior)
+        if (_requestMethod == "GET") {
+            _requestMethod = "POST"
+        }
+        
         if (requestBodyBuffer == null) {
             requestBodyBuffer = Buffer()
         }
