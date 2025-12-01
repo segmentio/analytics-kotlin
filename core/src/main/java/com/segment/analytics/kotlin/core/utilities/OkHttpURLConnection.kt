@@ -75,19 +75,9 @@ internal class OkHttpURLConnection(
             "GET" -> builder.get()
             "POST" -> {
                 val body = requestBodyBuffer?.let { buffer ->
-                    val isGzipped = getRequestProperty("Content-Encoding")?.contains("gzip") == true
                     val mediaType = getRequestProperty("Content-Type")?.toMediaType()
                         ?: "text/plain".toMediaType()
-
-                    if (isGzipped) {
-                        val gzippedBuffer = Buffer()
-                        val gzipSink = GzipSink(gzippedBuffer).buffer()
-                        gzipSink.writeAll(buffer)
-                        gzipSink.close()
-                        gzippedBuffer.readByteArray().toRequestBody(mediaType)
-                    } else {
-                        buffer.readByteArray().toRequestBody(mediaType)
-                    }
+                    buffer.readByteArray().toRequestBody(mediaType)
                 } ?: "".toRequestBody("text/plain".toMediaType())
                 builder.post(body)
             }
