@@ -161,7 +161,7 @@ class WaitingTests {
     @Test
     fun `test timeout force resume on DestinationPlugin`() = testScope.runTest {
         assertTrue(analytics.running())
-        val waitingPlugin = ManualResumeWaitingPlugin()
+        val waitingPlugin = ExampleWaitingPlugin()
         val destinationPlugin = StubDestinationPlugin()
         analytics.add(destinationPlugin)
         destinationPlugin.add(waitingPlugin)
@@ -192,7 +192,6 @@ class WaitingTests {
         assertFalse(plugin1.tracked)
         assertFalse(plugin2.tracked)
 
-        plugin1.resume()
         advanceTimeBy(6000)
 
         assertFalse(analytics.running())
@@ -200,8 +199,6 @@ class WaitingTests {
         assertFalse(plugin2.tracked)
 
         plugin2.resume()
-        advanceUntilIdle()
-        advanceTimeBy(6000)
 
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
