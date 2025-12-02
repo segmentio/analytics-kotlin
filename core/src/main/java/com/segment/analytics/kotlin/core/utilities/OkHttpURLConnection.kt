@@ -236,30 +236,15 @@ internal class OkHttpURLConnection(
     }
 
     override fun getDate(): Long {
-        return getHeaderField("Date")?.let { dateStr ->
-            try {
-                java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US)
-                    .parse(dateStr)?.time ?: 0L
-            } catch (e: Exception) { 0L }
-        } ?: 0L
+        return getHeaderFieldDate("Date", 0L)
     }
 
     override fun getExpiration(): Long {
-        return getHeaderField("Expires")?.let { dateStr ->
-            try {
-                java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US)
-                    .parse(dateStr)?.time ?: 0L
-            } catch (e: Exception) { 0L }
-        } ?: 0L
+        return getHeaderFieldDate("Expires", 0L)
     }
 
     override fun getLastModified(): Long {
-        return getHeaderField("Last-Modified")?.let { dateStr ->
-            try {
-                java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US)
-                    .parse(dateStr)?.time ?: 0L
-            } catch (e: Exception) { 0L }
-        } ?: 0L
+        return getHeaderFieldDate("Last-Modified", 0L)
     }
 
     override fun getDoInput(): Boolean = _doInput
