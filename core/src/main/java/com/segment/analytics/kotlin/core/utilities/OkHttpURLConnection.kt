@@ -147,6 +147,14 @@ internal class OkHttpURLConnection(
         return responseMessage ?: ""
     }
 
+    /**
+     * Returns the protocol used for this connection (e.g., "h2" for HTTP/2, "http/1.1" for HTTP/1.1).
+     * Returns null if the connection hasn't been established yet.
+     */
+    fun getProtocol(): String? {
+        return response?.protocol?.toString()
+    }
+
     // Override ALL URLConnection methods to prevent bypassing OkHttp
     override fun getURL(): URL = url
 
