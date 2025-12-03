@@ -1,6 +1,9 @@
 package com.segment.analytics.kotlin.core
 
 import com.segment.analytics.kotlin.core.Constants.LIBRARY_VERSION
+import com.segment.analytics.kotlin.core.utilities.OkHttpURLConnection
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import java.io.BufferedReader
 import java.io.Closeable
 import java.io.IOException
@@ -9,7 +12,9 @@ import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
+import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
+
 class HTTPClient(
     private val writeKey: String,
     private val requestFactory: RequestFactory = RequestFactory()
@@ -138,7 +143,15 @@ internal class HTTPException(
     }
 }
 
-open class RequestFactory {
+open class RequestFactory(
+    httpClient: OkHttpClient? = null
+) {
+    private val okHttpClient = httpClient ?: OkHttpClient.Builder()
+        .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .build()
+
     open fun settings(cdnHost: String, writeKey: String): HttpURLConnection {
         val connection: HttpURLConnection = openConnection("https://$cdnHost/projects/$writeKey/settings")
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
@@ -170,9 +183,9 @@ open class RequestFactory {
             Analytics.reportInternalError(error)
             throw error
         }
-        val connection = requestedURL.openConnection() as HttpURLConnection
+        val connection = requestedURL.openOkHttpConnection() as HttpURLConnection
         connection.connectTimeout = 15_000 // 15s
-        connection.readTimeout = 20_1000 // 20s
+        connection.readTimeout = 20_000 // 20s
 
         connection.setRequestProperty(
             "User-Agent",
@@ -180,5 +193,9 @@ open class RequestFactory {
         )
         connection.doInput = true
         return connection
+    }
+
+    private fun URL.openOkHttpConnection(): OkHttpURLConnection {
+        return OkHttpURLConnection(this, okHttpClient)
     }
 }

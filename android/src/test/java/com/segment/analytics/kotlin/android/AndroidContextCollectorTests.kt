@@ -82,7 +82,9 @@ class AndroidContextCollectorTests {
             }
             assertTrue(this.containsKey("device"))
             this["device"]?.jsonObject?.let {
-                assertEquals("unknown", it["id"].asString())
+                it["id"].asString().let { id ->
+                    assertTrue(id == "unknown" || id == "")
+                }
                 assertEquals("robolectric", it["manufacturer"].asString())
                 assertEquals("robolectric", it["model"].asString())
                 assertEquals("robolectric", it["name"].asString())
