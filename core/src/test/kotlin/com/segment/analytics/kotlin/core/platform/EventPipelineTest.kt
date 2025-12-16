@@ -208,4 +208,30 @@ internal class EventPipelineTest {
             storage.read(Storage.Constants.Events)
         }
     }
+
+    @Test
+    fun `upload closes InputStream when exception occurs`() {
+        // Create a trackable InputStream wrapper
+        var isClosed = false
+        val trackableInputStream = object : java.io.InputStream() {
+            override fun read(): Int = -1
+            override fun close() {
+                isClosed = true
+                super.close()
+            }
+        }
+        every { storage.readAsStream(any()) } returns trackableInputStream
+
+        // Mock connection.upload to throw exception
+        every { anyConstructed<HTTPClient>().upload(any()) } throws RuntimeException("Network error")
+
+        pipeline.put(event1)
+        pipeline.put(event2)
+
+        // Give some time for async processing
+        Thread.sleep(500)
+
+        // Verify that close() was called on the InputStream even when exception occurred
+        assertTrue(isClosed, "InputStream should have been closed when exception occurs")
+    }
 }

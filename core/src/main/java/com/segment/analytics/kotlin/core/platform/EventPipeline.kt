@@ -132,14 +132,13 @@ open class EventPipeline(
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
                 // upload event file
-                storage.readAsStream(url)?.let { data ->
+                storage.readAsStream(url)?.use { data ->
                     var shouldCleanup = true
                     try {
                         val connection = httpClient.upload(apiHost)
                         connection.outputStream?.let {
                             // Write the payloads into the OutputStream
                             data.copyTo(connection.outputStream)
-                            data.close()
                             connection.outputStream.close()
 
                             // Upload the payloads.
