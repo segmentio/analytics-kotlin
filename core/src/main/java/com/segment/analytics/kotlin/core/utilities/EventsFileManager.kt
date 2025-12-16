@@ -41,7 +41,6 @@ class EventsFileManager(
 
     init {
         createDirectory(directory)
-        registerShutdownHook()
     }
 
     private val fileIndexKey = if(subject == null) "segment.events.file.index.$writeKey" else "segment.events.file.index.$writeKey.$subject"
@@ -168,15 +167,6 @@ class EventsFileManager(
     private fun reset() {
         os = null
         curFile = null
-    }
-
-    private fun registerShutdownHook() {
-        // close the stream if the app shuts down
-        Runtime.getRuntime().addShutdownHook(object : Thread() {
-            override fun run() {
-                os?.close()
-            }
-        })
     }
 
     private suspend fun withLock(block: () -> Unit) {

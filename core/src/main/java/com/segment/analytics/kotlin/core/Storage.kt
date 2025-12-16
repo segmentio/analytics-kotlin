@@ -99,6 +99,13 @@ interface Storage {
      * Close and finish the current stream and start a new one
      */
     suspend fun rollover()
+
+    /**
+     * Close and cleanup storage resources
+     */
+    fun close() {
+        // empty body default
+    }
 }
 
 fun parseFilePaths(filePathStr: String?): List<String> {

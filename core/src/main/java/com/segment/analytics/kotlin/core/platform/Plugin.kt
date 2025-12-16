@@ -43,6 +43,10 @@ interface Plugin {
     fun update(settings: Settings, type: UpdateType) {
         // empty body default
     }
+
+    fun shutdown() {
+        // empty body default
+    }
 }
 
 interface VersionedPlugin {

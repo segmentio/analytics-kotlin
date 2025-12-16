@@ -598,14 +598,31 @@ open class Analytics protected constructor(
      * Should only be called in containerized environments where you need to free resources like
      * CoroutineDispatchers and ExecutorService instances so they allow the container to shutdown
      * properly.
+     *
+     * @param waitForTasks if true, waits for all analyticsScope coroutines to complete before shutdown
      */
+    @JvmOverloads
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun shutdown() {
-        (analyticsDispatcher as CloseableCoroutineDispatcher).close()
-        (networkIODispatcher as CloseableCoroutineDispatcher).close()
-        (fileIODispatcher as CloseableCoroutineDispatcher).close()
+    fun shutdown(waitForTasks: Boolean = false) {
+        timeline.applyClosure {
+            it.shutdown()
+        }
 
-        store.shutdown();
+        val job = analyticsScope.coroutineContext[Job]
+        job?.cancel()
+        if (waitForTasks) {
+            runBlocking {
+                job?.join()
+            }
+        }
+
+        (analyticsDispatcher as? CloseableCoroutineDispatcher)?.close()
+        (networkIODispatcher as? CloseableCoroutineDispatcher)?.close()
+        (fileIODispatcher as? CloseableCoroutineDispatcher)?.close()
+
+        store.shutdown()
+
+        storage.close()
     }
 
     /**
