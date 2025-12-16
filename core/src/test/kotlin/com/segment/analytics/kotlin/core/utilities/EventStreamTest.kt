@@ -266,5 +266,43 @@ class EventStreamTest {
             assertEquals("test", files[0])
             assertFalse(eventStream.isOpened)
         }
+
+        @Test
+        fun readLimitsTo1000FilesTest() {
+            // Create 1250 files in the directory
+            for (i in 1..1250) {
+                File(dir, "test$i.tmp").createNewFile()
+            }
+
+            val files = eventStream.read()
+
+            // Verify that read() returns at most 1000 files
+            assertTrue(files.size <= 1000, "Expected at most 1000 files, but got ${files.size}")
+
+            // Verify all returned paths are valid files
+            files.forEach { path ->
+                assertTrue(File(path).exists(), "File $path should exist")
+                assertTrue(File(path).isFile, "Path $path should be a file")
+            }
+        }
+
+        @Test
+        fun readReturnsAllFilesWhenUnder1000Test() {
+            // Create 50 files in the directory
+            for (i in 1..50) {
+                File(dir, "test$i.tmp").createNewFile()
+            }
+
+            val files = eventStream.read()
+
+            // Verify that all 50 files are returned when count is under 1000
+            assertEquals(50, files.size, "Expected 50 files, but got ${files.size}")
+
+            // Verify all returned paths are valid files
+            files.forEach { path ->
+                assertTrue(File(path).exists(), "File $path should exist")
+                assertTrue(File(path).isFile, "Path $path should be a file")
+            }
+        }
     }
 }
