@@ -203,7 +203,12 @@ open class FileEventStream(
         }
     }
 
-    override fun read(): List<String> = (directory.listFiles() ?: emptyArray()).map { it.absolutePath }
+    override fun read(): List<String> = directory.walk()
+        .maxDepth(1)
+        .filter { it.isFile }
+        .take(1000)
+        .map { it.absolutePath }
+        .toList()
 
     /**
      * Remove the given file from disk
