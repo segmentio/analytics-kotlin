@@ -11,8 +11,6 @@ import com.segment.analytics.kotlin.core.platform.plugins.StartupQueue
 import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.JsonAnySerializer
-import com.segment.analytics.kotlin.core.utilities.StorageImpl
-import com.segment.analytics.kotlin.core.utilities.FileEventStream
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
@@ -607,9 +605,7 @@ open class Analytics protected constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun shutdown(waitForTasks: Boolean = false) {
         timeline.applyClosure {
-            if (it is com.segment.analytics.kotlin.core.platform.EventPipeline) {
-                it.stop()
-            }
+            it.shutdown()
         }
 
         val job = analyticsScope.coroutineContext[Job]
@@ -620,18 +616,13 @@ open class Analytics protected constructor(
             }
         }
 
-        (analyticsDispatcher as CloseableCoroutineDispatcher).close()
-        (networkIODispatcher as CloseableCoroutineDispatcher).close()
-        (fileIODispatcher as CloseableCoroutineDispatcher).close()
+        (analyticsDispatcher as? CloseableCoroutineDispatcher)?.close()
+        (networkIODispatcher as? CloseableCoroutineDispatcher)?.close()
+        (fileIODispatcher as? CloseableCoroutineDispatcher)?.close()
 
         store.shutdown()
 
-        if (storage is StorageImpl) {
-            val s = storage as StorageImpl
-            if (s.eventStream is FileEventStream) {
-                (s.eventStream as FileEventStream).close()
-            }
-        }
+        storage.close()
     }
 
     /**

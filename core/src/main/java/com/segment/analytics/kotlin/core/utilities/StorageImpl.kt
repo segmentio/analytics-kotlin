@@ -195,6 +195,12 @@ open class StorageImpl(
         block()
         semaphore.release()
     }
+
+    override fun close() {
+        if (eventStream is FileEventStream) {
+            (eventStream as FileEventStream).close()
+        }
+    }
 }
 
 object ConcreteStorageProvider : StorageProvider {

@@ -111,6 +111,10 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin, Subscriber {
         pipeline?.flush()
     }
 
+    override fun shutdown() {
+        pipeline?.stop()
+    }
+
     override fun version(): String {
         return Constants.LIBRARY_VERSION
     }

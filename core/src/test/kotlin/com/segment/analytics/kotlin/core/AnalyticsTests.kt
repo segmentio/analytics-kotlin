@@ -948,6 +948,22 @@ class AnalyticsTests {
     }
 
     @Test
+    fun `shutdown calls shutdown on all plugins`() {
+        val config = Configuration(
+            writeKey = "test-shutdown",
+            application = "TestApp"
+        )
+        val testScope = TestScope(testDispatcher)
+        val testAnalytics = testAnalytics(config, testScope, testDispatcher)
+        val mockPlugin = spyk<StubPlugin>()
+        testAnalytics.add(mockPlugin)
+
+        testAnalytics.shutdown()
+
+        verify { mockPlugin.shutdown() }
+    }
+
+    @Test
     fun `purgeStorage clears storage`() = runTest {
         analytics.track("test")
         analytics.storage.rollover()
