@@ -209,6 +209,34 @@ open class Analytics protected constructor(
      * info.
      *
      * @param userId Unique identifier which you recognize a user by in your own database
+     * @param anonymousId Anonymous id to associate with the user
+     * @param traits [Traits] about the user.
+     * @param enrichment a closure that enables enrichment on the generated event
+     * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
+     */
+    @JvmOverloads
+    fun identify(userId: String, anonymousId: String, traits: JsonObject = emptyJsonObject, enrichment: EnrichmentClosure? = null) {
+        analyticsScope.launch(analyticsDispatcher) {
+            store.dispatch(UserInfo.SetUserIdAndTraitsAction(userId, traits), UserInfo::class)
+            store.dispatch(UserInfo.SetAnonymousIdAction(anonymousId), UserInfo::class)
+        }
+        val event = IdentifyEvent(userId = userId, traits = traits)
+        process(event, enrichment)
+    }
+
+    /**
+     * Identify lets you tie one of your users and their actions to a recognizable {@code userId}.
+     * It also lets you record {@code traits} about the user, like their email, name, account type,
+     * etc.
+     *
+     * <p>Traits and userId will be automatically cached and available on future sessions for the
+     * same user. To update a trait on the server, call identify with the same user id.
+     * You can also use {@link #identify(Traits)} for this purpose.
+     *
+     * In the case when user logs out, make sure to call {@link #reset()} to clear user's identity
+     * info.
+     *
+     * @param userId Unique identifier which you recognize a user by in your own database
      * @param traits [Traits] about the user.
      * @param enrichment a closure that enables enrichment on the generated event
      * @see <a href="https://segment.com/docs/spec/identify/">Identify Documentation</a>
