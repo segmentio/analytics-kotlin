@@ -132,8 +132,8 @@ open class EventPipeline(
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
                 // upload event file
+                var shouldCleanup = true
                 storage.readAsStream(url)?.use { data ->
-                    var shouldCleanup = true
                     try {
                         val connection = httpClient.upload(apiHost)
                         connection.outputStream?.let {
@@ -150,10 +150,10 @@ open class EventPipeline(
                         analytics.reportInternalError(e)
                         shouldCleanup = handleUploadException(e, url)
                     }
+                }
 
-                    if (shouldCleanup) {
-                        storage.removeFile(url)
-                    }
+                if (shouldCleanup) {
+                    storage.removeFile(url)
                 }
             }
         }
