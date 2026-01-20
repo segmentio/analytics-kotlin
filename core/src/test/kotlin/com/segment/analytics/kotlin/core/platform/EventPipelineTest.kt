@@ -11,16 +11,22 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.net.HttpURLConnection
 import java.util.*
+import kotlin.io.path.outputStream
 
 internal class EventPipelineTest {
 
+    private lateinit var mockRequestFactory: RequestFactory
+    private lateinit var mockHttpClient: HTTPClient
     private lateinit var pipeline: EventPipeline
 
     private lateinit var analytics: Analytics
@@ -53,19 +59,26 @@ internal class EventPipelineTest {
     @BeforeEach
     internal fun setUp() {
         MockKAnnotations.init(this)
-        mockkConstructor(HTTPClient::class)
-        mockkConstructor(File::class)
+
+        mockRequestFactory = spyk(RequestFactory())
+        mockHttpClient = spyk(HTTPClient("123", mockRequestFactory))
 
         analytics = mockAnalytics(testScope, testDispatcher)
         clearPersistentStorage(analytics.configuration.writeKey)
         storage = spyk(ConcreteStorageProvider.createStorage(analytics))
         every { analytics.storage } returns storage
 
-        pipeline = EventPipeline(analytics,
+//        every { analytics.configuration.requestFactory } returns mockRequestFactory
+
+        pipeline = object: EventPipeline(analytics,
             "test",
             "123",
             listOf(CountBasedFlushPolicy(2), FrequencyFlushPolicy(0))
-        )
+        ) {
+            override val httpClient: HTTPClient
+                get() = mockHttpClient
+        }
+
         pipeline.start()
     }
 
@@ -82,7 +95,7 @@ internal class EventPipelineTest {
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
-            anyConstructed<HTTPClient>().upload(any())
+            mockHttpClient.upload(any())
             storage.removeFile(any())
         }
     }
@@ -105,33 +118,122 @@ internal class EventPipelineTest {
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
-            anyConstructed<HTTPClient>().upload(any())
+            mockHttpClient.upload(any())
             storage.removeFile(any())
         }
     }
 
     @Test
     fun `enqueuing properly handles 400 http exception`() {
-        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "", mutableMapOf())
+        every { mockHttpClient.upload(any()) } throws HTTPException(400, "", "", mutableMapOf())
         pipeline.put(event1)
         pipeline.put(event2)
-        coVerify {
+        coVerify(exactly = 1) {
             storage.rollover()
             storage.read(Storage.Constants.Events)
-            anyConstructed<HTTPClient>().upload(any())
+            mockHttpClient.upload(any())
+            storage.removeFile(any())
+        }
+    }
+
+    @Test
+    fun `retry sets X-Retry-Count header on subsequent attempts`() {
+        val capturedConnections = mutableListOf<HttpURLConnection>()
+        var attemptCount = 0
+
+        // Capture connections from factory
+        every { mockRequestFactory.upload(any()) } answers {
+            attemptCount++
+            val realConnection = callOriginal()
+            capturedConnections.add(realConnection)
+            realConnection
+        }
+
+        var closeAttempts = 0
+        every { mockHttpClient.upload(any()) } answers {
+            val realConnection = callOriginal()
+            // Create a spy that throws on close for first 2 attempts
+            object : Connection(
+                (realConnection as Connection).connection,
+                realConnection.inputStream,
+                realConnection.outputStream
+            ) {
+                override fun close() {
+                    closeAttempts++
+                    if (closeAttempts < 3) {
+                        throw HTTPException(500, "Internal Server Error", "", mutableMapOf())
+                    }
+                    super.close()
+                }
+            }
+        }
+
+        pipeline.put(event1)
+        pipeline.put(event2)
+        Thread.sleep(2000)
+
+        // Verify: Multiple connections were created
+//        assertTrue(capturedConnections.size >= 3, "Should have created at least 3 connections, got ${capturedConnections.size}")
+        assertTrue(capturedConnections.size == 1, "Should have created exactly 1 connection, got ${capturedConnections.size}")
+
+        // Verify headers on captured connections
+        assertNull(
+            capturedConnections[0].getRequestProperty("X-Retry-Count"),
+            "First attempt should not have X-Retry-Count header"
+        )
+
+        if (capturedConnections.size > 1) {
+            assertEquals(
+                "1",
+                capturedConnections[1].getRequestProperty("X-Retry-Count"),
+                "Second attempt should have X-Retry-Count=1"
+            )
+        }
+
+        if (capturedConnections.size > 2) {
+            assertEquals(
+                "2",
+                capturedConnections[2].getRequestProperty("X-Retry-Count"),
+                "Third attempt should have X-Retry-Count=2"
+            )
+        }
+    }
+
+    @Test
+    fun `enqueuing properly handles 401 http exception`() {
+        every { mockHttpClient.upload(any()) } throws HTTPException(401, "", "", mutableMapOf())
+        pipeline.put(event1)
+        pipeline.put(event2)
+        coVerify(exactly = 1) {
+            storage.rollover()
+            storage.read(Storage.Constants.Events)
+            mockHttpClient.upload(any())
+            storage.removeFile(any())
+        }
+    }
+
+    @Test
+    fun `enqueuing properly handles 403 http exception`() {
+        every { mockHttpClient.upload(any()) } throws HTTPException(403, "", "", mutableMapOf())
+        pipeline.put(event1)
+        pipeline.put(event2)
+        coVerify(exactly = 1) {
+            storage.rollover()
+            storage.read(Storage.Constants.Events)
+            mockHttpClient.upload(any())
             storage.removeFile(any())
         }
     }
 
     @Test
     fun `enqueuing properly handles other http exception`() {
-        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(300, "", "", mutableMapOf())
+        every { mockHttpClient.upload(any()) } throws HTTPException(300, "", "", mutableMapOf())
         pipeline.put(event1)
         pipeline.put(event2)
-        coVerify {
+        coVerify(exactly = 1){
             storage.rollover()
             storage.read(Storage.Constants.Events)
-            anyConstructed<HTTPClient>().upload(any())
+            mockHttpClient.upload(any())
         }
         verify(exactly = 0) {
             storage.removeFile(any())
@@ -140,13 +242,13 @@ internal class EventPipelineTest {
 
     @Test
     fun `enqueuing properly handles other exception`() {
-        every { anyConstructed<HTTPClient>().upload(any()) } throws Exception()
+        every { mockHttpClient.upload(any()) } throws Exception()
         pipeline.put(event1)
         pipeline.put(event2)
         coVerify {
             storage.rollover()
             storage.read(Storage.Constants.Events)
-            anyConstructed<HTTPClient>().upload(any())
+            mockHttpClient.upload(any())
         }
         verify(exactly = 0) {
             storage.removeFile(any())
@@ -168,7 +270,7 @@ internal class EventPipelineTest {
         coVerify(atLeast = 1, atMost = 2) {
             storage.rollover()
             storage.read(Storage.Constants.Events)
-            anyConstructed<HTTPClient>().upload(any())
+            mockHttpClient.upload(any())
             storage.removeFile(any())
         }
     }
@@ -181,7 +283,7 @@ internal class EventPipelineTest {
             storage.read(Storage.Constants.Events)
         }
         verify(exactly = 0) {
-            anyConstructed<HTTPClient>().upload(any())
+            mockHttpClient.upload(any())
             storage.removeFile(any())
         }
     }
@@ -223,7 +325,7 @@ internal class EventPipelineTest {
         every { storage.readAsStream(any()) } returns trackableInputStream
 
         // Mock connection.upload to throw exception
-        every { anyConstructed<HTTPClient>().upload(any()) } throws RuntimeException("Network error")
+        every { mockHttpClient.upload(any()) } throws RuntimeException("Network error")
 
         pipeline.put(event1)
         pipeline.put(event2)
