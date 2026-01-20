@@ -234,4 +234,93 @@ internal class EventPipelineTest {
         // Verify that close() was called on the InputStream even when exception occurred
         assertTrue(isClosed, "InputStream should have been closed when exception occurs")
     }
+
+    @Test
+    fun `removeFile is called after InputStream is closed`() {
+        // Track order of operations to ensure stream is closed before file deletion
+        val operationOrder = mutableListOf<String>()
+        var streamClosed = false
+
+        val trackableInputStream = object : java.io.InputStream() {
+            override fun read(): Int = -1
+            override fun close() {
+                streamClosed = true
+                operationOrder.add("stream_closed")
+                super.close()
+            }
+        }
+
+        every { storage.readAsStream(any()) } returns trackableInputStream
+        every { storage.removeFile(any()) } answers {
+            operationOrder.add("file_removed")
+            // Verify stream was closed before removeFile is called (Windows file locking requirement)
+            assertTrue(streamClosed, "InputStream must be closed before removeFile is called")
+            true
+        }
+
+        pipeline.put(event1)
+        pipeline.put(event2)
+
+        // Give some time for async processing
+        Thread.sleep(500)
+
+        // Verify correct operation order
+        coVerify {
+            storage.removeFile(any())
+        }
+        assertTrue(operationOrder == listOf("stream_closed", "file_removed"),
+            "Expected order: [stream_closed, file_removed], but got: $operationOrder")
+    }
+
+    @Test
+    fun `removeFile is called when readAsStream returns null`() {
+        every { storage.readAsStream(any()) } returns null
+
+        pipeline.put(event1)
+        pipeline.put(event2)
+
+        // Give some time for async processing
+        Thread.sleep(500)
+
+        // Verify file is still deleted even when stream is null
+        coVerify {
+            storage.removeFile(any())
+        }
+    }
+
+    @Test
+    fun `InputStream is closed before removeFile even when upload throws exception`() {
+        val operationOrder = mutableListOf<String>()
+        var streamClosed = false
+
+        val trackableInputStream = object : java.io.InputStream() {
+            override fun read(): Int = -1
+            override fun close() {
+                streamClosed = true
+                operationOrder.add("stream_closed")
+                super.close()
+            }
+        }
+
+        every { storage.readAsStream(any()) } returns trackableInputStream
+        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "", mutableMapOf())
+        every { storage.removeFile(any()) } answers {
+            operationOrder.add("file_removed")
+            assertTrue(streamClosed, "InputStream must be closed before removeFile even when upload fails")
+            true
+        }
+
+        pipeline.put(event1)
+        pipeline.put(event2)
+
+        // Give some time for async processing
+        Thread.sleep(500)
+
+        // Verify correct operation order even with exception
+        coVerify {
+            storage.removeFile(any())
+        }
+        assertTrue(operationOrder == listOf("stream_closed", "file_removed"),
+            "Expected order: [stream_closed, file_removed], but got: $operationOrder")
+    }
 }
