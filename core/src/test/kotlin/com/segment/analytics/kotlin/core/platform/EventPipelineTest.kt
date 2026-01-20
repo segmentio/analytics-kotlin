@@ -405,7 +405,7 @@ internal class EventPipelineTest {
         }
 
         every { storage.readAsStream(any()) } returns trackableInputStream
-        every { anyConstructed<HTTPClient>().upload(any()) } throws HTTPException(400, "", "", mutableMapOf())
+        every { mockHttpClient.upload(any()) } throws HTTPException(400, "", "", mutableMapOf())
         every { storage.removeFile(any()) } answers {
             operationOrder.add("file_removed")
             assertTrue(streamClosed, "InputStream must be closed before removeFile even when upload fails")
