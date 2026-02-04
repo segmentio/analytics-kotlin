@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import kotlin.system.exitProcess
 
 @Serializable
 data class CLIOutput(
@@ -60,14 +61,11 @@ fun main(args: Array<String>) {
                 }
             )
 
-            // Extract host from apiHost URL for cdnHost
-            val apiHostUrl = java.net.URL(input.apiHost.replace("http://", "https://"))
-            val cdnHostValue = "${apiHostUrl.host}:${apiHostUrl.port}"
-
+            // Use apiHost for both API and CDN (mock server handles all)
             val analytics = Analytics(input.writeKey) {
                 application = "e2e-cli"
                 apiHost = input.apiHost
-                cdnHost = cdnHostValue
+                cdnHost = input.apiHost
                 flushAt = input.config?.flushAt ?: 20
                 flushInterval = input.config?.flushInterval ?: 30
                 autoAddSegmentDestination = true
@@ -85,10 +83,9 @@ fun main(args: Array<String>) {
                 }
             }
 
-            // Flush and wait
+            // Flush and wait for async operations to complete
             analytics.flush()
-            // Give time for async flush to complete
-            delay(5000)
+            delay(2000)
         }
 
         output = CLIOutput(success = true, sentBatches = 1)
@@ -97,6 +94,9 @@ fun main(args: Array<String>) {
     }
 
     println(Json.encodeToString(CLIOutput.serializer(), output))
+
+    // Force exit since Analytics has background threads
+    exitProcess(if (output.success) 0 else 1)
 }
 
 fun sendEvent(analytics: Analytics, event: JsonObject) {
