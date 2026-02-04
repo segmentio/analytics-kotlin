@@ -4,4 +4,5 @@ include ':samples:kotlin-android-app'
 include ':samples:kotlin-android-app-destinations'
 include ':samples:java-android-app'
 include ':samples:kotlin-jvm-app'
+include ':e2e-cli'
 rootProject.name = "Analytics-Android-Next"
