@@ -24,6 +24,7 @@ application {
 }
 
 tasks.named('jar') {
+    dependsOn(':core:jar')
     manifest {
         attributes['Main-Class'] = 'cli.MainKt'
     }

@@ -1,7 +1,10 @@
 package cli
 
 import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.emptyJsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -50,12 +53,25 @@ fun main(args: Array<String>) {
         val input = Json.decodeFromString<CLIInput>(inputJson)
 
         runBlocking {
+            // Create default settings to avoid CDN fetch
+            val defaultSettings = Settings(
+                integrations = buildJsonObject {
+                    put("Segment.io", true)
+                }
+            )
+
+            // Extract host from apiHost URL for cdnHost
+            val apiHostUrl = java.net.URL(input.apiHost.replace("http://", "https://"))
+            val cdnHostValue = "${apiHostUrl.host}:${apiHostUrl.port}"
+
             val analytics = Analytics(input.writeKey) {
                 application = "e2e-cli"
                 apiHost = input.apiHost
+                cdnHost = cdnHostValue
                 flushAt = input.config?.flushAt ?: 20
                 flushInterval = input.config?.flushInterval ?: 30
                 autoAddSegmentDestination = true
+                this.defaultSettings = defaultSettings
             }
 
             // Process event sequences
@@ -98,9 +114,9 @@ fun sendEvent(analytics: Analytics, event: JsonObject) {
     when (type) {
         "identify" -> analytics.identify(userId, traits)
         "track" -> analytics.track(eventName ?: "Unknown Event", properties)
-        "page" -> analytics.page(name ?: "Unknown Page", properties = properties)
+        "page" -> analytics.screen(name ?: "Unknown Page", properties = properties) // Kotlin SDK uses screen for both
         "screen" -> analytics.screen(name ?: "Unknown Screen", properties = properties)
-        "alias" -> analytics.alias(userId, previousId)
+        "alias" -> analytics.alias(userId)
         "group" -> analytics.group(groupId ?: "", traits)
         else -> throw IllegalArgumentException("Unknown event type: $type")
     }
