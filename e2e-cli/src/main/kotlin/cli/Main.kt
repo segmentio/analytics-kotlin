@@ -35,7 +35,8 @@ data class EventSequence(
 @Serializable
 data class CLIInput(
     val writeKey: String,
-    val apiHost: String,
+    val apiHost: String? = null,
+    val cdnHost: String? = null,
     val sequences: List<EventSequence>,
     val config: CLIConfig? = null
 )
@@ -61,11 +62,10 @@ fun main(args: Array<String>) {
                 }
             )
 
-            // Use apiHost for both API and CDN (mock server handles all)
             val analytics = Analytics(input.writeKey) {
                 application = "e2e-cli"
-                apiHost = input.apiHost
-                cdnHost = input.apiHost
+                input.apiHost?.let { apiHost = it }
+                input.cdnHost?.let { cdnHost = it }
                 flushAt = input.config?.flushAt ?: 20
                 flushInterval = input.config?.flushInterval ?: 30
                 autoAddSegmentDestination = true
