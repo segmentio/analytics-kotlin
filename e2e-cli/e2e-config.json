@@ -1,0 +1,7 @@
+{
+  "sdk": "kotlin",
+  "test_suites": "basic",
+  "auto_settings": true,
+  "patch": "analytics-kotlin-http.patch",
+  "env": {}
+}
