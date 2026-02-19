@@ -127,6 +127,11 @@ class RetryStateMachine(
         return UploadDecision.Proceed to state
     }
 
+    fun getRetryCount(state: RetryState, batchFile: String): Int {
+        val batchRetryCount = state.batchMetadata[batchFile]?.failureCount ?: 0
+        return maxOf(batchRetryCount, state.globalRetryCount)
+    }
+
     private fun resolveStatusCodeBehavior(code: Int): RetryBehavior {
         config.backoffConfig.statusCodeOverrides[code]?.let { return it }
 

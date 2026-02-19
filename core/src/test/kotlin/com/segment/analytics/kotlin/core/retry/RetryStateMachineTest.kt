@@ -238,4 +238,45 @@ class RetryStateMachineTest {
         assertEquals(DropReason.MAX_DURATION_EXCEEDED, (decision as UploadDecision.DropBatch).reason)
         assertFalse(newState.batchMetadata.containsKey("batch-1"))
     }
+
+    @Test
+    fun `getRetryCount returns 0 for new batch`() {
+        val state = RetryState()
+
+        val retryCount = stateMachine.getRetryCount(state, "batch-1")
+
+        assertEquals(0, retryCount)
+    }
+
+    @Test
+    fun `getRetryCount returns per-batch failureCount`() {
+        val state = RetryState(
+            batchMetadata = mapOf("batch-1" to BatchMetadata(failureCount = 3))
+        )
+
+        val retryCount = stateMachine.getRetryCount(state, "batch-1")
+
+        assertEquals(3, retryCount)
+    }
+
+    @Test
+    fun `getRetryCount returns max of per-batch and global count`() {
+        val state = RetryState(
+            globalRetryCount = 10,
+            batchMetadata = mapOf("batch-1" to BatchMetadata(failureCount = 3))
+        )
+
+        val retryCount = stateMachine.getRetryCount(state, "batch-1")
+
+        assertEquals(10, retryCount)  // max(3, 10)
+    }
+
+    @Test
+    fun `getRetryCount returns global count when no batch metadata`() {
+        val state = RetryState(globalRetryCount = 5)
+
+        val retryCount = stateMachine.getRetryCount(state, "batch-1")
+
+        assertEquals(5, retryCount)
+    }
 }
