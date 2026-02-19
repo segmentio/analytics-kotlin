@@ -279,4 +279,64 @@ class RetryStateMachineTest {
 
         assertEquals(5, retryCount)
     }
+
+    @Test
+    fun `legacy mode - 429 does not trigger rate limiting`() {
+        val disabledConfig = RetryConfig(
+            rateLimitConfig = RateLimitConfig(enabled = false),
+            backoffConfig = BackoffConfig(enabled = false)
+        )
+        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val state = RetryState()
+
+        val response = ResponseInfo(429, retryAfterSeconds = 60, "batch-1", 1000L)
+        val newState = machine.handleResponse(state, response)
+
+        assertEquals(PipelineState.READY, newState.pipelineState)
+        assertFalse(newState.batchMetadata.containsKey("batch-1"))
+    }
+
+    @Test
+    fun `legacy mode - 5xx does not create metadata`() {
+        val disabledConfig = RetryConfig(
+            rateLimitConfig = RateLimitConfig(enabled = false),
+            backoffConfig = BackoffConfig(enabled = false)
+        )
+        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val state = RetryState()
+
+        val response = ResponseInfo(503, null, "batch-1", 1000L)
+        val newState = machine.handleResponse(state, response)
+
+        assertFalse(newState.batchMetadata.containsKey("batch-1"))
+    }
+
+    @Test
+    fun `legacy mode - 4xx drops batch`() {
+        val disabledConfig = RetryConfig(
+            rateLimitConfig = RateLimitConfig(enabled = false),
+            backoffConfig = BackoffConfig(enabled = false)
+        )
+        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val state = RetryState()
+
+        val response = ResponseInfo(400, null, "batch-1", 1000L)
+        val newState = machine.handleResponse(state, response)
+
+        assertFalse(newState.batchMetadata.containsKey("batch-1"))
+    }
+
+    @Test
+    fun `legacy mode - shouldUploadBatch always proceeds`() {
+        val disabledConfig = RetryConfig(
+            rateLimitConfig = RateLimitConfig(enabled = false),
+            backoffConfig = BackoffConfig(enabled = false)
+        )
+        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val state = RetryState()
+
+        val (decision, _) = machine.shouldUploadBatch(state, "any-batch")
+
+        assertEquals(UploadDecision.Proceed, decision)
+    }
 }

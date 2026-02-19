@@ -4,11 +4,22 @@ class RetryStateMachine(
     private val config: RetryConfig,
     private val timeProvider: TimeProvider = SystemTimeProvider()
 ) {
+    private val isLegacyMode: Boolean
+        get() = !config.rateLimitConfig.enabled && !config.backoffConfig.enabled
 
     fun handleResponse(
         state: RetryState,
         response: ResponseInfo
     ): RetryState {
+        // Legacy mode: both configs disabled
+        if (isLegacyMode) {
+            return when {
+                response.statusCode in 200..299 -> state.removeBatch(response.batchFile)
+                response.statusCode == 429 || response.statusCode in 500..599 -> state  // Keep
+                else -> state.removeBatch(response.batchFile)  // Drop on 4xx
+            }
+        }
+
         val currentTime = response.currentTime
         val behavior = resolveStatusCodeBehavior(response.statusCode)
 
@@ -94,6 +105,11 @@ class RetryStateMachine(
         state: RetryState,
         batchFile: String
     ): Pair<UploadDecision, RetryState> {
+        // Legacy mode: skip all smart retry logic
+        if (isLegacyMode) {
+            return UploadDecision.Proceed to state
+        }
+
         val currentTime = timeProvider.currentTimeMillis()
 
         // Check 1: Global rate limiting
