@@ -100,4 +100,52 @@ class RetryStateMachineTest {
         assertFalse(newState.batchMetadata.containsKey("batch-1"))
         assertEquals(PipelineState.READY, newState.pipelineState)
     }
+
+    @Test
+    fun `429 transitions to RATE_LIMITED state`() {
+        val state = RetryState()
+        val response = ResponseInfo(429, retryAfterSeconds = 60, "batch-1", 1000L)
+
+        val newState = stateMachine.handleResponse(state, response)
+
+        assertEquals(PipelineState.RATE_LIMITED, newState.pipelineState)
+        assertEquals(61000L, newState.waitUntilTime)  // 1000 + 60*1000
+        assertEquals(1, newState.globalRetryCount)
+    }
+
+    @Test
+    fun `429 clamps excessive Retry-After to maxRetryInterval`() {
+        val state = RetryState()
+        // Retry-After=500 seconds, but maxRetryInterval=300
+        val response = ResponseInfo(429, retryAfterSeconds = 500, "batch-1", 1000L)
+
+        val newState = stateMachine.handleResponse(state, response)
+
+        assertEquals(PipelineState.RATE_LIMITED, newState.pipelineState)
+        assertEquals(301000L, newState.waitUntilTime)  // 1000 + 300*1000 (clamped)
+    }
+
+    @Test
+    fun `429 uses maxRetryInterval when Retry-After is missing`() {
+        val state = RetryState()
+        val response = ResponseInfo(429, retryAfterSeconds = null, "batch-1", 1000L)
+
+        val newState = stateMachine.handleResponse(state, response)
+
+        assertEquals(301000L, newState.waitUntilTime)  // defaults to 300s
+    }
+
+    @Test
+    fun `globalRetryCount resets on successful upload`() {
+        val state = RetryState(
+            globalRetryCount = 5,
+            batchMetadata = mapOf("batch-1" to BatchMetadata(failureCount = 3))
+        )
+
+        val response = ResponseInfo(200, null, "batch-1", 1000L)
+        val newState = stateMachine.handleResponse(state, response)
+
+        assertEquals(0, newState.globalRetryCount)
+        assertFalse(newState.batchMetadata.containsKey("batch-1"))
+    }
 }

@@ -9,6 +9,7 @@ class RetryStateMachine(
         state: RetryState,
         response: ResponseInfo
     ): RetryState {
+        val currentTime = response.currentTime
         val behavior = resolveStatusCodeBehavior(response.statusCode)
 
         return when {
@@ -21,14 +22,38 @@ class RetryStateMachine(
                 )
             }
 
+            response.statusCode == 429 && config.rateLimitConfig.enabled -> {
+                handleRateLimitResponse(state, response, currentTime)
+            }
+
             behavior == RetryBehavior.RETRY && config.backoffConfig.enabled -> {
-                handleRetryableError(state, response, response.currentTime)
+                handleRetryableError(state, response, currentTime)
             }
 
             else -> {
                 state.removeBatch(response.batchFile)
             }
         }
+    }
+
+    private fun handleRateLimitResponse(
+        state: RetryState,
+        response: ResponseInfo,
+        currentTime: Long
+    ): RetryState {
+        val retryAfterMs = calculateRetryAfterMs(response.retryAfterSeconds, currentTime)
+
+        return state.copy(
+            pipelineState = PipelineState.RATE_LIMITED,
+            waitUntilTime = retryAfterMs,
+            globalRetryCount = state.globalRetryCount + 1
+        )
+    }
+
+    private fun calculateRetryAfterMs(retryAfterSeconds: Int?, currentTime: Long): Long {
+        val seconds = retryAfterSeconds?.coerceAtLeast(0) ?: config.rateLimitConfig.maxRetryInterval
+        val clampedSeconds = minOf(seconds, config.rateLimitConfig.maxRetryInterval)
+        return currentTime + (clampedSeconds * 1000L)
     }
 
     private fun handleRetryableError(
