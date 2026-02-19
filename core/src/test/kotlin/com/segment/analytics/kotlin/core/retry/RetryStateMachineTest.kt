@@ -148,4 +148,94 @@ class RetryStateMachineTest {
         assertEquals(0, newState.globalRetryCount)
         assertFalse(newState.batchMetadata.containsKey("batch-1"))
     }
+
+    @Test
+    fun `shouldUploadBatch skips all batches when rate limited`() {
+        val rateLimitedState = RetryState(
+            pipelineState = PipelineState.RATE_LIMITED,
+            waitUntilTime = 61000L
+        )
+
+        timeProvider.setTime(30000L)  // Before waitUntilTime
+
+        val (decision, _) = stateMachine.shouldUploadBatch(rateLimitedState, "batch-1")
+
+        assertEquals(UploadDecision.SkipAllBatches, decision)
+    }
+
+    @Test
+    fun `shouldUploadBatch proceeds when rate limit time passes`() {
+        val rateLimitedState = RetryState(
+            pipelineState = PipelineState.RATE_LIMITED,
+            waitUntilTime = 61000L
+        )
+
+        timeProvider.setTime(61001L)  // After waitUntilTime
+
+        val (decision, _) = stateMachine.shouldUploadBatch(rateLimitedState, "batch-1")
+
+        assertEquals(UploadDecision.Proceed, decision)
+    }
+
+    @Test
+    fun `shouldUploadBatch skips batch waiting for backoff`() {
+        val state = RetryState(
+            batchMetadata = mapOf(
+                "batch-1" to BatchMetadata(
+                    failureCount = 2,
+                    nextRetryTime = 10000L,
+                    firstFailureTime = 1000L
+                )
+            )
+        )
+
+        timeProvider.setTime(5000L)  // Before nextRetryTime
+
+        val (decision, _) = stateMachine.shouldUploadBatch(state, "batch-1")
+
+        assertEquals(UploadDecision.SkipThisBatch, decision)
+    }
+
+    @Test
+    fun `shouldUploadBatch drops batch after max retries`() {
+        val state = RetryState(
+            batchMetadata = mapOf(
+                "batch-1" to BatchMetadata(
+                    failureCount = 100,  // At max
+                    nextRetryTime = 1000L,
+                    firstFailureTime = 1000L
+                )
+            )
+        )
+
+        timeProvider.setTime(2000L)
+
+        val (decision, newState) = stateMachine.shouldUploadBatch(state, "batch-1")
+
+        assertTrue(decision is UploadDecision.DropBatch)
+        assertEquals(DropReason.MAX_RETRIES_EXCEEDED, (decision as UploadDecision.DropBatch).reason)
+        assertFalse(newState.batchMetadata.containsKey("batch-1"))
+    }
+
+    @Test
+    fun `shouldUploadBatch drops batch after max duration`() {
+        val state = RetryState(
+            batchMetadata = mapOf(
+                "batch-1" to BatchMetadata(
+                    failureCount = 5,
+                    nextRetryTime = 1000L,
+                    firstFailureTime = 1000L
+                )
+            )
+        )
+
+        // Advance past max duration (12 hours = 43200 seconds)
+        timeProvider.setTime(1000L + (43200 * 1000L) + 1)
+
+        val (decision, newState) = stateMachine.shouldUploadBatch(state, "batch-1")
+
+        assertTrue(decision is UploadDecision.DropBatch)
+        assertEquals(DropReason.MAX_DURATION_EXCEEDED, (decision as UploadDecision.DropBatch).reason)
+        assertFalse(newState.batchMetadata.containsKey("batch-1"))
+    }
 }

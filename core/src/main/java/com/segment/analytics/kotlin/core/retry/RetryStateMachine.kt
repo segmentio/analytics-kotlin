@@ -90,6 +90,43 @@ class RetryStateMachine(
         return (cappedBackoff + jitter).toLong()
     }
 
+    fun shouldUploadBatch(
+        state: RetryState,
+        batchFile: String
+    ): Pair<UploadDecision, RetryState> {
+        val currentTime = timeProvider.currentTimeMillis()
+
+        // Check 1: Global rate limiting
+        if (state.isRateLimited(currentTime)) {
+            return UploadDecision.SkipAllBatches to state
+        }
+
+        // Check 2: Per-batch metadata
+        val metadata = state.batchMetadata[batchFile]
+        if (metadata != null) {
+            // Check retry count limit (must be checked before duration per spec)
+            if (config.backoffConfig.enabled &&
+                metadata.failureCount >= config.backoffConfig.maxRetryCount) {
+                return UploadDecision.DropBatch(DropReason.MAX_RETRIES_EXCEEDED) to
+                       state.removeBatch(batchFile)
+            }
+
+            // Check duration limit
+            if (config.backoffConfig.enabled &&
+                metadata.exceedsMaxDuration(currentTime, config.backoffConfig.maxTotalBackoffDuration * 1000)) {
+                return UploadDecision.DropBatch(DropReason.MAX_DURATION_EXCEEDED) to
+                       state.removeBatch(batchFile)
+            }
+
+            // Check if backoff time has passed
+            if (config.backoffConfig.enabled && !metadata.shouldRetry(currentTime)) {
+                return UploadDecision.SkipThisBatch to state
+            }
+        }
+
+        return UploadDecision.Proceed to state
+    }
+
     private fun resolveStatusCodeBehavior(code: Int): RetryBehavior {
         config.backoffConfig.statusCodeOverrides[code]?.let { return it }
 
