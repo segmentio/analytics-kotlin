@@ -10,12 +10,14 @@ import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import sovran.kotlin.Subscriber
 
 @Serializable
 data class SegmentSettings(
     var apiKey: String,
-    var apiHost: String? = null
+    var apiHost: String? = null,
+    var httpConfig: JsonObject? = null
 )
 
 /**
