@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core.retry
 
+import kotlin.random.Random
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -9,12 +10,13 @@ class RetryStateMachineTest {
     private lateinit var config: RetryConfig
     private lateinit var stateMachine: RetryStateMachine
     private lateinit var timeProvider: FakeTimeProvider
+    private val random = Random(42)  // Seeded for deterministic tests
 
     @BeforeEach
     fun setup() {
         timeProvider = FakeTimeProvider(1000L)
         config = RetryConfig()
-        stateMachine = RetryStateMachine(config, timeProvider)
+        stateMachine = RetryStateMachine(config, timeProvider, random)
     }
 
     @Test
@@ -76,7 +78,7 @@ class RetryStateMachineTest {
         state = stateMachine.handleResponse(state, ResponseInfo(503, null, "batch-1", 1000L))
         var metadata = state.batchMetadata["batch-1"]!!
         assertEquals(1, metadata.failureCount)
-        assertTrue(metadata.nextRetryTime!! in 1450L..1550L)  // 500ms ±10% jitter
+        assertTrue(metadata.nextRetryTime!! in 1450L..1550L)  // 500ms with up to +10% jitter
         assertEquals(1000L, metadata.firstFailureTime)
 
         // Second failure: should be ~1000ms (0.5 * 2^1)
@@ -286,7 +288,7 @@ class RetryStateMachineTest {
             rateLimitConfig = RateLimitConfig(enabled = false),
             backoffConfig = BackoffConfig(enabled = false)
         )
-        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val machine = RetryStateMachine(disabledConfig, timeProvider, random)
         val state = RetryState()
 
         val response = ResponseInfo(429, retryAfterSeconds = 60, "batch-1", 1000L)
@@ -302,7 +304,7 @@ class RetryStateMachineTest {
             rateLimitConfig = RateLimitConfig(enabled = false),
             backoffConfig = BackoffConfig(enabled = false)
         )
-        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val machine = RetryStateMachine(disabledConfig, timeProvider, random)
         val state = RetryState()
 
         val response = ResponseInfo(503, null, "batch-1", 1000L)
@@ -317,7 +319,7 @@ class RetryStateMachineTest {
             rateLimitConfig = RateLimitConfig(enabled = false),
             backoffConfig = BackoffConfig(enabled = false)
         )
-        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val machine = RetryStateMachine(disabledConfig, timeProvider, random)
         val state = RetryState()
 
         val response = ResponseInfo(400, null, "batch-1", 1000L)
@@ -332,7 +334,7 @@ class RetryStateMachineTest {
             rateLimitConfig = RateLimitConfig(enabled = false),
             backoffConfig = BackoffConfig(enabled = false)
         )
-        val machine = RetryStateMachine(disabledConfig, timeProvider)
+        val machine = RetryStateMachine(disabledConfig, timeProvider, random)
         val state = RetryState()
 
         val (decision, _) = machine.shouldUploadBatch(state, "any-batch")

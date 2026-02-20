@@ -1,8 +1,11 @@
 package com.segment.analytics.kotlin.core.retry
 
+import kotlin.random.Random
+
 class RetryStateMachine(
     private val config: RetryConfig,
-    private val timeProvider: TimeProvider = SystemTimeProvider()
+    private val timeProvider: TimeProvider = SystemTimeProvider(),
+    private val random: Random = Random.Default
 ) {
     private val isLegacyMode: Boolean
         get() = !config.rateLimitConfig.enabled && !config.backoffConfig.enabled
@@ -52,16 +55,16 @@ class RetryStateMachine(
         response: ResponseInfo,
         currentTime: Long
     ): RetryState {
-        val retryAfterMs = calculateRetryAfterMs(response.retryAfterSeconds, currentTime)
+        val waitUntilTimeMs = calculateWaitUntilTimeMs(response.retryAfterSeconds, currentTime)
 
         return state.copy(
             pipelineState = PipelineState.RATE_LIMITED,
-            waitUntilTime = retryAfterMs,
+            waitUntilTime = waitUntilTimeMs,
             globalRetryCount = state.globalRetryCount + 1
         )
     }
 
-    private fun calculateRetryAfterMs(retryAfterSeconds: Int?, currentTime: Long): Long {
+    private fun calculateWaitUntilTimeMs(retryAfterSeconds: Int?, currentTime: Long): Long {
         val seconds = retryAfterSeconds?.coerceAtLeast(0) ?: config.rateLimitConfig.maxRetryInterval
         val clampedSeconds = minOf(seconds, config.rateLimitConfig.maxRetryInterval)
         return currentTime + (clampedSeconds * 1000L)
@@ -96,9 +99,9 @@ class RetryStateMachine(
         val cappedBackoff = minOf(exponentialBackoff, max.toDouble())
 
         val jitterAmount = cappedBackoff * (config.backoffConfig.jitterPercent / 100.0)
-        val jitter = (Math.random() * jitterAmount).toLong()
+        val jitter = (random.nextDouble() * jitterAmount).toLong()
 
-        return (cappedBackoff + jitter).toLong()
+        return minOf(cappedBackoff + jitter, max.toDouble()).toLong()
     }
 
     fun shouldUploadBatch(
@@ -117,30 +120,42 @@ class RetryStateMachine(
             return UploadDecision.SkipAllBatches to state
         }
 
+        // Clear stale rate limit state if it has expired
+        val clearedState = if (state.pipelineState == PipelineState.RATE_LIMITED &&
+                               state.waitUntilTime != null &&
+                               currentTime >= state.waitUntilTime) {
+            state.copy(
+                pipelineState = PipelineState.READY,
+                waitUntilTime = null
+            )
+        } else {
+            state
+        }
+
         // Check 2: Per-batch metadata
-        val metadata = state.batchMetadata[batchFile]
+        val metadata = clearedState.batchMetadata[batchFile]
         if (metadata != null) {
             // Check retry count limit (must be checked before duration per spec)
             if (config.backoffConfig.enabled &&
                 metadata.failureCount >= config.backoffConfig.maxRetryCount) {
                 return UploadDecision.DropBatch(DropReason.MAX_RETRIES_EXCEEDED) to
-                       state.removeBatch(batchFile)
+                       clearedState.removeBatch(batchFile)
             }
 
             // Check duration limit
             if (config.backoffConfig.enabled &&
                 metadata.exceedsMaxDuration(currentTime, config.backoffConfig.maxTotalBackoffDuration * 1000)) {
                 return UploadDecision.DropBatch(DropReason.MAX_DURATION_EXCEEDED) to
-                       state.removeBatch(batchFile)
+                       clearedState.removeBatch(batchFile)
             }
 
             // Check if backoff time has passed
             if (config.backoffConfig.enabled && !metadata.shouldRetry(currentTime)) {
-                return UploadDecision.SkipThisBatch to state
+                return UploadDecision.SkipThisBatch to clearedState
             }
         }
 
-        return UploadDecision.Proceed to state
+        return UploadDecision.Proceed to clearedState
     }
 
     fun getRetryCount(state: RetryState, batchFile: String): Int {
