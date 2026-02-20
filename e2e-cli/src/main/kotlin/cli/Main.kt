@@ -104,12 +104,17 @@ fun sendEvent(analytics: Analytics, event: JsonObject) {
         ?: throw IllegalArgumentException("Event missing 'type' field")
     val userId = event["userId"]?.jsonPrimitive?.content ?: ""
     val anonymousId = event["anonymousId"]?.jsonPrimitive?.content ?: ""
+    val messageId = event["messageId"]?.jsonPrimitive?.content
+    val timestamp = event["timestamp"]?.jsonPrimitive?.content
     val traits = event["traits"]?.jsonObject ?: emptyJsonObject
     val properties = event["properties"]?.jsonObject ?: emptyJsonObject
     val eventName = event["event"]?.jsonPrimitive?.content
     val name = event["name"]?.jsonPrimitive?.content
+    val category = event["category"]?.jsonPrimitive?.content
     val groupId = event["groupId"]?.jsonPrimitive?.content
     val previousId = event["previousId"]?.jsonPrimitive?.content
+    val context = event["context"]?.jsonObject
+    val integrations = event["integrations"]?.jsonObject
 
     when (type) {
         "identify" -> analytics.identify(userId, traits)
