@@ -109,6 +109,13 @@ object RetryConfigParser {
         }
     }
 
+    /**
+     * Parse status code overrides.
+     *
+     * Note: An empty JSON object {} intentionally returns an empty map, allowing the CDN
+     * to clear all default overrides. This differs from other fields where missing values
+     * fall back to defaults, but enables explicit override removal when needed.
+     */
     private fun parseStatusCodeOverrides(json: JsonObject?): Map<Int, RetryBehavior> {
         if (json == null) return BackoffConfig().statusCodeOverrides
 
