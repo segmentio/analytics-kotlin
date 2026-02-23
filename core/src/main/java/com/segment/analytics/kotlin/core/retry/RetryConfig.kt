@@ -13,7 +13,7 @@ data class RateLimitConfig(
     val enabled: Boolean = true,
     val maxRetryCount: Int = 100,
     val maxRetryInterval: Int = 300,
-    val maxTotalBackoffDuration: Long = 43200
+    val maxRateLimitDuration: Long = 43200
 )
 
 @Serializable

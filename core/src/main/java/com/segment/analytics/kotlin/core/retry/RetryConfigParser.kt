@@ -46,7 +46,7 @@ object RetryConfigParser {
                     ?.intOrNull
                     ?.coerceIn(1, 3600) // 1 second to 1 hour
                     ?: 300,
-                maxTotalBackoffDuration = json.jsonPrimitive("maxTotalBackoffDuration")
+                maxRateLimitDuration = json.jsonPrimitive("maxRateLimitDuration")
                     ?.longOrNull
                     ?.coerceIn(0, 604800)
                     ?: 43200
