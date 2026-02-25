@@ -8,6 +8,7 @@ import com.segment.analytics.kotlin.core.platform.VersionedPlugin
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
 import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
+import com.segment.analytics.kotlin.core.retry.HttpConfig
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import sovran.kotlin.Subscriber
@@ -15,7 +16,8 @@ import sovran.kotlin.Subscriber
 @Serializable
 data class SegmentSettings(
     var apiKey: String,
-    var apiHost: String? = null
+    var apiHost: String? = null,
+    var httpConfig: HttpConfig? = null
 )
 
 /**
