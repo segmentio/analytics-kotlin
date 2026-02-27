@@ -6,6 +6,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.utilities.LenientJson
 import com.segment.analytics.kotlin.core.utilities.safeJsonObject
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
@@ -89,7 +90,7 @@ suspend fun Analytics.checkSettings() {
 
     val settingsObj = withContext(networkIODispatcher) {
         log("Fetching settings on ${Thread.currentThread().name}")
-        return@withContext fetchSettings(writeKey, cdnHost)
+        return@withContext runInterruptible { fetchSettings(writeKey, cdnHost) }
     }
 
     settingsObj?.let {

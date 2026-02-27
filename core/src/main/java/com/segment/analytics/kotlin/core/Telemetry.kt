@@ -263,15 +263,19 @@ object Telemetry: Subscriber {
             //  We're using this to leave off the 'log' parameter if unset.
             val payload = Json.encodeToString(mapOf("series" to sendQueue))
 
-            val connection = httpClient.upload(host)
-            connection.outputStream?.use { outputStream ->
-                // Write the JSON string to the outputStream.
-                outputStream.write(payload.toByteArray(Charsets.UTF_8))
-                outputStream.flush() // Ensure all data is written
+            runBlocking {
+                runInterruptible {
+                    val connection = httpClient.upload(host)
+                    connection.outputStream?.use { outputStream ->
+                        // Write the JSON string to the outputStream.
+                        outputStream.write(payload.toByteArray(Charsets.UTF_8))
+                        outputStream.flush() // Ensure all data is written
+                    }
+                    connection.inputStream?.close()
+                    connection.outputStream?.close()
+                    connection.close()
+                }
             }
-            connection.inputStream?.close()
-            connection.outputStream?.close()
-            connection.close()
         } catch (e: HTTPException) {
             errorHandler?.invoke(e)
             if (e.responseCode == 429) {
