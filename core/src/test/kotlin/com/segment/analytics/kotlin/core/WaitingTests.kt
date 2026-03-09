@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class WaitingTests {
 
     private lateinit var analytics: Analytics
@@ -124,12 +125,14 @@ class WaitingTests {
         assertFalse(plugin2.tracked)
 
         advanceTimeBy(6000)
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(plugin1.tracked)
         assertFalse(plugin2.tracked)
 
         plugin2.resume()
+        testScheduler.runCurrent()
 
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
@@ -190,12 +193,14 @@ class WaitingTests {
         assertFalse(plugin2.tracked)
 
         advanceTimeBy(6000)
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(plugin1.tracked)
         assertFalse(plugin2.tracked)
 
         plugin2.resume()
+        testScheduler.runCurrent()
 
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
