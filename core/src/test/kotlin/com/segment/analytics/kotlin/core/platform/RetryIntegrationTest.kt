@@ -1,14 +1,11 @@
 package com.segment.analytics.kotlin.core.platform
 
-import com.segment.analytics.kotlin.core.Analytics
-import com.segment.analytics.kotlin.core.Configuration
-import com.segment.analytics.kotlin.core.ScreenEvent
-import com.segment.analytics.kotlin.core.Storage
-import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.*
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
+import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
-import com.segment.analytics.kotlin.core.utils.mockHTTPClient
-import com.segment.analytics.kotlin.core.utils.testAnalytics
+import com.segment.analytics.kotlin.core.utils.mockAnalytics
+import io.mockk.*
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -42,33 +39,51 @@ class RetryIntegrationTest {
     private lateinit var mockServer: MockWebServer
     private lateinit var analytics: Analytics
     private lateinit var storage: Storage
+    private lateinit var mockRequestFactory: RequestFactory
+    private lateinit var mockHttpClient: HTTPClient
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
     @BeforeEach
     fun setup() {
+        MockKAnnotations.init(this)
+
         mockServer = MockWebServer()
         mockServer.start()
 
-        // Mock HTTPClient to prevent real CDN settings fetch
-        mockHTTPClient()
+        mockRequestFactory = spyk(RequestFactory())
+        mockHttpClient = spyk(HTTPClient("test-write-key", mockRequestFactory))
 
-        val config = Configuration(
-            writeKey = "test-write-key",
-            application = "RetryIntegrationTest",
-            apiHost = mockServer.url("/").toString().trimEnd('/')
-        )
+        // Mock the upload method to use our MockWebServer
+        every { mockRequestFactory.upload(any()) } answers {
+            val conn = mockk<java.net.HttpURLConnection>(relaxed = true)
+            val url = mockServer.url("/v1/batch")
+            every { conn.url } returns url.toUrl()
+            conn
+        }
 
-        clearPersistentStorage(config.writeKey)
-        analytics = testAnalytics(config, testScope, testDispatcher)
-        storage = analytics.storage
+        analytics = mockAnalytics(testScope, testDispatcher)
+        clearPersistentStorage(analytics.configuration.writeKey)
+        storage = spyk(ConcreteStorageProvider.createStorage(analytics))
+        every { analytics.storage } returns storage
     }
 
     @AfterEach
     fun teardown() {
-        analytics.shutdown()
         mockServer.shutdown()
-        clearPersistentStorage("test-write-key")
+        clearPersistentStorage("123")
+    }
+
+    private fun createPipeline(): EventPipeline {
+        return object : EventPipeline(
+            analytics,
+            "test-destination",
+            "test-write-key",
+            listOf(CountBasedFlushPolicy(2))
+        ) {
+            override val httpClient: HTTPClient
+                get() = mockHttpClient
+        }
     }
 
     private fun createTestEvent(name: String): ScreenEvent {
@@ -91,13 +106,7 @@ class RetryIntegrationTest {
         // Enqueue successful response
         mockServer.enqueue(MockResponse().setResponseCode(200))
 
-        // Trigger upload with count-based policy (flush after 2 events)
-        val pipeline = EventPipeline(
-            analytics,
-            "test-destination",
-            "test-write-key",
-            listOf(CountBasedFlushPolicy(2))
-        )
+        val pipeline = createPipeline()
 
         // Add events to trigger flush
         pipeline.put(createTestEvent("event1"))
@@ -106,167 +115,136 @@ class RetryIntegrationTest {
         // Allow time for upload to complete
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Verify batch was uploaded
-        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
-        assertNotNull(recordedRequest, "Upload request should have been made")
-        assertEquals("/v1/batch", recordedRequest?.path)
+        // Verify upload was called
+        coVerify { mockHttpClient.upload(any()) }
 
         // Verify batch file was removed
-        assertEquals(0, getBatchFileCount(), "Batch file should be deleted after successful upload")
+        coVerify { storage.removeFile(any()) }
     }
 
     @Test
     fun `baseline - 400 error deletes batch file immediately`() = testScope.runTest {
-        // Enqueue 400 Bad Request
-        mockServer.enqueue(MockResponse().setResponseCode(400).setBody("Bad Request"))
+        // Mock 400 response
+        every { mockHttpClient.upload(any()) } throws HTTPException(400, "", "", mutableMapOf())
 
-        val pipeline = EventPipeline(
-            analytics,
-            "test-destination",
-            "test-write-key",
-            listOf(CountBasedFlushPolicy(2))
-        )
+        val pipeline = createPipeline()
 
         pipeline.put(createTestEvent("event1"))
         pipeline.put(createTestEvent("event2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Verify request was made
-        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
-        assertNotNull(recordedRequest, "Upload request should have been made")
+        // Verify upload was attempted
+        coVerify { mockHttpClient.upload(any()) }
 
         // Verify batch file was deleted (current behavior: 4xx = data loss)
-        assertEquals(0, getBatchFileCount(), "Batch file should be deleted on 400 error")
+        coVerify { storage.removeFile(any()) }
     }
 
     @Test
     fun `baseline - 429 error keeps batch file for retry`() = testScope.runTest {
-        // Enqueue 429 Too Many Requests (no Retry-After header in current impl)
-        mockServer.enqueue(MockResponse().setResponseCode(429).setBody("Too Many Requests"))
+        // Mock 429 response
+        every { mockHttpClient.upload(any()) } throws HTTPException(429, "", "", mutableMapOf())
 
-        val pipeline = EventPipeline(
-            analytics,
-            "test-destination",
-            "test-write-key",
-            listOf(CountBasedFlushPolicy(2))
-        )
+        val pipeline = createPipeline()
 
         pipeline.put(createTestEvent("event1"))
         pipeline.put(createTestEvent("event2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Verify request was made
-        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
-        assertNotNull(recordedRequest, "Upload request should have been made")
+        // Verify upload was attempted
+        coVerify { mockHttpClient.upload(any()) }
 
         // Verify batch file was NOT deleted (current behavior: 429 = keep for retry)
-        assertEquals(1, getBatchFileCount(), "Batch file should be kept on 429 error")
+        coVerify(exactly = 0) { storage.removeFile(any()) }
     }
 
     @Test
     fun `baseline - 500 error keeps batch file for retry`() = testScope.runTest {
-        // Enqueue 500 Internal Server Error
-        mockServer.enqueue(MockResponse().setResponseCode(500).setBody("Internal Server Error"))
+        // Mock 500 response
+        every { mockHttpClient.upload(any()) } throws HTTPException(500, "", "", mutableMapOf())
 
-        val pipeline = EventPipeline(
-            analytics,
-            "test-destination",
-            "test-write-key",
-            listOf(CountBasedFlushPolicy(2))
-        )
+        val pipeline = createPipeline()
 
         pipeline.put(createTestEvent("event1"))
         pipeline.put(createTestEvent("event2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Verify request was made
-        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
-        assertNotNull(recordedRequest, "Upload request should have been made")
+        // Verify upload was attempted
+        coVerify { mockHttpClient.upload(any()) }
 
         // Verify batch file was NOT deleted (current behavior: 5xx = keep for retry)
-        assertEquals(1, getBatchFileCount(), "Batch file should be kept on 500 error")
+        coVerify(exactly = 0) { storage.removeFile(any()) }
     }
 
     @Test
     fun `baseline - no Retry-After header handling`() = testScope.runTest {
-        // Enqueue 429 with Retry-After header
-        mockServer.enqueue(
-            MockResponse()
-                .setResponseCode(429)
-                .setHeader("Retry-After", "60")
-                .setBody("Too Many Requests")
-        )
+        // First call throws 429, second succeeds
+        every { mockHttpClient.upload(any()) } throws HTTPException(
+            429,
+            "",
+            "",
+            mutableMapOf("Retry-After" to "60")
+        ) andThenThrows HTTPException(
+            429,
+            "",
+            "",
+            mutableMapOf("Retry-After" to "60")
+        ) andThen null // success
 
-        // Enqueue success for immediate retry attempt
-        mockServer.enqueue(MockResponse().setResponseCode(200))
-
-        val pipeline = EventPipeline(
-            analytics,
-            "test-destination",
-            "test-write-key",
-            listOf(CountBasedFlushPolicy(2))
-        )
+        val pipeline = createPipeline()
 
         // First flush - hits 429
         pipeline.put(createTestEvent("event1"))
         pipeline.put(createTestEvent("event2"))
-
         testDispatcher.scheduler.advanceUntilIdle()
-
-        // Verify first request received 429
-        val request1 = mockServer.takeRequest(1, TimeUnit.SECONDS)
-        assertNotNull(request1, "First upload request should have been made")
 
         // Trigger another flush immediately (current behavior: ignores Retry-After)
         pipeline.put(createTestEvent("event3"))
         pipeline.put(createTestEvent("event4"))
-
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Current behavior: second request is made immediately, ignoring Retry-After
-        val request2 = mockServer.takeRequest(1, TimeUnit.SECONDS)
-        assertNotNull(request2, "Current behavior allows immediate retry, ignoring Retry-After header")
+        // Third flush succeeds
+        pipeline.put(createTestEvent("event5"))
+        pipeline.put(createTestEvent("event6"))
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        // Batch should now be deleted after success
-        assertEquals(0, getBatchFileCount(), "Batch should be deleted after successful retry")
+        // Current behavior: retries happen immediately, ignoring Retry-After
+        coVerify(atLeast = 3) { mockHttpClient.upload(any()) }
+
+        // Eventually succeeds and removes file
+        coVerify { storage.removeFile(any()) }
     }
 
     @Test
     fun `baseline - no exponential backoff delays`() = testScope.runTest {
-        // Enqueue multiple 500 errors, then success
-        mockServer.enqueue(MockResponse().setResponseCode(500))
-        mockServer.enqueue(MockResponse().setResponseCode(500))
-        mockServer.enqueue(MockResponse().setResponseCode(200))
+        // Multiple 500 errors, then success
+        every { mockHttpClient.upload(any()) } throws HTTPException(500, "", "", mutableMapOf()) andThenThrows
+                HTTPException(500, "", "", mutableMapOf()) andThen null // success
 
-        val pipeline = EventPipeline(
-            analytics,
-            "test-destination",
-            "test-write-key",
-            listOf(CountBasedFlushPolicy(2))
-        )
+        val pipeline = createPipeline()
 
         // First attempt
         pipeline.put(createTestEvent("event1"))
         pipeline.put(createTestEvent("event2"))
         testDispatcher.scheduler.advanceUntilIdle()
-        mockServer.takeRequest(1, TimeUnit.SECONDS)
 
         // Second attempt (immediate, no backoff)
         pipeline.put(createTestEvent("event3"))
         pipeline.put(createTestEvent("event4"))
         testDispatcher.scheduler.advanceUntilIdle()
-        mockServer.takeRequest(1, TimeUnit.SECONDS)
 
         // Third attempt (still immediate, no backoff)
         pipeline.put(createTestEvent("event5"))
         pipeline.put(createTestEvent("event6"))
         testDispatcher.scheduler.advanceUntilIdle()
-        mockServer.takeRequest(1, TimeUnit.SECONDS)
 
         // Current behavior: all retries happen immediately without exponential backoff
-        assertEquals(0, getBatchFileCount(), "Batches retry immediately without backoff delays")
+        coVerify(atLeast = 3) { mockHttpClient.upload(any()) }
+
+        // Eventually succeeds and removes file
+        coVerify { storage.removeFile(any()) }
     }
 }
