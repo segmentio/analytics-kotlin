@@ -7,8 +7,8 @@ import com.segment.analytics.kotlin.core.Storage
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.platform.policies.CountBasedFlushPolicy
 import com.segment.analytics.kotlin.core.utils.clearPersistentStorage
+import com.segment.analytics.kotlin.core.utils.mockHTTPClient
 import com.segment.analytics.kotlin.core.utils.testAnalytics
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  * Baseline Integration Tests (Phase 3.5)
@@ -48,6 +49,9 @@ class RetryIntegrationTest {
     fun setup() {
         mockServer = MockWebServer()
         mockServer.start()
+
+        // Mock HTTPClient to prevent real CDN settings fetch
+        mockHTTPClient()
 
         val config = Configuration(
             writeKey = "test-write-key",
@@ -101,12 +105,11 @@ class RetryIntegrationTest {
 
         // Allow time for upload to complete
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
 
-        // Verify batch was uploaded and deleted
-        val recordedRequest = mockServer.takeRequest()
-        assertNotNull(recordedRequest)
-        assertEquals("/v1/batch", recordedRequest.path)
+        // Verify batch was uploaded
+        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
+        assertNotNull(recordedRequest, "Upload request should have been made")
+        assertEquals("/v1/batch", recordedRequest?.path)
 
         // Verify batch file was removed
         assertEquals(0, getBatchFileCount(), "Batch file should be deleted after successful upload")
@@ -128,11 +131,10 @@ class RetryIntegrationTest {
         pipeline.put(createTestEvent("event2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
 
         // Verify request was made
-        val recordedRequest = mockServer.takeRequest()
-        assertNotNull(recordedRequest)
+        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
+        assertNotNull(recordedRequest, "Upload request should have been made")
 
         // Verify batch file was deleted (current behavior: 4xx = data loss)
         assertEquals(0, getBatchFileCount(), "Batch file should be deleted on 400 error")
@@ -154,11 +156,10 @@ class RetryIntegrationTest {
         pipeline.put(createTestEvent("event2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
 
         // Verify request was made
-        val recordedRequest = mockServer.takeRequest()
-        assertNotNull(recordedRequest)
+        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
+        assertNotNull(recordedRequest, "Upload request should have been made")
 
         // Verify batch file was NOT deleted (current behavior: 429 = keep for retry)
         assertEquals(1, getBatchFileCount(), "Batch file should be kept on 429 error")
@@ -180,11 +181,10 @@ class RetryIntegrationTest {
         pipeline.put(createTestEvent("event2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
 
         // Verify request was made
-        val recordedRequest = mockServer.takeRequest()
-        assertNotNull(recordedRequest)
+        val recordedRequest = mockServer.takeRequest(1, TimeUnit.SECONDS)
+        assertNotNull(recordedRequest, "Upload request should have been made")
 
         // Verify batch file was NOT deleted (current behavior: 5xx = keep for retry)
         assertEquals(1, getBatchFileCount(), "Batch file should be kept on 500 error")
@@ -215,21 +215,19 @@ class RetryIntegrationTest {
         pipeline.put(createTestEvent("event2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
 
         // Verify first request received 429
-        val request1 = mockServer.takeRequest()
-        assertNotNull(request1)
+        val request1 = mockServer.takeRequest(1, TimeUnit.SECONDS)
+        assertNotNull(request1, "First upload request should have been made")
 
         // Trigger another flush immediately (current behavior: ignores Retry-After)
         pipeline.put(createTestEvent("event3"))
         pipeline.put(createTestEvent("event4"))
 
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
 
         // Current behavior: second request is made immediately, ignoring Retry-After
-        val request2 = mockServer.takeRequest()
+        val request2 = mockServer.takeRequest(1, TimeUnit.SECONDS)
         assertNotNull(request2, "Current behavior allows immediate retry, ignoring Retry-After header")
 
         // Batch should now be deleted after success
@@ -254,22 +252,19 @@ class RetryIntegrationTest {
         pipeline.put(createTestEvent("event1"))
         pipeline.put(createTestEvent("event2"))
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
-        mockServer.takeRequest()
+        mockServer.takeRequest(1, TimeUnit.SECONDS)
 
         // Second attempt (immediate, no backoff)
         pipeline.put(createTestEvent("event3"))
         pipeline.put(createTestEvent("event4"))
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
-        mockServer.takeRequest()
+        mockServer.takeRequest(1, TimeUnit.SECONDS)
 
         // Third attempt (still immediate, no backoff)
         pipeline.put(createTestEvent("event5"))
         pipeline.put(createTestEvent("event6"))
         testDispatcher.scheduler.advanceUntilIdle()
-        delay(100)
-        mockServer.takeRequest()
+        mockServer.takeRequest(1, TimeUnit.SECONDS)
 
         // Current behavior: all retries happen immediately without exponential backoff
         assertEquals(0, getBatchFileCount(), "Batches retry immediately without backoff delays")
