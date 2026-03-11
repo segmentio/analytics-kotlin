@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.retry.*
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -22,7 +23,8 @@ open class EventPipeline(
     private val logTag: String,
     apiKey: String,
     private val flushPolicies: List<FlushPolicy>,
-    var apiHost: String = Constants.DEFAULT_API_HOST
+    var apiHost: String = Constants.DEFAULT_API_HOST,
+    private val httpConfig: HttpConfig? = null
 ) {
 
     private var writeChannel: Channel<BaseEvent>
@@ -39,6 +41,11 @@ open class EventPipeline(
 
     protected open val networkIODispatcher get() = analytics.networkIODispatcher
 
+    // Retry state machine for smart retry logic (Phase 4)
+    private val retryStateMachine: RetryStateMachine
+    private var retryState: RetryState
+
+
     var running: Boolean
         private set
 
@@ -53,6 +60,23 @@ open class EventPipeline(
 
         writeChannel = Channel(UNLIMITED)
         uploadChannel = Channel(UNLIMITED)
+
+        // Initialize retry state machine with config (or defaults if null)
+        // Convert HttpConfig to RetryConfig (they have the same structure)
+        val retryConfig = httpConfig?.let {
+            RetryConfig(
+                rateLimitConfig = it.rateLimitConfig,
+                backoffConfig = it.backoffConfig
+            )
+        } ?: RetryConfig()
+        
+        retryStateMachine = RetryStateMachine(
+            retryConfig,
+            SystemTimeProvider()
+        )
+
+        // Load persisted retry state (or start with defaults)
+        retryState = storage.loadRetryState()
     }
 
     fun put(event: BaseEvent) {
