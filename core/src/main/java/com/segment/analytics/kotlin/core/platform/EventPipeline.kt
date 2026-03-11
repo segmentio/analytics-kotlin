@@ -44,6 +44,8 @@ open class EventPipeline(
     // Retry state machine for smart retry logic (Phase 4)
     private val retryStateMachine: RetryStateMachine
     private var retryState: RetryState
+    private val timeProvider: TimeProvider = SystemTimeProvider()
+
 
 
     var running: Boolean
@@ -153,6 +155,23 @@ open class EventPipeline(
                 storage.rollover()
             }
 
+            // Phase 4 Step 2: Upload Gate - Check if pipeline is rate-limited
+            val currentTime = timeProvider.currentTimeMillis()
+            if (retryState.isRateLimited(currentTime)) {
+                analytics.log("$logTag skipping uploads: pipeline is rate-limited until ${retryState.waitUntilTime}")
+                return@consumeEach // Skip all uploads for this flush
+            }
+            
+            // Clear RATE_LIMITED state if wait time has passed
+            val waitTime = retryState.waitUntilTime
+            if (retryState.pipelineState == PipelineState.RATE_LIMITED &&
+                waitTime != null &&
+                currentTime >= waitTime) {
+                retryState = retryState.copy(
+                    pipelineState = PipelineState.READY,
+                    waitUntilTime = null
+                )
+            }
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
                 // upload event file
@@ -182,7 +201,6 @@ open class EventPipeline(
             }
         }
     }
-
     private fun schedule() {
         flushPolicies.forEach { it.schedule(analytics) }
     }
