@@ -174,6 +174,34 @@ open class EventPipeline(
             }
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
+                // Phase 4 Step 3: Load batch metadata and check if we should upload
+                val (decision, updatedState) = retryStateMachine.shouldUploadBatch(
+                    retryState,
+                    url
+                )
+                retryState = updatedState
+
+                // Check if we should skip this batch
+                when (decision) {
+                    UploadDecision.SkipAllBatches -> {
+                        // This shouldn't happen here (caught by upload gate), but handle it
+                        analytics.log("$logTag skipping remaining uploads")
+                        break // Stop processing remaining files
+                    }
+                    UploadDecision.SkipThisBatch -> {
+                        analytics.log("$logTag skipping batch $url: not ready for retry")
+                        continue // Skip this file, continue with next
+                    }
+                    is UploadDecision.DropBatch -> {
+                        // Batch exceeded retry limits - delete it
+                        analytics.log("$logTag dropping batch $url: ${decision.reason}")
+                        storage.removeFile(url)
+                        continue
+                    }
+                    UploadDecision.Proceed -> {
+                        // Continue with upload
+                    }
+                }
                 // upload event file
                 var shouldCleanup = true
                 storage.readAsStream(url)?.use { data ->
@@ -189,6 +217,8 @@ open class EventPipeline(
                         }
                         // Cleanup uploaded payloads
                         analytics.log("$logTag uploaded $url")
+                        
+                        // Phase 4 Step 3: Delete metadata on successful upload
                     } catch (e: Exception) {
                         analytics.reportInternalError(e)
                         shouldCleanup = handleUploadException(e, url)
@@ -197,6 +227,7 @@ open class EventPipeline(
 
                 if (shouldCleanup) {
                     storage.removeFile(url)
+                    // Also delete metadata when we delete the batch file
                 }
             }
         }
