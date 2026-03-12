@@ -13,8 +13,7 @@ class HttpConfigTest {
               "rateLimitConfig": {
                 "enabled": true,
                 "maxRetryCount": 50,
-                "maxRetryInterval": 600,
-                "maxRateLimitDuration": 7200
+                "maxRetryInterval": 600
               },
               "backoffConfig": {
                 "enabled": true,
@@ -39,7 +38,6 @@ class HttpConfigTest {
         assertEquals(true, config.rateLimitConfig.enabled)
         assertEquals(50, config.rateLimitConfig.maxRetryCount)
         assertEquals(600, config.rateLimitConfig.maxRetryInterval)
-        assertEquals(7200L, config.rateLimitConfig.maxRateLimitDuration)
 
         assertEquals(true, config.backoffConfig.enabled)
         assertEquals(25, config.backoffConfig.maxRetryCount)
@@ -58,9 +56,9 @@ class HttpConfigTest {
         val config = Json.decodeFromString<HttpConfig>(json)
 
         // Should return defaults without throwing
-        assertEquals(true, config.rateLimitConfig.enabled)
+        assertEquals(false, config.rateLimitConfig.enabled)
         assertEquals(100, config.rateLimitConfig.maxRetryCount)
-        assertEquals(true, config.backoffConfig.enabled)
+        assertEquals(false, config.backoffConfig.enabled)
     }
 
     @Test
@@ -69,9 +67,9 @@ class HttpConfigTest {
 
         val config = Json.decodeFromString<HttpConfig>(json)
 
-        assertEquals(true, config.rateLimitConfig.enabled)
+        assertEquals(false, config.rateLimitConfig.enabled)
         assertEquals(100, config.rateLimitConfig.maxRetryCount)
-        assertEquals(true, config.backoffConfig.enabled)
+        assertEquals(false, config.backoffConfig.enabled)
     }
 
     @Test
@@ -88,7 +86,7 @@ class HttpConfigTest {
 
         assertEquals(75, config.rateLimitConfig.maxRetryCount)
         assertEquals(300, config.rateLimitConfig.maxRetryInterval) // Default
-        assertEquals(true, config.backoffConfig.enabled) // Default
+        assertEquals(false, config.backoffConfig.enabled) // Default
     }
 
     @Test
@@ -113,14 +111,6 @@ class HttpConfigTest {
         val validated = config.validated()
 
         assertEquals(1, validated.maxRetryInterval) // Clamped to 1 second
-    }
-
-    @Test
-    fun `RateLimitConfig validation clamps maxRateLimitDuration`() {
-        val config = RateLimitConfig(maxRateLimitDuration = 1000000)
-        val validated = config.validated()
-
-        assertEquals(604800, validated.maxRateLimitDuration) // Clamped to 1 week
     }
 
     @Test

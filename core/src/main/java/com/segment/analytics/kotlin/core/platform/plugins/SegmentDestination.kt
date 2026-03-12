@@ -85,7 +85,8 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin, Subscriber {
                 key,
                 configuration.writeKey,
                 flushPolicies,
-                configuration.apiHost
+                configuration.apiHost,
+                configuration.httpConfig
             )
 
             analyticsScope.launch(analyticsDispatcher) {

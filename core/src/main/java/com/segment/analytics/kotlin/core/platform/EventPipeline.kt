@@ -41,7 +41,7 @@ open class EventPipeline(
 
     protected open val networkIODispatcher get() = analytics.networkIODispatcher
 
-    // Retry state machine for smart retry logic (Phase 4)
+    // Retry state machine for smart retry logic 
     private val retryStateMachine: RetryStateMachine
     private var retryState: RetryState
     private val timeProvider: TimeProvider = SystemTimeProvider()
@@ -155,7 +155,7 @@ open class EventPipeline(
                 storage.rollover()
             }
 
-            // Phase 4 Step 2: Upload Gate - Check if pipeline is rate-limited
+            // Upload Gate - Check if pipeline is rate-limited
             val currentTime = timeProvider.currentTimeMillis()
             if (retryState.isRateLimited(currentTime)) {
                 analytics.log("$logTag skipping uploads: pipeline is rate-limited until ${retryState.waitUntilTime}")
@@ -174,7 +174,7 @@ open class EventPipeline(
             }
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
-                // Phase 4 Step 3: Load batch metadata and check if we should upload
+                // Load batch metadata and check if we should upload
                 val (decision, updatedState) = retryStateMachine.shouldUploadBatch(
                     retryState,
                     url
@@ -202,11 +202,23 @@ open class EventPipeline(
                         // Continue with upload
                     }
                 }
+                // Get retry count for X-Retry-Count header
+                val retryCount = retryStateMachine.getRetryCount(retryState, url)
+                
                 // upload event file
                 var shouldCleanup = true
+                var statusCode = 0
+                var retryAfterSeconds: Int? = null
+
                 storage.readAsStream(url)?.use { data ->
                     try {
                         val connection = httpClient.upload(apiHost)
+
+                        // Add X-Retry-Count header (only on retries, not first attempt)
+                        if (retryCount > 0) {
+                            connection.connection.setRequestProperty("X-Retry-Count", retryCount.toString())
+                        }
+                        
                         connection.outputStream?.let {
                             // Write the payloads into the OutputStream
                             data.copyTo(connection.outputStream)
@@ -215,19 +227,39 @@ open class EventPipeline(
                             // Upload the payloads.
                             connection.close()
                         }
-                        // Cleanup uploaded payloads
+
+                        // Success!
+                        statusCode = 200
                         analytics.log("$logTag uploaded $url")
-                        
-                        // Phase 4 Step 3: Delete metadata on successful upload
                     } catch (e: Exception) {
                         analytics.reportInternalError(e)
+                        
+                        // Extract status code and retry-after from exception
+                        if (e is HTTPException) {
+                            statusCode = e.responseCode
+                            retryAfterSeconds = e.responseHeaders["Retry-After"]?.firstOrNull()?.toIntOrNull()
+                        }
+                        
                         shouldCleanup = handleUploadException(e, url)
                     }
+                }
+                
+                // Update retry state based on response
+                val responseInfo = ResponseInfo(
+                    statusCode = if (statusCode > 0) statusCode else 500, // Default to 500 for unknown errors
+                    retryAfterSeconds = retryAfterSeconds,
+                    batchFile = url,
+                    currentTime = timeProvider.currentTimeMillis()
+                )
+                retryState = retryStateMachine.handleResponse(retryState, responseInfo)
+                
+                // Persist updated retry state
+                withContext(fileIODispatcher) {
+                    storage.saveRetryState(retryState)
                 }
 
                 if (shouldCleanup) {
                     storage.removeFile(url)
-                    // Also delete metadata when we delete the batch file
                 }
             }
         }

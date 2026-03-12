@@ -6,32 +6,42 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
+/**
+ * Retry configuration for smart retry logic.
+ * Both rate limiting and exponential backoff default to disabled (legacy mode).
+ */
 @Serializable
 data class RetryConfig(
     val rateLimitConfig: RateLimitConfig = RateLimitConfig(),
+/**
+ * Configuration for rate limiting (429 responses).
+ * Default: disabled for backward compatibility.
+ */
     val backoffConfig: BackoffConfig = BackoffConfig()
 )
 
 @Serializable
 data class RateLimitConfig(
-    val enabled: Boolean = true,
+    val enabled: Boolean = false,
     val maxRetryCount: Int = 100,
-    val maxRetryInterval: Int = 300,
-    val maxRateLimitDuration: Long = 43200
+    val maxRetryInterval: Int = 300
 ) {
     /**
      * Validate and clamp all numeric values to safe ranges.
      */
     fun validated(): RateLimitConfig = copy(
         maxRetryCount = maxRetryCount.coerceIn(0, 1000),
-        maxRetryInterval = maxRetryInterval.coerceIn(1, 3600),
-        maxRateLimitDuration = maxRateLimitDuration.coerceIn(0, 604800)
+        maxRetryInterval = maxRetryInterval.coerceIn(1, 3600)
     )
+/**
+ * Configuration for exponential backoff on retryable errors.
+ * Default: disabled for backward compatibility.
+ */
 }
 
 @Serializable
 data class BackoffConfig(
-    val enabled: Boolean = true,
+    val enabled: Boolean = false,
     val maxRetryCount: Int = 100,
     val baseBackoffInterval: Double = 0.5,
     val maxBackoffInterval: Int = 300,

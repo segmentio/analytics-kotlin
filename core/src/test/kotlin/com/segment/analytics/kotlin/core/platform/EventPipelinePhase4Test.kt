@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
 import java.util.*
 
 /**
- * Phase 4 Step 1 Tests
+ * Infrastructure Tests
  *
  * These tests verify the retry infrastructure initialization in EventPipeline:
  * - httpConfig parameter is accepted
@@ -195,8 +195,7 @@ class EventPipelinePhase4Test {
             rateLimitConfig = RateLimitConfig(
                 enabled = true,
                 maxRetryCount = 50,
-                maxRetryInterval = 300,
-                maxRateLimitDuration = 3600
+                maxRetryInterval = 300
             ),
             backoffConfig = BackoffConfig(
                 enabled = true,
