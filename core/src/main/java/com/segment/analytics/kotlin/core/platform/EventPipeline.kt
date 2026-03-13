@@ -5,6 +5,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.logger.LogKind
 import com.segment.analytics.kotlin.core.platform.plugins.logger.log
 import com.segment.analytics.kotlin.core.platform.plugins.logger.segmentLog
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.retry.*
 import com.segment.analytics.kotlin.core.utilities.EncodeDefaultsJson
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -22,7 +23,8 @@ open class EventPipeline(
     private val logTag: String,
     apiKey: String,
     private val flushPolicies: List<FlushPolicy>,
-    var apiHost: String = Constants.DEFAULT_API_HOST
+    var apiHost: String = Constants.DEFAULT_API_HOST,
+    private val httpConfig: HttpConfig? = null
 ) {
 
     private var writeChannel: Channel<BaseEvent>
@@ -39,6 +41,13 @@ open class EventPipeline(
 
     protected open val networkIODispatcher get() = analytics.networkIODispatcher
 
+    // Retry state machine for smart retry logic 
+    private val retryStateMachine: RetryStateMachine
+    private var retryState: RetryState
+    private val timeProvider: TimeProvider = SystemTimeProvider()
+
+
+
     var running: Boolean
         private set
 
@@ -53,6 +62,23 @@ open class EventPipeline(
 
         writeChannel = Channel(UNLIMITED)
         uploadChannel = Channel(UNLIMITED)
+
+        // Initialize retry state machine with config (or defaults if null)
+        // Convert HttpConfig to RetryConfig (they have the same structure)
+        val retryConfig = httpConfig?.let {
+            RetryConfig(
+                rateLimitConfig = it.rateLimitConfig,
+                backoffConfig = it.backoffConfig
+            )
+        } ?: RetryConfig()
+        
+        retryStateMachine = RetryStateMachine(
+            retryConfig,
+            SystemTimeProvider()
+        )
+
+        // Load persisted retry state (or start with defaults)
+        retryState = storage.loadRetryState()
     }
 
     fun put(event: BaseEvent) {
@@ -129,13 +155,70 @@ open class EventPipeline(
                 storage.rollover()
             }
 
+            // Upload Gate - Check if pipeline is rate-limited
+            val currentTime = timeProvider.currentTimeMillis()
+            if (retryState.isRateLimited(currentTime)) {
+                analytics.log("$logTag skipping uploads: pipeline is rate-limited until ${retryState.waitUntilTime}")
+                return@consumeEach // Skip all uploads for this flush
+            }
+            
+            // Clear RATE_LIMITED state if wait time has passed
+            val waitTime = retryState.waitUntilTime
+            if (retryState.pipelineState == PipelineState.RATE_LIMITED &&
+                waitTime != null &&
+                currentTime >= waitTime) {
+                retryState = retryState.copy(
+                    pipelineState = PipelineState.READY,
+                    waitUntilTime = null
+                )
+            }
             val fileUrlList = parseFilePaths(storage.read(Storage.Constants.Events))
             for (url in fileUrlList) {
+                // Load batch metadata and check if we should upload
+                val (decision, updatedState) = retryStateMachine.shouldUploadBatch(
+                    retryState,
+                    url
+                )
+                retryState = updatedState
+
+                // Check if we should skip this batch
+                when (decision) {
+                    UploadDecision.SkipAllBatches -> {
+                        // This shouldn't happen here (caught by upload gate), but handle it
+                        analytics.log("$logTag skipping remaining uploads")
+                        break // Stop processing remaining files
+                    }
+                    UploadDecision.SkipThisBatch -> {
+                        analytics.log("$logTag skipping batch $url: not ready for retry")
+                        continue // Skip this file, continue with next
+                    }
+                    is UploadDecision.DropBatch -> {
+                        // Batch exceeded retry limits - delete it
+                        analytics.log("$logTag dropping batch $url: ${decision.reason}")
+                        storage.removeFile(url)
+                        continue
+                    }
+                    UploadDecision.Proceed -> {
+                        // Continue with upload
+                    }
+                }
+                // Get retry count for X-Retry-Count header
+                val retryCount = retryStateMachine.getRetryCount(retryState, url)
+                
                 // upload event file
                 var shouldCleanup = true
+                var statusCode = 0
+                var retryAfterSeconds: Int? = null
+
                 storage.readAsStream(url)?.use { data ->
                     try {
                         val connection = httpClient.upload(apiHost)
+
+                        // Add X-Retry-Count header (only on retries, not first attempt)
+                        if (retryCount > 0) {
+                            connection.connection.setRequestProperty("X-Retry-Count", retryCount.toString())
+                        }
+                        
                         connection.outputStream?.let {
                             // Write the payloads into the OutputStream
                             data.copyTo(connection.outputStream)
@@ -144,12 +227,35 @@ open class EventPipeline(
                             // Upload the payloads.
                             connection.close()
                         }
-                        // Cleanup uploaded payloads
+
+                        // Success!
+                        statusCode = 200
                         analytics.log("$logTag uploaded $url")
                     } catch (e: Exception) {
                         analytics.reportInternalError(e)
+                        
+                        // Extract status code and retry-after from exception
+                        if (e is HTTPException) {
+                            statusCode = e.responseCode
+                            retryAfterSeconds = e.responseHeaders["Retry-After"]?.firstOrNull()?.toIntOrNull()
+                        }
+                        
                         shouldCleanup = handleUploadException(e, url)
                     }
+                }
+                
+                // Update retry state based on response
+                val responseInfo = ResponseInfo(
+                    statusCode = if (statusCode > 0) statusCode else 500, // Default to 500 for unknown errors
+                    retryAfterSeconds = retryAfterSeconds,
+                    batchFile = url,
+                    currentTime = timeProvider.currentTimeMillis()
+                )
+                retryState = retryStateMachine.handleResponse(retryState, responseInfo)
+                
+                // Persist updated retry state
+                withContext(fileIODispatcher) {
+                    storage.saveRetryState(retryState)
                 }
 
                 if (shouldCleanup) {
@@ -158,7 +264,6 @@ open class EventPipeline(
             }
         }
     }
-
     private fun schedule() {
         flushPolicies.forEach { it.schedule(analytics) }
     }

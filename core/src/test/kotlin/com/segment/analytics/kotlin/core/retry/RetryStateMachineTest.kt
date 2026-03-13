@@ -15,7 +15,10 @@ class RetryStateMachineTest {
     @BeforeEach
     fun setup() {
         timeProvider = FakeTimeProvider(1000L)
-        config = RetryConfig()
+        config = RetryConfig(
+            rateLimitConfig = RateLimitConfig(enabled = true),
+            backoffConfig = BackoffConfig(enabled = true)
+        )
         stateMachine = RetryStateMachine(config, timeProvider, random)
     }
 
