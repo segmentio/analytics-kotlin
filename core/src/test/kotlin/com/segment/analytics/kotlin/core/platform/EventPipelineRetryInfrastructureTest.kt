@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
 import java.util.*
 
 /**
- * Infrastructure Tests
+ * Retry Infrastructure Tests
  *
  * These tests verify the retry infrastructure initialization in EventPipeline:
  * - httpConfig parameter is accepted
@@ -33,7 +33,7 @@ import java.util.*
  * - EventPipeline continues to work normally (no behavior changes yet)
  */
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class EventPipelinePhase4Test {
+class EventPipelineRetryInfrastructureTest {
 
     private lateinit var analytics: Analytics
     private lateinit var storage: Storage
