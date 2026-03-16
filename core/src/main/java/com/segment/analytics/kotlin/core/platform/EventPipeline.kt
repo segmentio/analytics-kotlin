@@ -24,7 +24,8 @@ open class EventPipeline(
     apiKey: String,
     private val flushPolicies: List<FlushPolicy>,
     var apiHost: String = Constants.DEFAULT_API_HOST,
-    private val httpConfig: HttpConfig? = null
+    private val httpConfig: HttpConfig? = null,
+    private val timeProvider: TimeProvider = SystemTimeProvider()
 ) {
 
     private var writeChannel: Channel<BaseEvent>
@@ -44,7 +45,6 @@ open class EventPipeline(
     // Retry state machine for smart retry logic 
     private val retryStateMachine: RetryStateMachine
     private var retryState: RetryState
-    private val timeProvider: TimeProvider = SystemTimeProvider()
 
 
 
@@ -74,7 +74,7 @@ open class EventPipeline(
         
         retryStateMachine = RetryStateMachine(
             retryConfig,
-            SystemTimeProvider()
+            timeProvider
         )
 
         // Load persisted retry state (or start with defaults)
