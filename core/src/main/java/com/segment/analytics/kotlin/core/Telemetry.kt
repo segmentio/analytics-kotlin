@@ -276,7 +276,7 @@ object Telemetry: Subscriber {
             errorHandler?.invoke(e)
             if (e.responseCode == 429) {
                 val headers = e.responseHeaders
-                val rateLimit = headers["Retry-After"]?.firstOrNull()?.toLongOrNull()
+                val rateLimit = headers["retry-after"]?.firstOrNull()?.toLongOrNull()
                 if (rateLimit != null) {
                     rateLimitEndTime = rateLimit + (System.currentTimeMillis() / 1000)
                 }

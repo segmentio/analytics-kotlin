@@ -241,10 +241,7 @@ open class EventPipeline(
                         // Extract status code and retry-after from exception
                         if (e is HTTPException) {
                             statusCode = e.responseCode
-                            // Header names may be lowercased by HTTP/2 or OkHttp
-                            retryAfterSeconds = (e.responseHeaders["Retry-After"]
-                                ?: e.responseHeaders["retry-after"])
-                                ?.firstOrNull()?.toIntOrNull()
+                            retryAfterSeconds = (e.responseHeaders["retry-after"])?.firstOrNull()?.toIntOrNull()
                         }
 
                         shouldCleanup = handleUploadException(e, url)

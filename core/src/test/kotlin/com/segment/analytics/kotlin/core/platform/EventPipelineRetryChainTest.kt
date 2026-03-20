@@ -80,8 +80,8 @@ class EventPipelineRetryChainTest {
         val pipeline = createPipeline(httpConfig)
         pipeline.start()
 
-        // Trigger 429 with Retry-After
-        val headers = mutableMapOf("Retry-After" to mutableListOf("60"))
+        // Trigger 429 with retry-after
+        val headers = mutableMapOf("retry-after" to mutableListOf("60"))
         every { mockHttpClient.upload(any()) } throws HTTPException(429, "", "", headers)
 
         pipeline.put(createTestEvent("event1"))
@@ -109,7 +109,7 @@ class EventPipelineRetryChainTest {
         var uploadAttempts = 0
         every { mockHttpClient.upload(any()) } answers {
             uploadAttempts++
-            throw HTTPException(429, "", "", mutableMapOf("Retry-After" to mutableListOf("60")))
+            throw HTTPException(429, "", "", mutableMapOf("retry-after" to mutableListOf("60")))
         }
 
         // First flush: Should upload
@@ -147,7 +147,7 @@ class EventPipelineRetryChainTest {
             uploadAttempts++
             if (uploadAttempts == 1) {
                 // First attempt: 429
-                throw HTTPException(429, "", "", mutableMapOf("Retry-After" to mutableListOf("60")))
+                throw HTTPException(429, "", "", mutableMapOf("retry-after" to mutableListOf("60")))
             } else {
                 // Subsequent attempts: Success
                 successfulUploads++
@@ -204,8 +204,8 @@ class EventPipelineRetryChainTest {
         every { mockHttpClient.upload(any()) } answers {
             uploadAttempts++
             when (uploadAttempts) {
-                1 -> throw HTTPException(429, "", "", mutableMapOf("Retry-After" to mutableListOf("30")))
-                2 -> throw HTTPException(429, "", "", mutableMapOf("Retry-After" to mutableListOf("30")))
+                1 -> throw HTTPException(429, "", "", mutableMapOf("retry-after" to mutableListOf("30")))
+                2 -> throw HTTPException(429, "", "", mutableMapOf("retry-after" to mutableListOf("30")))
                 else -> mockk {
                     every { connection } returns mockk(relaxed = true)
                     every { outputStream } returns mockk(relaxed = true)

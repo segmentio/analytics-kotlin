@@ -88,8 +88,8 @@ class EventPipelineSmartRetryTest {
         pipeline = createPipeline(httpConfig)
         pipeline.start()
 
-        // First flush: 429 error with Retry-After
-        val headers = mutableMapOf("Retry-After" to mutableListOf("60"))
+        // First flush: 429 error with retry-after
+        val headers = mutableMapOf("retry-after" to mutableListOf("60"))
         every { mockHttpClient.upload(any()) } throws HTTPException(429, "", "", headers)
 
         pipeline.put(createTestEvent("event1"))
@@ -221,7 +221,7 @@ class EventPipelineSmartRetryTest {
         pipeline = createPipeline(httpConfig)
         pipeline.start()
 
-        val headers = mutableMapOf("Retry-After" to mutableListOf("60"))
+        val headers = mutableMapOf("retry-after" to mutableListOf("60"))
         every { mockHttpClient.upload(any()) } throws HTTPException(429, "", "", headers)
 
         pipeline.put(createTestEvent("event1"))
