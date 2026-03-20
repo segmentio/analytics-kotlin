@@ -3,12 +3,16 @@ package cli
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.retry.BackoffConfig
+import com.segment.analytics.kotlin.core.retry.HttpConfig
+import com.segment.analytics.kotlin.core.retry.RateLimitConfig
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import java.util.Collections
 import kotlin.system.exitProcess
 
 @Serializable
@@ -62,6 +66,10 @@ fun main(args: Array<String>) {
                 }
             )
 
+            // Collect delivery errors from the SDK's error handler.
+            // HTTPException is internal, so we parse the message ("HTTP {code}: ...").
+            val deliveryErrors = Collections.synchronizedList(mutableListOf<String>())
+
             val analytics = Analytics(input.writeKey) {
                 application = "e2e-cli"
                 input.apiHost?.let { apiHost = it }
@@ -70,6 +78,22 @@ fun main(args: Array<String>) {
                 flushInterval = input.config?.flushInterval ?: 30
                 autoAddSegmentDestination = true
                 this.defaultSettings = defaultSettings
+                // Enable smart retry (rate limiting + exponential backoff)
+                val maxRetries = input.config?.maxRetries ?: 100
+                httpConfig = HttpConfig(
+                    rateLimitConfig = RateLimitConfig(enabled = true),
+                    backoffConfig = BackoffConfig(
+                        enabled = true,
+                        maxRetryCount = maxRetries,
+                        baseBackoffInterval = 0.5
+                    )
+                )
+                errorHandler = { error ->
+                    val msg = error.message ?: error.toString()
+                    if (msg.startsWith("HTTP ") || msg.startsWith("Batch dropped")) {
+                        deliveryErrors.add(msg)
+                    }
+                }
             }
 
             // Process event sequences
@@ -83,12 +107,44 @@ fun main(args: Array<String>) {
                 }
             }
 
-            // Flush and wait for async operations to complete
+            // Flush and poll until all batch files are processed.
+            // Each flush() triggers an upload cycle — retries happen on
+            // subsequent flush cycles (batch files persist to disk).
+            val timeoutMs = (input.config?.timeout ?: 20) * 1000L
+            val deadline = System.currentTimeMillis() + timeoutMs
+            deliveryErrors.clear()
             analytics.flush()
-            delay(2000)
-        }
+            // Brief initial wait for the flush to write + upload
+            delay(500)
 
-        output = CLIOutput(success = true, sentBatches = 1)
+            while (System.currentTimeMillis() < deadline) {
+                val pending = analytics.pendingUploads()
+                if (pending.isEmpty()) break
+                // Clear errors before each retry cycle — only the final cycle's errors matter.
+                // If a retry succeeds, no error fires and deliveryErrors stays empty.
+                deliveryErrors.clear()
+                // Trigger another flush cycle for retries
+                analytics.flush()
+                delay(500)
+            }
+
+            val remaining = analytics.pendingUploads()
+            output = if (remaining.isNotEmpty()) {
+                CLIOutput(
+                    success = false,
+                    error = "Delivery incomplete: ${remaining.size} batch file(s) still pending"
+                )
+            } else if (deliveryErrors.isNotEmpty()) {
+                // Events were dropped (not delivered) — pendingUploads is empty because
+                // the SDK deleted the batch file, but errorHandler captured the HTTP error.
+                CLIOutput(
+                    success = false,
+                    error = "Delivery failed: ${deliveryErrors.joinToString("; ")}"
+                )
+            } else {
+                CLIOutput(success = true, sentBatches = 1)
+            }
+        }
     } catch (e: Exception) {
         output = CLIOutput(success = false, error = e.message ?: e.toString())
     }

@@ -194,7 +194,11 @@ open class EventPipeline(
                     }
                     is UploadDecision.DropBatch -> {
                         // Batch exceeded retry limits - delete it
-                        analytics.log("$logTag dropping batch $url: ${decision.reason}")
+                        val reason = decision.reason
+                        analytics.log("$logTag dropping batch $url: $reason")
+                        analytics.reportInternalError(
+                            Exception("Batch dropped: $reason")
+                        )
                         storage.removeFile(url)
                         continue
                     }
@@ -233,20 +237,31 @@ open class EventPipeline(
                         analytics.log("$logTag uploaded $url")
                     } catch (e: Exception) {
                         analytics.reportInternalError(e)
-                        
+
                         // Extract status code and retry-after from exception
                         if (e is HTTPException) {
                             statusCode = e.responseCode
-                            retryAfterSeconds = e.responseHeaders["Retry-After"]?.firstOrNull()?.toIntOrNull()
+                            // Header names may be lowercased by HTTP/2 or OkHttp
+                            retryAfterSeconds = (e.responseHeaders["Retry-After"]
+                                ?: e.responseHeaders["retry-after"])
+                                ?.firstOrNull()?.toIntOrNull()
                         }
-                        
+
                         shouldCleanup = handleUploadException(e, url)
                     }
                 }
-                
+
+                // Normalize status code: default to 500 for non-HTTP errors
+                val effectiveStatusCode = if (statusCode > 0) statusCode else 500
+
+                // In smart retry mode, override legacy cleanup with state machine decision.
+                if (httpConfig != null && effectiveStatusCode !in 200..299) {
+                    shouldCleanup = retryStateMachine.shouldDeleteBatch(effectiveStatusCode)
+                }
+
                 // Update retry state based on response
                 val responseInfo = ResponseInfo(
-                    statusCode = if (statusCode > 0) statusCode else 500, // Default to 500 for unknown errors
+                    statusCode = effectiveStatusCode,
                     retryAfterSeconds = retryAfterSeconds,
                     batchFile = url,
                     currentTime = timeProvider.currentTimeMillis()
