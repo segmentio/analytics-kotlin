@@ -248,17 +248,9 @@ open class EventPipeline(
                     }
                 }
 
-                // Normalize status code: default to 500 for non-HTTP errors
-                val effectiveStatusCode = if (statusCode > 0) statusCode else 500
-
-                // In smart retry mode, override legacy cleanup with state machine decision.
-                if (httpConfig != null && effectiveStatusCode !in 200..299) {
-                    shouldCleanup = retryStateMachine.shouldDeleteBatch(effectiveStatusCode)
-                }
-
                 // Update retry state based on response
                 val responseInfo = ResponseInfo(
-                    statusCode = effectiveStatusCode,
+                    statusCode = if (statusCode > 0) statusCode else 500, // Default to 500 for unknown errors
                     retryAfterSeconds = retryAfterSeconds,
                     batchFile = url,
                     currentTime = timeProvider.currentTimeMillis()
@@ -290,7 +282,7 @@ open class EventPipeline(
         var shouldCleanup = false
         if (e is HTTPException) {
             analytics.log("$logTag exception while uploading, ${e.message}")
-            if (e.is4xx() && e.responseCode != 429) {
+            if (retryStateMachine.shouldDeleteBatch(e.responseCode)) {
                 // Simply log and proceed to remove the rejected payloads from the queue.
                 Analytics.segmentLog(
                     message = "Payloads were rejected by server. Marked for removal.",
