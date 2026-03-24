@@ -1,6 +1,6 @@
 {
   "sdk": "kotlin",
-  "test_suites": "basic,retry",
+  "test_suites": "basic,settings,retry",
   "auto_settings": true,
   "patch": "analytics-kotlin-http.patch",
   "env": {}
