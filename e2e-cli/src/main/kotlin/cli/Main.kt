@@ -85,7 +85,7 @@ fun main(args: Array<String>) {
 
             // Flush and wait for async operations to complete
             analytics.flush()
-            delay(2000)
+            delay(5000)
         }
 
         output = CLIOutput(success = true, sentBatches = 1)
