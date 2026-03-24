@@ -194,7 +194,11 @@ open class EventPipeline(
                     }
                     is UploadDecision.DropBatch -> {
                         // Batch exceeded retry limits - delete it
-                        analytics.log("$logTag dropping batch $url: ${decision.reason}")
+                        val reason = decision.reason
+                        analytics.log("$logTag dropping batch $url: $reason")
+                        analytics.reportInternalError(
+                            Exception("Batch dropped: $reason")
+                        )
                         storage.removeFile(url)
                         continue
                     }
@@ -233,17 +237,17 @@ open class EventPipeline(
                         analytics.log("$logTag uploaded $url")
                     } catch (e: Exception) {
                         analytics.reportInternalError(e)
-                        
+
                         // Extract status code and retry-after from exception
                         if (e is HTTPException) {
                             statusCode = e.responseCode
-                            retryAfterSeconds = e.responseHeaders["Retry-After"]?.firstOrNull()?.toIntOrNull()
+                            retryAfterSeconds = (e.responseHeaders["retry-after"])?.firstOrNull()?.toIntOrNull()
                         }
-                        
+
                         shouldCleanup = handleUploadException(e, url)
                     }
                 }
-                
+
                 // Update retry state based on response
                 val responseInfo = ResponseInfo(
                     statusCode = if (statusCode > 0) statusCode else 500, // Default to 500 for unknown errors
@@ -278,7 +282,7 @@ open class EventPipeline(
         var shouldCleanup = false
         if (e is HTTPException) {
             analytics.log("$logTag exception while uploading, ${e.message}")
-            if (e.is4xx() && e.responseCode != 429) {
+            if (retryStateMachine.shouldDeleteBatch(e.responseCode)) {
                 // Simply log and proceed to remove the rejected payloads from the queue.
                 Analytics.segmentLog(
                     message = "Payloads were rejected by server. Marked for removal.",
