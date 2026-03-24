@@ -153,7 +153,8 @@ open class RequestFactory(
         .build()
 
     open fun settings(cdnHost: String, writeKey: String): HttpURLConnection {
-        val connection: HttpURLConnection = openConnection("https://$cdnHost/projects/$writeKey/settings")
+        val scheme = if (cdnHost.startsWith("http://") || cdnHost.startsWith("https://")) "" else "https://" // E2E PATCH — DO NOT COMMIT
+        val connection: HttpURLConnection = openConnection("$scheme$cdnHost/projects/$writeKey/settings")
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
         val responseCode = connection.responseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -164,7 +165,8 @@ open class RequestFactory(
     }
 
     open fun upload(apiHost: String): HttpURLConnection {
-        val connection: HttpURLConnection = openConnection("https://$apiHost/b")
+        val scheme = if (apiHost.startsWith("http://") || apiHost.startsWith("https://")) "" else "https://" // E2E PATCH — DO NOT COMMIT
+        val connection: HttpURLConnection = openConnection("$scheme$apiHost/b")
         connection.setRequestProperty("Content-Type", "text/plain")
         connection.setRequestProperty("Content-Encoding", "gzip")
         connection.doOutput = true
