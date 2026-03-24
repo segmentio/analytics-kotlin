@@ -114,8 +114,8 @@ fun main(args: Array<String>) {
             val deadline = System.currentTimeMillis() + timeoutMs
             deliveryErrors.clear()
             analytics.flush()
-            // Brief initial wait for the flush to write + upload
-            delay(500)
+            // Wait for settings to load + initial flush to write + upload
+            delay(5000)
 
             while (System.currentTimeMillis() < deadline) {
                 val pending = analytics.pendingUploads()
