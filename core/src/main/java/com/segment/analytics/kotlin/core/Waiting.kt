@@ -44,14 +44,16 @@ internal suspend fun Analytics.running(): Boolean {
 }
 
 internal suspend fun Analytics.pauseEventProcessing(timeout: Long = 30_000) {
-    if (!running()) return
+    if (forceRunningJob?.isActive == true) return
 
     store.dispatch(System.ToggleRunningAction(false), System::class)
-    startProcessingAfterTimeout(timeout)
+    forceRunningJob = startProcessingAfterTimeout(timeout)
 }
 
 internal suspend fun Analytics.resumeEventProcessing() {
     if (running()) return
+    forceRunningJob?.cancel()
+    forceRunningJob = null
     store.dispatch(System.ToggleRunningAction(true), System::class)
 }
 

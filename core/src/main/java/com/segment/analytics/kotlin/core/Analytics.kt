@@ -57,6 +57,8 @@ open class Analytics protected constructor(
             }
         }
 
+    internal var forceRunningJob: Job? = null
+
     companion object {
         var debugLogsEnabled: Boolean = false
 
