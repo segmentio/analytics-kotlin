@@ -279,6 +279,20 @@ class WaitingTests {
         assertTrue(analytics.running())
     }
 
+    @Test
+    fun `test forceRunningJob is cleared after natural timeout completion`() = testScope.runTest {
+        assertTrue(analytics.running())
+        analytics.pauseEventProcessing(1000)
+        assertFalse(analytics.running())
+        assertNotNull(analytics.forceRunningJob)
+        assertTrue(analytics.forceRunningJob?.isActive == true)
+
+        // After timeout, ForceRunningAction fires and forceRunningJob should be cleared
+        advanceTimeBy(2000)
+        assertTrue(analytics.running())
+        assertNull(analytics.forceRunningJob)
+    }
+
     class ExampleWaitingPlugin: EventPlugin, WaitingPlugin {
         override val type: Plugin.Type = Plugin.Type.Enrichment
         override lateinit var analytics: Analytics
