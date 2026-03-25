@@ -114,18 +114,32 @@ fun main(args: Array<String>) {
             val deadline = System.currentTimeMillis() + timeoutMs
             deliveryErrors.clear()
             analytics.flush()
-            // Initial wait for flush to write + upload (and for settings to fail/fallback if needed)
-            delay(2000)
+
+            // Wait for initial batch file creation and first upload attempt.
+            // Also allows time for settings to fail/timeout and SDK to fallback to defaults.
+            delay(1500)
+
+            // Then poll with adaptive intervals
+            var pollInterval = 200L // Start with 200ms polls
+            var pollCount = 0
 
             while (System.currentTimeMillis() < deadline) {
                 val pending = analytics.pendingUploads()
                 if (pending.isEmpty()) break
+
                 // Clear errors before each retry cycle — only the final cycle's errors matter.
                 // If a retry succeeds, no error fires and deliveryErrors stays empty.
                 deliveryErrors.clear()
+
                 // Trigger another flush cycle for retries
                 analytics.flush()
-                delay(500)
+                delay(pollInterval)
+                pollCount++
+
+                // Increase poll interval for longer waits (200ms -> 500ms after 5 polls = 1.3s)
+                if (pollCount >= 5 && pollInterval < 500) {
+                    pollInterval = 500
+                }
             }
 
             val remaining = analytics.pendingUploads()
