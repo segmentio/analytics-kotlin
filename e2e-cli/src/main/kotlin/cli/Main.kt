@@ -115,15 +115,14 @@ fun main(args: Array<String>) {
             deliveryErrors.clear()
             analytics.flush()
 
-            // Wait for initial batch file creation and first upload attempt.
-            // Also allows time for settings to fail/timeout and SDK to fallback to defaults.
-            delay(1500)
-
-            // Then poll with adaptive intervals
-            var pollInterval = 200L // Start with 200ms polls
+            // Poll with aggressive initial intervals, then slow down
+            var pollInterval = 100L // Start very fast for quick tests
             var pollCount = 0
 
             while (System.currentTimeMillis() < deadline) {
+                delay(pollInterval)
+                pollCount++
+
                 val pending = analytics.pendingUploads()
                 if (pending.isEmpty()) break
 
@@ -133,12 +132,12 @@ fun main(args: Array<String>) {
 
                 // Trigger another flush cycle for retries
                 analytics.flush()
-                delay(pollInterval)
-                pollCount++
 
-                // Increase poll interval for longer waits (200ms -> 500ms after 5 polls = 1.3s)
-                if (pollCount >= 5 && pollInterval < 500) {
-                    pollInterval = 500
+                // Adaptive intervals: ramp up as time passes
+                // Polls: 100ms x10 = 1s, then 500ms x6 = 3s (total 4s), then 1s thereafter
+                when {
+                    pollCount >= 16 && pollInterval < 1000 -> pollInterval = 1000
+                    pollCount >= 10 && pollInterval < 500 -> pollInterval = 500
                 }
             }
 
