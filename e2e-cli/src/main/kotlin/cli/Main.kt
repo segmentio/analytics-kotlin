@@ -1,6 +1,7 @@
 package cli
 
 import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.RequestFactory
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import com.segment.analytics.kotlin.core.retry.BackoffConfig
@@ -12,7 +13,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import java.util.Collections
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
 @Serializable
@@ -70,6 +74,14 @@ fun main(args: Array<String>) {
             // HTTPException is internal, so we parse the message ("HTTP {code}: ...").
             val deliveryErrors = Collections.synchronizedList(mutableListOf<String>())
 
+            // Use short HTTP timeouts (2s) for e2e tests to fail fast on settings errors.
+            // This allows the SDK to quickly fall back to defaultSettings and proceed.
+            val httpClient = OkHttpClient.Builder()
+                .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
+                .connectTimeout(2, TimeUnit.SECONDS)
+                .readTimeout(2, TimeUnit.SECONDS)
+                .build()
+
             val analytics = Analytics(input.writeKey) {
                 application = "e2e-cli"
                 input.apiHost?.let { apiHost = it }
@@ -78,6 +90,7 @@ fun main(args: Array<String>) {
                 flushInterval = input.config?.flushInterval ?: 30
                 autoAddSegmentDestination = true
                 this.defaultSettings = defaultSettings
+                requestFactory = RequestFactory(httpClient)
                 // Enable smart retry (rate limiting + exponential backoff)
                 val maxRetries = input.config?.maxRetries ?: 100
                 httpConfig = HttpConfig(
@@ -115,10 +128,10 @@ fun main(args: Array<String>) {
             deliveryErrors.clear()
             analytics.flush()
 
-            // Initial delay: Give SDK time to initialize, handle settings timeout,
-            // fall back to defaultSettings, and create batch files.
-            // This overhead is inherent to the CLI architecture.
-            delay(900)
+            // Initial delay: Give SDK time to initialize and create initial batch files.
+            // With 2s HTTP timeouts, settings errors fail fast (tests with delayed settings
+            // responses will timeout quickly and fall back to defaultSettings).
+            delay(300)
 
             // Poll with adaptive intervals: start fast, then slow down
             var pollInterval = 200L
