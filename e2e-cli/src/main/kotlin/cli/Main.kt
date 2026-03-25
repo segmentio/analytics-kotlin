@@ -115,8 +115,13 @@ fun main(args: Array<String>) {
             deliveryErrors.clear()
             analytics.flush()
 
-            // Poll with aggressive initial intervals, then slow down
-            var pollInterval = 100L // Start very fast for quick tests
+            // Initial delay: Give SDK time to initialize, handle settings timeout,
+            // fall back to defaultSettings, and create batch files.
+            // This overhead is inherent to the CLI architecture.
+            delay(1200)
+
+            // Poll with adaptive intervals: start fast, then slow down
+            var pollInterval = 200L
             var pollCount = 0
 
             while (System.currentTimeMillis() < deadline) {
@@ -133,11 +138,10 @@ fun main(args: Array<String>) {
                 // Trigger another flush cycle for retries
                 analytics.flush()
 
-                // Adaptive intervals: ramp up as time passes
-                // Polls: 100ms x10 = 1s, then 500ms x6 = 3s (total 4s), then 1s thereafter
+                // Adaptive intervals: ramp up as polling continues
                 when {
-                    pollCount >= 16 && pollInterval < 1000 -> pollInterval = 1000
-                    pollCount >= 10 && pollInterval < 500 -> pollInterval = 500
+                    pollCount >= 10 && pollInterval < 1000 -> pollInterval = 1000
+                    pollCount >= 5 && pollInterval < 500 -> pollInterval = 500
                 }
             }
 
