@@ -55,9 +55,14 @@ internal suspend fun Analytics.pauseEventProcessing(timeout: Long = 30_000) {
 
 internal suspend fun Analytics.resumeEventProcessing() {
     if (running()) return
-    forceRunningMutex.withLock {
-        forceRunningJob?.cancel()
-        forceRunningJob = null
+    // Only cancel forceRunningJob if no plugins are waiting
+    // This ensures other waiting plugins still have the safety timeout
+    val system = store.currentState(System::class)
+    if (system?.waitingPlugins?.isEmpty() == true) {
+        forceRunningMutex.withLock {
+            forceRunningJob?.cancel()
+            forceRunningJob = null
+        }
     }
     store.dispatch(System.ToggleRunningAction(true), System::class)
 }
