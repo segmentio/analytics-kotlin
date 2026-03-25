@@ -128,12 +128,11 @@ fun main(args: Array<String>) {
             deliveryErrors.clear()
             analytics.flush()
 
-            // Initial delay: Give SDK time to initialize and create initial batch files.
-            // With 2s HTTP timeouts, settings errors fail fast (tests with delayed settings
-            // responses will timeout quickly and fall back to defaultSettings).
-            delay(300)
-
-            // Poll with adaptive intervals: start fast, then slow down
+            // Poll until batch files appear then drain.
+            // Key insight: pendingUploads() returns empty BOTH when "all sent"
+            // AND when "SDK hasn't created batch files yet" (still initializing).
+            // We track whether we've ever seen batch files to distinguish the two.
+            var everSeenPending = false
             var pollInterval = 200L
             var pollCount = 0
 
@@ -142,14 +141,21 @@ fun main(args: Array<String>) {
                 pollCount++
 
                 val pending = analytics.pendingUploads()
-                if (pending.isEmpty()) break
+                if (pending.isNotEmpty()) {
+                    everSeenPending = true
 
-                // Clear errors before each retry cycle — only the final cycle's errors matter.
-                // If a retry succeeds, no error fires and deliveryErrors stays empty.
-                deliveryErrors.clear()
+                    // Clear errors before each retry cycle — only the final cycle's errors matter.
+                    // If a retry succeeds, no error fires and deliveryErrors stays empty.
+                    deliveryErrors.clear()
 
-                // Trigger another flush cycle for retries
-                analytics.flush()
+                    // Trigger another flush cycle for retries
+                    analytics.flush()
+                } else if (everSeenPending) {
+                    // Had batch files, now they're gone → all uploaded (or dropped)
+                    break
+                }
+                // else: SDK still initializing (settings fetch, event processing paused)
+                // keep polling until batch files appear or we time out
 
                 // Adaptive intervals: ramp up as polling continues
                 when {
