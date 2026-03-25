@@ -207,6 +207,92 @@ class WaitingTests {
         assertTrue(plugin2.tracked)
     }
 
+    @Test
+    fun `test manual resume cancels pending force running job`() = testScope.runTest {
+        assertTrue(analytics.running())
+        analytics.pauseEventProcessing(10000)
+        assertFalse(analytics.running())
+        assertNotNull(analytics.forceRunningJob)
+        assertTrue(analytics.forceRunningJob?.isActive == true)
+
+        // Manual resume before timeout
+        analytics.resumeEventProcessing()
+        assertTrue(analytics.running())
+        assertNull(analytics.forceRunningJob)
+
+        // Pause again and verify no stale ForceRunningAction fires from first pause
+        analytics.pauseEventProcessing(10000)
+        assertFalse(analytics.running())
+
+        // Advance past the first timeout - should NOT resume since it was cancelled
+        advanceTimeBy(5000)
+        assertFalse(analytics.running())
+
+        // Advance past the second timeout - should resume
+        advanceTimeBy(10000)
+        assertTrue(analytics.running())
+    }
+
+    @Test
+    fun `test pause-resume-pause cycle works correctly`() = testScope.runTest {
+        assertTrue(analytics.running())
+
+        // First pause
+        analytics.pauseEventProcessing(5000)
+        assertFalse(analytics.running())
+
+        // Resume before timeout
+        advanceTimeBy(2000)
+        analytics.resumeEventProcessing()
+        assertTrue(analytics.running())
+
+        // Second pause with new timeout
+        analytics.pauseEventProcessing(5000)
+        assertFalse(analytics.running())
+
+        // Advance time - only second timeout should apply
+        advanceTimeBy(3000) // Total 5s from start, but only 3s from second pause
+        assertFalse(analytics.running()) // Should still be paused
+
+        advanceTimeBy(3000) // Now 6s from second pause
+        assertTrue(analytics.running()) // Should be running now
+    }
+
+    @Test
+    fun `test pause schedules force running even when system not running`() = testScope.runTest {
+        assertTrue(analytics.running())
+
+        // Force the system to not running state without scheduling a ForceRunningAction
+        analytics.store.dispatch(System.ToggleRunningAction(false), System::class)
+        assertFalse(analytics.running())
+        assertNull(analytics.forceRunningJob)
+
+        // Now call pauseEventProcessing - it should schedule a ForceRunningAction
+        // even though the system is already not running
+        analytics.pauseEventProcessing(1000)
+        assertFalse(analytics.running())
+        assertNotNull(analytics.forceRunningJob)
+        assertTrue(analytics.forceRunningJob?.isActive == true)
+
+        // After timeout, ForceRunningAction should fire and resume
+        advanceTimeBy(2000)
+        assertTrue(analytics.running())
+    }
+
+    @Test
+    fun `test forceRunningJob is cleared after natural timeout completion`() = testScope.runTest {
+        assertTrue(analytics.running())
+        analytics.pauseEventProcessing(1000)
+        assertFalse(analytics.running())
+        assertNotNull(analytics.forceRunningJob)
+        assertTrue(analytics.forceRunningJob?.isActive == true)
+
+        // After timeout, ForceRunningAction fires and forceRunningJob should be cleared
+        advanceTimeBy(2000)
+        assertTrue(analytics.running())
+        assertNull(analytics.forceRunningJob)
+    }
+
     class ExampleWaitingPlugin: EventPlugin, WaitingPlugin {
         override val type: Plugin.Type = Plugin.Type.Enrichment
         override lateinit var analytics: Analytics

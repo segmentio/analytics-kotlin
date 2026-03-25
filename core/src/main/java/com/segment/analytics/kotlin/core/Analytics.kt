@@ -12,6 +12,7 @@ import com.segment.analytics.kotlin.core.platform.plugins.UserInfoPlugin
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import com.segment.analytics.kotlin.core.utilities.JsonAnySerializer
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.Json.Default.decodeFromJsonElement
@@ -56,6 +57,9 @@ open class Analytics protected constructor(
                 store.dispatch(System.ToggleEnabledAction(value), System::class)
             }
         }
+
+    internal var forceRunningJob: Job? = null
+    internal val forceRunningMutex = Mutex()
 
     companion object {
         var debugLogsEnabled: Boolean = false

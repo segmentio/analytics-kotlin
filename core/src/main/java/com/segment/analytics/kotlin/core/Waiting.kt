@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.platform.Plugin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 
 /**
  * An interface that provides functionality of pausing and resuming event processing on Analytics.
@@ -44,19 +45,33 @@ internal suspend fun Analytics.running(): Boolean {
 }
 
 internal suspend fun Analytics.pauseEventProcessing(timeout: Long = 30_000) {
-    if (!running()) return
+    forceRunningMutex.withLock {
+        if (forceRunningJob?.isActive == true) return
 
-    store.dispatch(System.ToggleRunningAction(false), System::class)
-    startProcessingAfterTimeout(timeout)
+        store.dispatch(System.ToggleRunningAction(false), System::class)
+        forceRunningJob = startProcessingAfterTimeout(timeout)
+    }
 }
 
 internal suspend fun Analytics.resumeEventProcessing() {
     if (running()) return
+    // Only cancel forceRunningJob if no plugins are waiting
+    // This ensures other waiting plugins still have the safety timeout
+    val system = store.currentState(System::class)
+    if (system?.waitingPlugins?.isEmpty() == true) {
+        forceRunningMutex.withLock {
+            forceRunningJob?.cancel()
+            forceRunningJob = null
+        }
+    }
     store.dispatch(System.ToggleRunningAction(true), System::class)
 }
 
 internal fun Analytics.startProcessingAfterTimeout(timeout: Long) = analyticsScope.launch(analyticsDispatcher) {
     delay(timeout)
     store.dispatch(System.ForceRunningAction(), System::class)
+    forceRunningMutex.withLock {
+        forceRunningJob = null
+    }
 }
 
