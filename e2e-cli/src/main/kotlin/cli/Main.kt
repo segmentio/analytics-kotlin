@@ -118,7 +118,7 @@ fun main(args: Array<String>) {
             // Initial delay: Give SDK time to initialize, handle settings timeout,
             // fall back to defaultSettings, and create batch files.
             // This overhead is inherent to the CLI architecture.
-            delay(1200)
+            delay(900)
 
             // Poll with adaptive intervals: start fast, then slow down
             var pollInterval = 200L
