@@ -42,8 +42,8 @@ open class EventPipeline(
 
     protected open val networkIODispatcher get() = analytics.networkIODispatcher
 
-    // Retry state machine for smart retry logic 
-    private val retryStateMachine: RetryStateMachine
+    // Retry state machine for smart retry logic
+    private var retryStateMachine: RetryStateMachine
     private var retryState: RetryState
 
 
@@ -111,6 +111,18 @@ open class EventPipeline(
         uploadChannel.cancel()
         writeChannel.cancel()
         unschedule()
+    }
+
+    /**
+     * Update the retry configuration from CDN settings.
+     * Recreates the RetryStateMachine with the new config while preserving retry state.
+     */
+    fun updateHttpConfig(newConfig: HttpConfig) {
+        val retryConfig = RetryConfig(
+            rateLimitConfig = newConfig.rateLimitConfig,
+            backoffConfig = newConfig.backoffConfig
+        )
+        retryStateMachine = RetryStateMachine(retryConfig, timeProvider)
     }
 
     open fun stringifyBaseEvent(payload: BaseEvent): String {

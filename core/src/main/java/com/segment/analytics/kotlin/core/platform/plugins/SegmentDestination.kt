@@ -11,6 +11,9 @@ import com.segment.analytics.kotlin.core.platform.policies.FrequencyFlushPolicy
 import com.segment.analytics.kotlin.core.retry.HttpConfig
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import sovran.kotlin.Subscriber
 
 @Serializable
@@ -103,9 +106,32 @@ class SegmentDestination: DestinationPlugin(), VersionedPlugin, Subscriber {
     override fun update(settings: Settings, type: Plugin.UpdateType) {
         super.update(settings, type)
         if (settings.hasIntegrationSettings(this)) {
-            // only populate the apiHost value if it exists
-            settings.destinationSettings<SegmentSettings>(key)?.apiHost?.let {
+            val segmentSettings = settings.destinationSettings<SegmentSettings>(key)
+
+            // Update apiHost if it exists
+            segmentSettings?.apiHost?.let {
                 pipeline?.apiHost = it
+            }
+
+            // Read httpConfig from CDN settings and apply to pipeline
+            segmentSettings?.httpConfig?.let { cdnConfig ->
+                // CDN-sourced config defaults enabled to true (presence implies active).
+                // Only honor explicit enabled: false from CDN.
+                val rawJson = settings.integrations[key]?.jsonObject
+                val httpConfigJson = rawJson?.get("httpConfig")?.jsonObject
+
+                val rlEnabled = httpConfigJson?.get("rateLimitConfig")?.jsonObject
+                    ?.get("enabled")?.jsonPrimitive?.booleanOrNull
+                val boEnabled = httpConfigJson?.get("backoffConfig")?.jsonObject
+                    ?.get("enabled")?.jsonPrimitive?.booleanOrNull
+
+                val adjustedConfig = HttpConfig(
+                    rateLimitConfig = cdnConfig.rateLimitConfig.copy(enabled = rlEnabled ?: true),
+                    backoffConfig = cdnConfig.backoffConfig.copy(enabled = boEnabled ?: true)
+                )
+
+                analytics.configuration.httpConfig = adjustedConfig
+                pipeline?.updateHttpConfig(adjustedConfig)
             }
         }
     }
