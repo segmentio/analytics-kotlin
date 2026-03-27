@@ -10,6 +10,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -135,14 +136,16 @@ open class EventPipeline(
                 var shouldCleanup = true
                 storage.readAsStream(url)?.use { data ->
                     try {
-                        val connection = httpClient.upload(apiHost)
-                        connection.outputStream?.let {
-                            // Write the payloads into the OutputStream
-                            data.copyTo(connection.outputStream)
-                            connection.outputStream.close()
+                        runInterruptible {
+                            val connection = httpClient.upload(apiHost)
+                            connection.outputStream?.let {
+                                // Write the payloads into the OutputStream
+                                data.copyTo(connection.outputStream)
+                                connection.outputStream.close()
 
-                            // Upload the payloads.
-                            connection.close()
+                                // Upload the payloads.
+                                connection.close()
+                            }
                         }
                         // Cleanup uploaded payloads
                         analytics.log("$logTag uploaded $url")
