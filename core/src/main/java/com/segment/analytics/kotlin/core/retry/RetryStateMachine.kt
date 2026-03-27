@@ -36,14 +36,20 @@ class RetryStateMachine(
                 )
             }
 
-            response.statusCode == 429 && config.rateLimitConfig.enabled -> {
-                handleRateLimitResponse(state, response, currentTime)
+            response.statusCode == 429 -> {
+                if (config.rateLimitConfig.enabled) {
+                    handleRateLimitResponse(state, response, currentTime)
+                } else {
+                    // Rate limit handling disabled: drop (don't fall through to backoff)
+                    state.removeBatch(response.batchFile)
+                }
             }
 
             behavior == RetryBehavior.RETRY && config.backoffConfig.enabled -> {
                 handleRetryableError(state, response, currentTime)
             }
 
+            // Drop non-retryable errors, or retryable errors when backoff is disabled
             else -> {
                 state.removeBatch(response.batchFile)
             }
@@ -132,7 +138,14 @@ class RetryStateMachine(
             state
         }
 
-        // Check 2: Per-batch metadata
+        // Check 2: Global rate limit retry count
+        if (config.rateLimitConfig.enabled &&
+            clearedState.globalRetryCount >= config.rateLimitConfig.maxRetryCount) {
+            return UploadDecision.DropBatch(DropReason.MAX_RETRIES_EXCEEDED) to
+                   clearedState.copy(globalRetryCount = 0).removeBatch(batchFile)
+        }
+
+        // Check 3: Per-batch metadata
         val metadata = clearedState.batchMetadata[batchFile]
         if (metadata != null) {
             // Check retry count limit (must be checked before duration per spec)
@@ -173,8 +186,12 @@ class RetryStateMachine(
             return statusCode in 400..499 && statusCode != 429
         }
         if (statusCode in 200..299) return true // Success: file can be removed
-        if (statusCode == 429 && config.rateLimitConfig.enabled) return false
-        return resolveStatusCodeBehavior(statusCode) == RetryBehavior.DROP
+        // 429 with rate limit handling disabled: delete
+        if (statusCode == 429) return !config.rateLimitConfig.enabled
+        val behavior = resolveStatusCodeBehavior(statusCode)
+        // Retryable error with backoff disabled: delete
+        if (behavior == RetryBehavior.RETRY && !config.backoffConfig.enabled) return true
+        return behavior == RetryBehavior.DROP
     }
 
     private fun resolveStatusCodeBehavior(code: Int): RetryBehavior {
