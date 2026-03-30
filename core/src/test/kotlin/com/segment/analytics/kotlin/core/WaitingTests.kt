@@ -9,6 +9,7 @@ import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,15 +66,19 @@ class WaitingTests {
     @Test
     fun `test pause does not dispatch state if already pause`() {
         mockkStatic("com.segment.analytics.kotlin.core.WaitingKt")
-        coEvery { analytics.startProcessingAfterTimeout(any()) } returns Job()
+        try {
+            coEvery { analytics.startProcessingAfterTimeout(any()) } returns Job()
 
-        testScope.runTest {
-            analytics.pauseEventProcessing()
-            analytics.pauseEventProcessing()
-            analytics.pauseEventProcessing()
-            coVerify(exactly = 1) {
-                analytics.startProcessingAfterTimeout(any())
+            testScope.runTest {
+                analytics.pauseEventProcessing()
+                analytics.pauseEventProcessing()
+                analytics.pauseEventProcessing()
+                coVerify(exactly = 1) {
+                    analytics.startProcessingAfterTimeout(any())
+                }
             }
+        } finally {
+            unmockkStatic("com.segment.analytics.kotlin.core.WaitingKt")
         }
     }
 
@@ -147,12 +152,13 @@ class WaitingTests {
         analytics.add(destinationPlugin)
         destinationPlugin.add(waitingPlugin)
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
-        advanceUntilIdle()
         advanceTimeBy(6000)
+        testScheduler.runCurrent()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -166,12 +172,13 @@ class WaitingTests {
         analytics.add(destinationPlugin)
         destinationPlugin.add(waitingPlugin)
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
-        advanceUntilIdle()
         advanceTimeBy(6000)
+        testScheduler.runCurrent()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
