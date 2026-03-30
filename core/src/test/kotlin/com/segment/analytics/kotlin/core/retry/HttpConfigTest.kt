@@ -22,12 +22,12 @@ class HttpConfigTest {
                 "maxBackoffInterval": 600,
                 "maxTotalBackoffDuration": 3600,
                 "jitterPercent": 20,
-                "default4xxBehavior": "DROP",
-                "default5xxBehavior": "RETRY",
-                "unknownCodeBehavior": "DROP",
+                "default4xxBehavior": "drop",
+                "default5xxBehavior": "retry",
+                "unknownCodeBehavior": "drop",
                 "statusCodeOverrides": {
-                  "408": "RETRY",
-                  "501": "DROP"
+                  "408": "retry",
+                  "501": "drop"
                 }
               }
             }
