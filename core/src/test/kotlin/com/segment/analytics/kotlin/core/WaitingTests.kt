@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Assertions.*
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class WaitingTests {
 
+    private val writeKey = "waiting-tests"
+
     private lateinit var analytics: Analytics
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -34,10 +36,10 @@ class WaitingTests {
 
     @BeforeEach
     fun setup() {
-        clearPersistentStorage()
+        clearPersistentStorage(writeKey)
         mockHTTPClient()
         val config = Configuration(
-            writeKey = "123",
+            writeKey = writeKey,
             application = "Test",
             autoAddSegmentDestination = false
         )
@@ -87,13 +89,16 @@ class WaitingTests {
         assertTrue(analytics.running())
         val waitingPlugin = ExampleWaitingPlugin()
         analytics.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
         advanceTimeBy(6000)
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -104,13 +109,16 @@ class WaitingTests {
         assertTrue(analytics.running())
         val waitingPlugin = ExampleWaitingPlugin()
         analytics.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
         advanceTimeBy(6000)
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -123,7 +131,9 @@ class WaitingTests {
         val plugin2 = ManualResumeWaitingPlugin()
         analytics.add(plugin1)
         analytics.add(plugin2)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(plugin1.tracked)
@@ -138,6 +148,7 @@ class WaitingTests {
 
         plugin2.resume()
         testScheduler.runCurrent()
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
@@ -151,6 +162,7 @@ class WaitingTests {
         val destinationPlugin = StubDestinationPlugin()
         analytics.add(destinationPlugin)
         destinationPlugin.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
         testScheduler.runCurrent()
 
@@ -159,6 +171,7 @@ class WaitingTests {
 
         advanceTimeBy(6000)
         testScheduler.runCurrent()
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -171,6 +184,7 @@ class WaitingTests {
         val destinationPlugin = StubDestinationPlugin()
         analytics.add(destinationPlugin)
         destinationPlugin.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
         testScheduler.runCurrent()
 
@@ -179,6 +193,7 @@ class WaitingTests {
 
         advanceTimeBy(6000)
         testScheduler.runCurrent()
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -193,7 +208,9 @@ class WaitingTests {
         val plugin2 = ManualResumeWaitingPlugin()
         destinationPlugin.add(plugin1)
         destinationPlugin.add(plugin2)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(plugin1.tracked)
@@ -208,6 +225,7 @@ class WaitingTests {
 
         plugin2.resume()
         testScheduler.runCurrent()
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
@@ -219,12 +237,11 @@ class WaitingTests {
         override lateinit var analytics: Analytics
         var tracked = false
 
-        override fun update(settings: Settings, type: Plugin.UpdateType) {
-            if (type == Plugin.UpdateType.Initial) {
-                analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
-                    delay(3000)
-                    resume()
-                }
+        override fun setup(analytics: Analytics) {
+            super<WaitingPlugin>.setup(analytics)
+            analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+                delay(3000)
+                resume()
             }
         }
 
