@@ -127,7 +127,7 @@ class WaitingTests {
     @Test
     fun `test multiple WaitingPlugin`() = testScope.runTest {
         assertTrue(analytics.running())
-        val plugin1 = ExampleWaitingPlugin()
+        val plugin1 = ManualResumeWaitingPlugin()
         val plugin2 = ManualResumeWaitingPlugin()
         analytics.add(plugin1)
         analytics.add(plugin2)
@@ -140,6 +140,13 @@ class WaitingTests {
         assertFalse(plugin2.tracked)
 
         advanceTimeBy(6000)
+        testScheduler.runCurrent()
+
+        assertFalse(analytics.running())
+        assertFalse(plugin1.tracked)
+        assertFalse(plugin2.tracked)
+
+        plugin1.resume()
         testScheduler.runCurrent()
 
         assertFalse(analytics.running())
