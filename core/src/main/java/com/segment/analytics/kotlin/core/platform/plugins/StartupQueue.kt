@@ -32,6 +32,7 @@ class StartupQueue : Plugin, Subscriber {
                     subscriber = this@StartupQueue,
                     stateClazz = System::class,
                     initialState = true,
+                    queue = analyticsDispatcher,
                     handler = this@StartupQueue::runningUpdate
                 )
             }
