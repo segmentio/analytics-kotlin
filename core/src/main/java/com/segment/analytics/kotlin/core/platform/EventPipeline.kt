@@ -300,6 +300,9 @@ open class EventPipeline(
                     message = "Payloads were rejected by server. Marked for removal.",
                     kind = LogKind.ERROR
                 )
+                analytics.reportInternalError(
+                    Exception("Batch dropped due to non-retryable HTTP ${e.responseCode}")
+                )
                 shouldCleanup = true
             } else {
                 Analytics.segmentLog(

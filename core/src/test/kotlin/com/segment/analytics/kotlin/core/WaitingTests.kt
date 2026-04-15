@@ -158,6 +158,14 @@ class WaitingTests {
         advanceUntilIdle()
 
         assertTrue(analytics.running())
+
+        // Verify both plugins process events after analytics fully resumes.
+        plugin1.tracked = false
+        plugin2.tracked = false
+        analytics.track("bar")
+        testScheduler.runCurrent()
+        advanceUntilIdle()
+
         assertTrue(plugin1.tracked)
         assertTrue(plugin2.tracked)
     }
