@@ -1,5 +1,6 @@
 package com.segment.analytics.kotlin.core.retry
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,8 +11,8 @@ enum class PipelineState {
 
 @Serializable
 enum class RetryBehavior {
-    RETRY,
-    DROP
+    @SerialName("retry") RETRY,
+    @SerialName("drop") DROP
 }
 
 @Serializable

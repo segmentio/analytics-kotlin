@@ -3,6 +3,7 @@ package com.segment.analytics.kotlin.core
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_API_HOST
 import com.segment.analytics.kotlin.core.Constants.DEFAULT_CDN_HOST
 import com.segment.analytics.kotlin.core.platform.policies.FlushPolicy
+import com.segment.analytics.kotlin.core.retry.HttpConfig
 import com.segment.analytics.kotlin.core.utilities.ConcreteStorageProvider
 import kotlinx.coroutines.*
 import sovran.kotlin.Store
@@ -21,6 +22,7 @@ import sovran.kotlin.Store
  * @property defaultSettings Settings object that will be used as fallback in case of network failure, defaults to empty
  * @property autoAddSegmentDestination automatically add SegmentDestination plugin, defaults to `true`
  * @property apiHost set a default apiHost to which Segment sends events, defaults to `api.segment.io/v1`
+ * @property httpConfig HTTP retry configuration for rate limiting and exponential backoff, defaults to `null` (legacy mode)
  */
 data class Configuration(
     val writeKey: String,
@@ -38,7 +40,8 @@ data class Configuration(
     var apiHost: String = DEFAULT_API_HOST,
     var cdnHost: String = DEFAULT_CDN_HOST,
     var requestFactory: RequestFactory = RequestFactory(),
-    var errorHandler: ErrorHandler? = null
+    var errorHandler: ErrorHandler? = null,
+    var httpConfig: HttpConfig? = null
 ) {
     fun isValid(): Boolean {
         return writeKey.isNotBlank() && application != null

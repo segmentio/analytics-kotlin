@@ -137,7 +137,7 @@ class RetryIntegrationTest {
     @Test
     fun `baseline - 429 with Retry-After header is ignored`() {
         // Current behavior: Retry-After header is completely ignored
-        val headers = mutableMapOf("Retry-After" to mutableListOf("60"))
+        val headers = mutableMapOf("retry-after" to mutableListOf("60"))
         every { mockHttpClient.upload(any()) } throws HTTPException(429, "", "", headers)
 
         pipeline.put(createTestEvent("event1"))

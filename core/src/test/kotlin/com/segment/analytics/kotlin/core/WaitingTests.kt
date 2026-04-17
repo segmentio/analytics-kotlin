@@ -9,6 +9,7 @@ import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -25,6 +26,8 @@ import org.junit.jupiter.api.Assertions.*
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class WaitingTests {
 
+    private val writeKey = "waiting-tests"
+
     private lateinit var analytics: Analytics
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -33,10 +36,10 @@ class WaitingTests {
 
     @BeforeEach
     fun setup() {
-        clearPersistentStorage()
+        clearPersistentStorage(writeKey)
         mockHTTPClient()
         val config = Configuration(
-            writeKey = "123",
+            writeKey = writeKey,
             application = "Test",
             autoAddSegmentDestination = false
         )
@@ -65,15 +68,19 @@ class WaitingTests {
     @Test
     fun `test pause does not dispatch state if already pause`() {
         mockkStatic("com.segment.analytics.kotlin.core.WaitingKt")
-        coEvery { analytics.startProcessingAfterTimeout(any()) } returns Job()
+        try {
+            coEvery { analytics.startProcessingAfterTimeout(any()) } returns Job()
 
-        testScope.runTest {
-            analytics.pauseEventProcessing()
-            analytics.pauseEventProcessing()
-            analytics.pauseEventProcessing()
-            coVerify(exactly = 1) {
-                analytics.startProcessingAfterTimeout(any())
+            testScope.runTest {
+                analytics.pauseEventProcessing()
+                analytics.pauseEventProcessing()
+                analytics.pauseEventProcessing()
+                coVerify(exactly = 1) {
+                    analytics.startProcessingAfterTimeout(any())
+                }
             }
+        } finally {
+            unmockkStatic("com.segment.analytics.kotlin.core.WaitingKt")
         }
     }
 
@@ -82,13 +89,16 @@ class WaitingTests {
         assertTrue(analytics.running())
         val waitingPlugin = ExampleWaitingPlugin()
         analytics.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
         advanceTimeBy(6000)
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -99,13 +109,16 @@ class WaitingTests {
         assertTrue(analytics.running())
         val waitingPlugin = ExampleWaitingPlugin()
         analytics.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
         advanceUntilIdle()
         advanceTimeBy(6000)
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -114,11 +127,13 @@ class WaitingTests {
     @Test
     fun `test multiple WaitingPlugin`() = testScope.runTest {
         assertTrue(analytics.running())
-        val plugin1 = ExampleWaitingPlugin()
+        val plugin1 = ManualResumeWaitingPlugin()
         val plugin2 = ManualResumeWaitingPlugin()
         analytics.add(plugin1)
         analytics.add(plugin2)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(plugin1.tracked)
@@ -131,10 +146,26 @@ class WaitingTests {
         assertFalse(plugin1.tracked)
         assertFalse(plugin2.tracked)
 
-        plugin2.resume()
+        plugin1.resume()
         testScheduler.runCurrent()
 
+        assertFalse(analytics.running())
+        assertFalse(plugin1.tracked)
+        assertFalse(plugin2.tracked)
+
+        plugin2.resume()
+        testScheduler.runCurrent()
+        advanceUntilIdle()
+
         assertTrue(analytics.running())
+
+        // Verify both plugins process events after analytics fully resumes.
+        plugin1.tracked = false
+        plugin2.tracked = false
+        analytics.track("bar")
+        testScheduler.runCurrent()
+        advanceUntilIdle()
+
         assertTrue(plugin1.tracked)
         assertTrue(plugin2.tracked)
     }
@@ -146,13 +177,16 @@ class WaitingTests {
         val destinationPlugin = StubDestinationPlugin()
         analytics.add(destinationPlugin)
         destinationPlugin.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
-        advanceUntilIdle()
         advanceTimeBy(6000)
+        testScheduler.runCurrent()
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -165,13 +199,16 @@ class WaitingTests {
         val destinationPlugin = StubDestinationPlugin()
         analytics.add(destinationPlugin)
         destinationPlugin.add(waitingPlugin)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(waitingPlugin.tracked)
 
-        advanceUntilIdle()
         advanceTimeBy(6000)
+        testScheduler.runCurrent()
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(waitingPlugin.tracked)
@@ -186,7 +223,9 @@ class WaitingTests {
         val plugin2 = ManualResumeWaitingPlugin()
         destinationPlugin.add(plugin1)
         destinationPlugin.add(plugin2)
+        testScheduler.runCurrent()
         analytics.track("foo")
+        testScheduler.runCurrent()
 
         assertFalse(analytics.running())
         assertFalse(plugin1.tracked)
@@ -201,6 +240,7 @@ class WaitingTests {
 
         plugin2.resume()
         testScheduler.runCurrent()
+        advanceUntilIdle()
 
         assertTrue(analytics.running())
         assertTrue(plugin1.tracked)
@@ -298,12 +338,11 @@ class WaitingTests {
         override lateinit var analytics: Analytics
         var tracked = false
 
-        override fun update(settings: Settings, type: Plugin.UpdateType) {
-            if (type == Plugin.UpdateType.Initial) {
-                analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
-                    delay(3000)
-                    resume()
-                }
+        override fun setup(analytics: Analytics) {
+            super<WaitingPlugin>.setup(analytics)
+            analytics.analyticsScope.launch(analytics.analyticsDispatcher) {
+                delay(3000)
+                resume()
             }
         }
 

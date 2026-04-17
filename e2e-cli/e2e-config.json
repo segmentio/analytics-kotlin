@@ -1,7 +1,9 @@
 {
   "sdk": "kotlin",
-  "test_suites": "basic,settings",
+  "test_suites": "basic,settings,retry,retry-settings",
   "auto_settings": true,
   "patch": "analytics-kotlin-http.patch",
-  "env": {}
+  "env": {
+    "HTTP_CONFIG_SETTINGS": "true"
+  }
 }

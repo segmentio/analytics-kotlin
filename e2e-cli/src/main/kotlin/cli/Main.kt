@@ -1,14 +1,22 @@
 package cli
 
 import com.segment.analytics.kotlin.core.Analytics
+import com.segment.analytics.kotlin.core.RequestFactory
 import com.segment.analytics.kotlin.core.Settings
 import com.segment.analytics.kotlin.core.emptyJsonObject
+import com.segment.analytics.kotlin.core.retry.BackoffConfig
+import com.segment.analytics.kotlin.core.retry.HttpConfig
+import com.segment.analytics.kotlin.core.retry.RateLimitConfig
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import java.util.Collections
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
 @Serializable
@@ -62,6 +70,18 @@ fun main(args: Array<String>) {
                 }
             )
 
+            // Collect delivery errors from the SDK's error handler.
+            // HTTPException is internal, so we parse the message ("HTTP {code}: ...").
+            val deliveryErrors = Collections.synchronizedList(mutableListOf<String>())
+
+            // Use short HTTP timeouts (2s) for e2e tests to fail fast on settings errors.
+            // This allows the SDK to quickly fall back to defaultSettings and proceed.
+            val httpClient = OkHttpClient.Builder()
+                .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
+                .connectTimeout(2, TimeUnit.SECONDS)
+                .readTimeout(2, TimeUnit.SECONDS)
+                .build()
+
             val analytics = Analytics(input.writeKey) {
                 application = "e2e-cli"
                 input.apiHost?.let { apiHost = it }
@@ -70,6 +90,23 @@ fun main(args: Array<String>) {
                 flushInterval = input.config?.flushInterval ?: 30
                 autoAddSegmentDestination = true
                 this.defaultSettings = defaultSettings
+                requestFactory = RequestFactory(httpClient)
+                // Enable smart retry (rate limiting + exponential backoff)
+                val maxRetries = input.config?.maxRetries ?: 100
+                httpConfig = HttpConfig(
+                    rateLimitConfig = RateLimitConfig(enabled = true),
+                    backoffConfig = BackoffConfig(
+                        enabled = true,
+                        maxRetryCount = maxRetries,
+                        baseBackoffInterval = 0.5
+                    )
+                )
+                errorHandler = { error ->
+                    val msg = error.message ?: error.toString()
+                    if (msg.startsWith("HTTP ") || msg.startsWith("Batch dropped")) {
+                        deliveryErrors.add(msg)
+                    }
+                }
             }
 
             // Process event sequences
@@ -83,12 +120,67 @@ fun main(args: Array<String>) {
                 }
             }
 
-            // Flush and wait for async operations to complete
+            // Flush and poll until all batch files are processed.
+            // Each flush() triggers an upload cycle — retries happen on
+            // subsequent flush cycles (batch files persist to disk).
+            val timeoutMs = (input.config?.timeout ?: 20) * 1000L
+            val deadline = System.currentTimeMillis() + timeoutMs
+            deliveryErrors.clear()
             analytics.flush()
-            delay(5000)
-        }
 
-        output = CLIOutput(success = true, sentBatches = 1)
+            // Poll until batch files appear then drain.
+            // Key insight: pendingUploads() returns empty BOTH when "all sent"
+            // AND when "SDK hasn't created batch files yet" (still initializing).
+            // We track whether we've ever seen batch files to distinguish the two.
+            var everSeenPending = false
+            var pollInterval = 200L
+            var pollCount = 0
+
+            while (System.currentTimeMillis() < deadline) {
+                delay(pollInterval)
+                pollCount++
+
+                val pending = analytics.pendingUploads()
+                if (pending.isNotEmpty()) {
+                    everSeenPending = true
+
+                    // Clear errors before each retry cycle — only the final cycle's errors matter.
+                    // If a retry succeeds, no error fires and deliveryErrors stays empty.
+                    deliveryErrors.clear()
+
+                    // Trigger another flush cycle for retries
+                    analytics.flush()
+                } else if (everSeenPending) {
+                    // Had batch files, now they're gone → all uploaded (or dropped)
+                    break
+                }
+                // else: SDK still initializing (settings fetch, event processing paused)
+                // keep polling until batch files appear or we time out
+
+                // Adaptive intervals: ramp up as polling continues
+                when {
+                    pollCount >= 10 && pollInterval < 1000 -> pollInterval = 1000
+                    pollCount >= 5 && pollInterval < 500 -> pollInterval = 500
+                }
+            }
+
+            val remaining = analytics.pendingUploads()
+            output = if (remaining.isNotEmpty()) {
+                CLIOutput(
+                    success = false,
+                    error = "Delivery incomplete: ${remaining.size} batch file(s) still pending"
+                )
+            } else if (deliveryErrors.isNotEmpty()) {
+                // Events were dropped (not delivered) — pendingUploads is empty because
+                // the SDK deleted the batch file, but errorHandler captured the HTTP error.
+                CLIOutput(
+                    success = false,
+                    error = "Delivery failed: ${deliveryErrors.joinToString("; ")}"
+                )
+            } else {
+                CLIOutput(success = true, sentBatches = 1)
+            }
+        }
     } catch (e: Exception) {
         output = CLIOutput(success = false, error = e.message ?: e.toString())
     }

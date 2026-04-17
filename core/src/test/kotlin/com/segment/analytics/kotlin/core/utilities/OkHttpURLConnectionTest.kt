@@ -5,6 +5,8 @@ import io.mockk.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -196,6 +198,35 @@ class OkHttpURLConnectionTest {
         assertEquals(2, headerFields["Cache-Control"]?.size)
         assertEquals("no-cache", headerFields["Cache-Control"]?.get(0))
         assertEquals("no-store", headerFields["Cache-Control"]?.get(1))
+    }
+
+    @Test
+    fun `getHeaderFields from OkHttp lowercases retry-after header names`() {
+        val server = MockWebServer()
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(429)
+                .addHeader("Retry-After", "60")
+                .setBody("rate limited")
+        )
+
+        server.start()
+        try {
+            val realConnection = OkHttpURLConnection(server.url("/b").toUrl(), OkHttpClient())
+            realConnection.setRequestMethod("POST")
+            realConnection.setRequestProperty("Content-Type", "text/plain")
+            realConnection.setDoOutput(true)
+
+            realConnection.outputStream.use { output ->
+                output.write("{}".toByteArray())
+            }
+
+            assertEquals(429, realConnection.responseCode)
+            val headerFields = realConnection.headerFields
+            assertEquals("60", headerFields["retry-after"]?.firstOrNull())
+        } finally {
+            server.shutdown()
+        }
     }
 
     @Test

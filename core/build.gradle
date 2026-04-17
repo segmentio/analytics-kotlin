@@ -19,6 +19,19 @@ compileKotlin {
 
 test {
     useJUnitPlatform()
+
+    if (System.getenv("CI") != null) {
+        // Prevent indefinite hangs in CI and surface the exact timed-out test.
+        systemProperty "junit.jupiter.execution.timeout.default", "2 m"
+    }
+
+    testLogging {
+        events "failed", "skipped"
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
+        showStackTraces true
+    }
 }
 
 dependencies {
