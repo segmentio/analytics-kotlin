@@ -1,7 +1,8 @@
-# Publish E2E CLI build to sdk-e2e-tests cli-builds branch
+# Publish E2E CLI build as a GitHub Actions artifact
 #
-# On merge to main, builds the e2e-cli fat JAR and pushes it
-# to the cli-builds branch of sdk-e2e-tests.
+# On merge to main (or monthly refresh), builds the e2e-cli fat JAR
+# and uploads it as an artifact. Consumers download via the GitHub API
+# or dawidd6/action-download-artifact.
 
 name: Publish E2E CLI
 
@@ -11,6 +12,8 @@ on:
     paths:
       - 'e2e-cli/**'
       - 'core/src/**'
+  schedule:
+    - cron: '0 0 1 * *'
   workflow_dispatch:
 
 jobs:
@@ -29,36 +32,14 @@ jobs:
       - name: Build e2e-cli
         run: ./gradlew :e2e-cli:jar
 
-      - name: Find e2e-cli jar
-        id: find-jar
+      - name: Prepare artifact
         run: |
-          JAR_PATH=$(find e2e-cli/build/libs -name "e2e-cli-*.jar" | head -1)
-          echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
+          mkdir -p artifact
+          cp $(find e2e-cli/build/libs -name "e2e-cli-*.jar" | head -1) artifact/e2e-cli.jar
 
-      - name: Checkout sdk-e2e-tests (cli-builds branch)
-        uses: actions/checkout@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          repository: segmentio/sdk-e2e-tests
-          ref: cli-builds
-          token: ${{ secrets.E2E_TESTS_TOKEN }}
-          path: sdk-e2e-tests-builds
-          fetch-depth: 1
-
-      - name: Copy CLI artifact
-        run: |
-          rm -rf sdk-e2e-tests-builds/analytics-kotlin
-          mkdir -p sdk-e2e-tests-builds/analytics-kotlin
-          cp ${{ steps.find-jar.outputs.jar_path }} sdk-e2e-tests-builds/analytics-kotlin/e2e-cli.jar
-
-      - name: Push to cli-builds branch
-        working-directory: sdk-e2e-tests-builds
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to CLI build"
-          else
-            git commit -m "update analytics-kotlin CLI build (${GITHUB_SHA::8})"
-            git push
-          fi
+          name: e2e-cli
+          path: artifact/e2e-cli.jar
+          retention-days: 90
