@@ -15,7 +15,7 @@ Releasing
 6. Upgrade to next version by changing version in `gradle.properties`
 7. `git commit -am "Prepare snapshot X.Y.Z-SNAPSHOT"`
 8. `git push && git push --tags`
-9. Create a PR to merge the new branch into `master`
+9. Create a PR to merge the new branch into `main`
 10. The CI pipeline will recognize the tag and upload, close and promote the artifacts automatically, and generate changelog automatically
 
 Example (stable release)
@@ -30,4 +30,4 @@ Example (stable release)
 7. Change VERSION_NAME = 1.3.2 (next higher version)
 8. `git commit -am "Prepare snapshot 1.3.2-SNAPSHOT"`
 9. `git push && git push --tags`
-10. Merging PR master will create a snapshot release 1.3.2-SNAPSHOT and tag push will create stable release 1.3.1
+10. Merging the PR into `main` will create a snapshot release 1.3.2-SNAPSHOT and the tag push will create stable release 1.3.1

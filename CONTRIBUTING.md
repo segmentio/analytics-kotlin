@@ -10,11 +10,11 @@ To get started with the project
 - clone this repository
 - import the project into Android Studio
 
-While developing, you can run the [example app](/example/) to test your changes.
+While developing, you can run one of the [example apps](/samples/) to test your changes.
 - You can do this via the IDE itself using the `Run app` button in the toolbar
-- You can install the debug version of the app using the gradle command:
+- You can install the debug version of an app using the gradle command (targeting a specific sample module):
 ```
-./gradlew installDebug
+./gradlew :samples:kotlin-android-app:installDebug
 ```
 
 Remember to add tests for your change if possible. Run the unit tests:
@@ -30,9 +30,9 @@ We follow the [conventional commits specification](https://www.conventionalcommi
 
 - `fix`: bug fixes, e.g. fix crash due to deprecated method.
 - `feat`: new features, e.g. add new method to the module.
-- `refactor`: code refactor, e.g. migrate from class components to hooks.
-- `docs`: changes into documentation, e.g. add usage example for the module..
-- `test`: adding or updating tests, eg add integration tests using detox.
+- `refactor`: code refactor, e.g. extract a helper or restructure a plugin.
+- `docs`: changes into documentation, e.g. add usage example for the module.
+- `test`: adding or updating tests, e.g. add unit tests for a new plugin.
 - `chore`: tooling changes, e.g. change CI config.
 
 ### Linting and tests
