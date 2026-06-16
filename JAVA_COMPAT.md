@@ -1,11 +1,7 @@
 # Analytics-Kotlin Java Compatibility 
-[![](https://jitpack.io/v/segmentio/analytics-kotlin.svg)](https://jitpack.io/#segmentio/analytics-kotlin)
+[![maven](https://img.shields.io/maven-central/v/com.segment.analytics.kotlin/android)](https://repo1.maven.org/maven2/com/segment/analytics/kotlin/)
 
 The hassle-free way to add Segment analytics to your kotlin app (Android/JVM).
-
-NOTE: This project is currently in the Pilot phase and is covered by Segment's [First Access & Beta Preview Terms](https://segment.com/legal/first-access-beta-preview/).  We encourage you
-to try out this new library. Please provide feedback via Github issues/PRs, and feel free to submit pull requests.  This library will eventually 
-supplant our `analytics-android` library.
 
 NOTE: This document serves as an explanation of usage of this `analytics-kotlin` library for pure Java codebase. For the sample usages in Kotlin and more detailed architectural explanation, please refer to our main [README.md doc](README.md).
 
@@ -35,7 +31,7 @@ NOTE: This document serves as an explanation of usage of this `analytics-kotlin`
   - [License](#license)
 
 ## Installation
-For our pilot phase, we will be using [jitpack](https://jitpack.io/#segmentio/analytics-kotlin) to distribute the library
+The library is published to Maven Central under the `com.segment.analytics.kotlin` group.
 <details open>
 <summary>Android</summary>
 <br>
@@ -43,11 +39,11 @@ In your app's build.gradle file add the following
 
 ```groovy
 repositories {
-    maven { url 'https://jitpack.io' }
+    mavenCentral()
 }
 
 dependencies {
-    implementation 'com.github.segmentio.analytics-kotlin:android:+'
+    implementation 'com.segment.analytics.kotlin:android:1.25.0'
 }
 ```
 
@@ -60,11 +56,11 @@ dependencies {
 In your app's build.gradle file add the following
 ```groovy
 repositories {
-    maven { url 'https://jitpack.io' }
+    mavenCentral()
 }
 
 dependencies {
-    implementation 'com.github.segmentio.analytics-kotlin:core:+'
+    implementation 'com.segment.analytics.kotlin:core:1.25.0'
 }
 ```
 </details>
