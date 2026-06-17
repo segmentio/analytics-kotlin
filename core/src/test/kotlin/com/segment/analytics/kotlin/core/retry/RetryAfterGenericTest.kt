@@ -147,6 +147,17 @@ class RetryAfterGenericTest {
     }
 
     @Test
+    fun `shouldDeleteBatch returns false for retryable code when rateLimitConfig enabled`() {
+        val config = RetryConfig(
+            rateLimitConfig = RateLimitConfig(enabled = true),
+            backoffConfig = BackoffConfig(enabled = false)
+        )
+        val machine = RetryStateMachine(config)
+        assertFalse(machine.shouldDeleteBatch(503))
+        assertFalse(machine.shouldDeleteBatch(529))
+    }
+
+    @Test
     fun `pipeline pause holds all batches`() {
         val config = makeConfig()
         val timeProvider = FakeTimeProvider(currentTime = 1_000_000L)
