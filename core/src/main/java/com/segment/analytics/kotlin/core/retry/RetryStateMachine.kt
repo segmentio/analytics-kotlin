@@ -45,11 +45,19 @@ class RetryStateMachine(
                 }
             }
 
-            behavior == RetryBehavior.RETRY && config.backoffConfig.enabled -> {
-                handleRetryableError(state, response, currentTime)
+            behavior == RetryBehavior.RETRY -> {
+                when {
+                    response.retryAfterSeconds != null && config.rateLimitConfig.enabled -> {
+                        handleRateLimitResponse(state, response, currentTime)
+                    }
+                    config.backoffConfig.enabled -> {
+                        handleRetryableError(state, response, currentTime)
+                    }
+                    else -> state.removeBatch(response.batchFile)
+                }
             }
 
-            // Drop non-retryable errors, or retryable errors when backoff is disabled
+            // Drop non-retryable errors
             else -> {
                 state.removeBatch(response.batchFile)
             }
