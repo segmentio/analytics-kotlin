@@ -45,11 +45,19 @@ class RetryStateMachine(
                 }
             }
 
-            behavior == RetryBehavior.RETRY && config.backoffConfig.enabled -> {
-                handleRetryableError(state, response, currentTime)
+            behavior == RetryBehavior.RETRY -> {
+                when {
+                    response.retryAfterSeconds != null && config.rateLimitConfig.enabled -> {
+                        handleRateLimitResponse(state, response, currentTime)
+                    }
+                    config.backoffConfig.enabled -> {
+                        handleRetryableError(state, response, currentTime)
+                    }
+                    else -> state.removeBatch(response.batchFile)
+                }
             }
 
-            // Drop non-retryable errors, or retryable errors when backoff is disabled
+            // Drop non-retryable errors
             else -> {
                 state.removeBatch(response.batchFile)
             }
@@ -189,8 +197,11 @@ class RetryStateMachine(
         // 429 with rate limit handling disabled: delete
         if (statusCode == 429) return !config.rateLimitConfig.enabled
         val behavior = resolveStatusCodeBehavior(statusCode)
-        // Retryable error with backoff disabled: delete
-        if (behavior == RetryBehavior.RETRY && !config.backoffConfig.enabled) return true
+        if (behavior == RetryBehavior.RETRY) {
+            if (config.rateLimitConfig.enabled) return false  // rate-limit path handles it
+            if (!config.backoffConfig.enabled) return true    // no retry mechanism: delete
+            return false
+        }
         return behavior == RetryBehavior.DROP
     }
 

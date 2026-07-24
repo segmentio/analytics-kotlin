@@ -267,8 +267,21 @@ open class EventPipeline(
                     batchFile = url,
                     currentTime = timeProvider.currentTimeMillis()
                 )
+                val previousState = retryState
                 retryState = retryStateMachine.handleResponse(retryState, responseInfo)
-                
+
+                // Log when Retry-After triggers a new pipeline pause
+                if (responseInfo.retryAfterSeconds != null &&
+                    previousState.pipelineState != PipelineState.RATE_LIMITED &&
+                    retryState.pipelineState == PipelineState.RATE_LIMITED) {
+                    val waitSeconds = responseInfo.retryAfterSeconds
+                    val waitUntilMs = retryState.waitUntilTime ?: 0L
+                    Analytics.segmentLog(
+                        message = "Retry-After (${waitSeconds}s) received on HTTP ${responseInfo.statusCode} — pausing pipeline until ${java.util.Date(waitUntilMs)}",
+                        kind = LogKind.WARNING
+                    )
+                }
+
                 // Persist updated retry state
                 withContext(fileIODispatcher) {
                     storage.saveRetryState(retryState)
