@@ -1,0 +1,16 @@
+settingsEvaluated { settings ->
+    settings.pluginManagement {
+        repositories {
+            clear()
+            maven { url 'https://maven.artifacts.twilio.com/artifactory/virtual-maven-thirdparty/' }
+        }
+    }
+    settings.dependencyResolutionManagement {
+        repositories {
+            clear()
+            maven { url 'https://maven.artifacts.twilio.com/artifactory/virtual-maven-thirdparty/' }
+            maven { url 'https://maven.artifacts.twilio.com/artifactory/remote-maven-google/' }
+        }
+    }
+}
+
