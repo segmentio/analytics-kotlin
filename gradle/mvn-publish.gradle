@@ -74,8 +74,11 @@ publishing {
     }
 }
 
-
 signing {
+    def signingKey = findProperty("signing.key")
+    if (signingKey) {
+        useInMemoryPgpKeys(findProperty("signing.keyId"), signingKey, findProperty("signing.password"))
+    }
     sign publishing.publications
 }
 
