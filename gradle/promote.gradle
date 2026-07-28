@@ -9,15 +9,7 @@ if (!hasProperty("signing.keyId")) {
 
     def pgpKeyContent = System.getenv('SIGNING_PRIVATE_KEY_BASE64')
     if (pgpKeyContent != null) {
-        def tmpDir = new File("$rootProject.rootDir/tmp")
-        mkdir tmpDir
-        def keyFile = new File("$tmpDir/key.pgp")
-        keyFile.createNewFile()
-        def os = keyFile.newDataOutputStream()
-        os.write(pgpKeyContent.decodeBase64())
-        os.close()
-
-        ext['signing.secretKeyRingFile'] = keyFile.absolutePath
+        ext['signing.key'] = new String(pgpKeyContent.decodeBase64())
     }
 }
 
