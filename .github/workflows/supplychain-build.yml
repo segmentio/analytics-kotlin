@@ -1,0 +1,36 @@
+name: Supply Chain Build
+
+on:
+  push:
+    branches: ["supplychain_*"]
+  pull_request:
+    branches: ["supplychain_*"]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || 'ubuntu-x64' }}
+    environment: test_docker
+    permissions:
+      id-token: write
+      contents: read
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: "temurin"
+          java-version: "11"
+
+      - name: Artifactory OIDC
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: twilio/sdk-actions/artifactory-oidc@79e834a5255209dff4c3be2208c673a1306ae8d1 # java_gradle
+        with:
+          ecosystem: "gradle"
+          provider-name: "github-actions-segmentio"
+
+      - name: Build
+        run: ./gradlew assemble
