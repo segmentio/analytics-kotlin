@@ -27,7 +27,7 @@ jobs:
 
       - name: Artifactory OIDC
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: twilio/sdk-actions/artifactory-oidc@79e834a5255209dff4c3be2208c673a1306ae8d1 # java_gradle
+        uses: twilio/sdk-actions/artifactory-oidc@0d27cae699ef35881ab22fd965922d3d555cab9d # java_gradle
         with:
           ecosystem: "gradle"
           provider-name: "github-actions-segmentio"

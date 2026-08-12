@@ -1,3 +1,4 @@
+/*
 settingsEvaluated { settings ->
     settings.pluginManagement {
         repositories {
@@ -13,4 +14,4 @@ settingsEvaluated { settings ->
         }
     }
 }
-
+*/
