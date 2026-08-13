@@ -25,6 +25,18 @@ jobs:
           distribution: "temurin"
           java-version: "11"
 
+        # Only cache if it's a fork
+      - name: Cache Gradle dependencies
+        if: ${{ github.event.pull_request.head.repo.fork }}
+        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Artifactory OIDC
         if: ${{ !github.event.pull_request.head.repo.fork }}
         uses: twilio/sdk-actions/artifactory-oidc@0d27cae699ef35881ab22fd965922d3d555cab9d # java_gradle
