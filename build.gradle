@@ -5,13 +5,6 @@ buildscript {
     repositories {
         google()
     }
-    configurations.classpath {
-        resolutionStrategy.force(
-            'org.bouncycastle:bcprov-jdk18on:1.81',
-            'org.bouncycastle:bcutil-jdk18on:1.81',
-            'org.bouncycastle:bcpkix-jdk18on:1.81'
-        )
-    }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.6.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -42,15 +35,6 @@ allprojects {
             freeCompilerArgs = ['-Xjvm-default=enable']
             jvmTarget = "1.8"
         }
-    }
-    // AGP pulls bcprov/bcutil-jdk18on transitively (extractAnnotations); older
-    // versions are blocked by Artifactory curation for CVEs. Force a clean release.
-    configurations.all {
-        resolutionStrategy.force(
-            'org.bouncycastle:bcprov-jdk18on:1.81',
-            'org.bouncycastle:bcutil-jdk18on:1.81',
-            'org.bouncycastle:bcpkix-jdk18on:1.81'
-        )
     }
     group GROUP
     version getVersionName()

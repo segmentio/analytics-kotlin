@@ -88,3 +88,11 @@ apply from: rootProject.file('gradle/codecov.gradle')
 tasks.named("signReleasePublication") {
     dependsOn("bundleReleaseAar")
 }
+
+// The extract*Annotations tasks pull bcprov-jdk18on:1.77 into a detached
+// configuration that Artifactory curation blocks for CVEs, and AGP's detached
+// config bypasses all resolutionStrategy overrides. The tasks only produce an
+// optional annotations.zip (IDE type-annotation hints for consumers); the AAR is
+// fully functional without it, so disable them.
+tasks.matching { it.name.startsWith("extract") && it.name.endsWith("Annotations") }
+    .configureEach { enabled = false }
