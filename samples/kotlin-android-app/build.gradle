@@ -6,7 +6,12 @@ plugins {
 }
 
 android {
+    namespace 'com.segment.analytics.next'
     compileSdkVersion 33
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         multiDexEnabled true

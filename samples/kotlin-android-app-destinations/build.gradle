@@ -5,7 +5,12 @@ plugins {
 }
 
 android {
+    namespace 'com.segment.analytics.kotlin.destinations'
     compileSdkVersion 33
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         multiDexEnabled true

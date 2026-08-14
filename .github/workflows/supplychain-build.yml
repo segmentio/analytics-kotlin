@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: "temurin"
-          java-version: "11"
+          java-version: "17"
 
         # Only cache if it's a fork
       - name: Cache Gradle dependencies
