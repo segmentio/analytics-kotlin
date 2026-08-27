@@ -157,8 +157,11 @@ open class RequestFactory(
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
         val responseCode = connection.responseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
+            // Read the message before disconnecting: on OkHttpURLConnection, disconnect() clears the response
+            // and a later getResponseMessage() reconnects, sending the request again and leaking that response.
+            val responseMessage = connection.responseMessage
             connection.disconnect()
-            throw IOException("HTTP " + responseCode + ": " + connection.responseMessage)
+            throw IOException("HTTP " + responseCode + ": " + responseMessage)
         }
         return connection
     }
