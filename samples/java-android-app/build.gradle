@@ -3,7 +3,12 @@ plugins {
 }
 
 android {
+    namespace 'com.segment.analytics.javaandroidapp'
     compileSdkVersion 33
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         applicationId "com.segment.analytics.javaandroidapp"

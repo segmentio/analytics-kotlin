@@ -6,7 +6,12 @@ plugins {
 }
 
 android {
+    namespace 'com.segment.analytics'
     compileSdkVersion 33
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         // Required when setting minSdkVersion to 20 or lower
