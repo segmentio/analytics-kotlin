@@ -52,6 +52,69 @@ You can find usage documentation at [https://segment.com/docs/sources/mobile/kot
 
 Explore more via the [example projects](samples) which showcase analytics instrumentation on different platforms/languages and usage of plugins. These projects contain sample [plugins](samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins) and [destination plugins](samples/kotlin-android-app-destinations/src/main/java/com/segment/analytics/destinations/plugins) 
 
+## Storage and security
+
+### Write keys are not secrets
+
+A Segment write key is a write-only ingestion identifier, not a credential. It grants no read access, no authentication, and no dashboard access — Segment intentionally ships write keys in client-side bundles (analytics.js, mobile app binaries). Treat it as an identifier that may be visible, not as a secret to be protected.
+
+### JVM / server storage behavior
+
+On the JVM (server) target, the default storage provider is `ConcreteStorageProvider`. It persists data to disk at:
+
+```
+/tmp/analytics-kotlin/<writeKey>/
+├── analytics-kotlin-<writeKey>.properties   # userId, anonymousId, traits, settings
+└── events/                                  # queued event batches awaiting flush
+```
+
+Two things to be aware of:
+
+* **The path is not configurable** and includes the write key as a directory name.
+* **Permissions are umask-derived.** These files are created without explicit POSIX permissions, so on a typical server umask (`0022`) they are world-readable (`0755` directories, `0644` files).
+
+The `.properties` file and queued event batches contain whatever identity data your application sends — `userId`, `anonymousId`, and `identify` traits. If those traits include end-user PII, that PII is written to this location in cleartext until the events are flushed.
+
+This applies **only to the JVM target**. Android uses `Context.MODE_PRIVATE`.
+
+### Recommendation: do not use the default provider on shared hosts
+
+Avoid the default `ConcreteStorageProvider` on shared, multi-tenant, or otherwise non-isolated hosts — for example a CI runner shared across jobs or tenants, a shared application server or jump box, or a container running more than one workload. Any other local user on such a host can read `/tmp/analytics-kotlin`. Because the parent directory name is fixed and contains no secret, `/tmp`'s sticky bit does not prevent a local user from pre-creating it (including as a symlink) before your application first runs.
+
+Storage is fully user-controllable via `Configuration.storageProvider`.
+
+**No disk persistence** — use the built-in in-memory provider. Events are queued in memory only, which eliminates on-disk exposure entirely. Note that queued events are lost if the process exits before a flush.
+
+```kotlin
+import com.segment.analytics.kotlin.core.utilities.InMemoryStorageProvider
+
+val analytics = Analytics("<WRITE_KEY>") {
+    storageProvider = InMemoryStorageProvider()
+}
+```
+
+**Durable queuing with private storage** — implement the `StorageProvider` interface to write to a location and permission set you control (for example a user-private or encrypted directory with owner-only `0600` permissions).
+
+```kotlin
+object MyStorageProvider : StorageProvider {
+    override fun createStorage(vararg params: Any): Storage {
+        // return your own Storage implementation
+    }
+}
+
+val analytics = Analytics("<WRITE_KEY>") {
+    storageProvider = MyStorageProvider
+}
+```
+
+**Restricting permissions on the default provider** — if you keep the default provider, run the JVM process with a restrictive umask so the storage tree is created owner-only:
+
+```sh
+umask 0077   # directories 0700, files 0600
+```
+
+Two caveats: a umask applies only to files created after it is set, so it will not tighten a storage directory that already exists; and it does not prevent the pre-creation issue described above, since that depends on the fixed directory path rather than on file permissions.
+
 ## Supported Device Mode Destinations
 
 | Partner | Package |
