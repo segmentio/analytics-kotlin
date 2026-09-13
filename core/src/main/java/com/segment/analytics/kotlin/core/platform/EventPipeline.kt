@@ -17,6 +17,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.IOException
 
 open class EventPipeline(
     private val analytics: Analytics,
@@ -167,16 +168,16 @@ open class EventPipeline(
                 storage.rollover()
             }
 
-            // Upload Gate - Check if pipeline is rate-limited
+            // Upload gate: server rate limiting or transport backoff.
             val currentTime = timeProvider.currentTimeMillis()
-            if (retryState.isRateLimited(currentTime)) {
-                analytics.log("$logTag skipping uploads: pipeline is rate-limited until ${retryState.waitUntilTime}")
+            if (retryState.isPaused(currentTime)) {
+                analytics.log("$logTag skipping uploads: pipeline is paused until ${retryState.waitUntilTime}")
                 return@consumeEach // Skip all uploads for this flush
             }
             
-            // Clear RATE_LIMITED state if wait time has passed
+            // Clear the pipeline pause if its wait time has passed.
             val waitTime = retryState.waitUntilTime
-            if (retryState.pipelineState == PipelineState.RATE_LIMITED &&
+            if (retryState.pipelineState != PipelineState.READY &&
                 waitTime != null &&
                 currentTime >= waitTime) {
                 retryState = retryState.copy(
@@ -222,6 +223,7 @@ open class EventPipeline(
                 val retryCount = retryStateMachine.getRetryCount(retryState, url)
                 
                 // upload event file
+                var transportFailure = false
                 var shouldCleanup = true
                 var statusCode = 0
                 var retryAfterSeconds: Int? = null
@@ -256,6 +258,7 @@ open class EventPipeline(
                             retryAfterSeconds = (e.responseHeaders["retry-after"])?.firstOrNull()?.toIntOrNull()
                         }
 
+                        transportFailure = e is IOException && e !is HTTPException
                         shouldCleanup = handleUploadException(e, url)
                     }
                 }
@@ -268,7 +271,11 @@ open class EventPipeline(
                     currentTime = timeProvider.currentTimeMillis()
                 )
                 val previousState = retryState
-                retryState = retryStateMachine.handleResponse(retryState, responseInfo)
+                retryState = if (transportFailure) {
+                    retryStateMachine.handleTransportFailure(retryState, url)
+                } else {
+                    retryStateMachine.handleResponse(retryState, responseInfo)
+                }
 
                 // Log when Retry-After triggers a new pipeline pause
                 if (responseInfo.retryAfterSeconds != null &&
@@ -286,6 +293,9 @@ open class EventPipeline(
                 withContext(fileIODispatcher) {
                     storage.saveRetryState(retryState)
                 }
+
+                // Trying every remaining batch cannot help when the transport has failed.
+                if (transportFailure) break
 
                 if (shouldCleanup) {
                     storage.removeFile(url)
