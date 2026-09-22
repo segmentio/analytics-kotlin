@@ -51,7 +51,7 @@ class RetryStateMachine(
                         handleRateLimitResponse(state, response, currentTime)
                     }
                     config.backoffConfig.enabled -> {
-                        handleRetryableError(state, response, currentTime)
+                        handleRetryableError(state, response.batchFile, currentTime)
                     }
                     else -> state.removeBatch(response.batchFile)
                 }
@@ -62,6 +62,22 @@ class RetryStateMachine(
                 state.removeBatch(response.batchFile)
             }
         }
+    }
+
+    internal fun handleTransportFailure(state: RetryState, batchFile: String): RetryState {
+        if (!config.backoffConfig.enabled) return state
+
+        val currentTime = timeProvider.currentTimeMillis()
+        val updatedState = handleRetryableError(
+            state,
+            batchFile,
+            currentTime
+        )
+        // A transport failure affects every queued batch, regardless of HTTP status overrides.
+        return updatedState.copy(
+            pipelineState = PipelineState.TRANSPORT_BACKOFF,
+            waitUntilTime = updatedState.batchMetadata[batchFile]?.nextRetryTime
+        )
     }
 
     private fun handleRateLimitResponse(
@@ -86,10 +102,10 @@ class RetryStateMachine(
 
     private fun handleRetryableError(
         state: RetryState,
-        response: ResponseInfo,
+        batchFile: String,
         currentTime: Long
     ): RetryState {
-        val existingMetadata = state.batchMetadata[response.batchFile]
+        val existingMetadata = state.batchMetadata[batchFile]
         val newFailureCount = (existingMetadata?.failureCount ?: 0) + 1
         val firstFailureTime = existingMetadata?.firstFailureTime ?: currentTime
         val nextRetryTime = currentTime + calculateBackoffMs(newFailureCount)
@@ -101,7 +117,7 @@ class RetryStateMachine(
         )
 
         return state.copy(
-            batchMetadata = state.batchMetadata + (response.batchFile to newMetadata)
+            batchMetadata = state.batchMetadata + (batchFile to newMetadata)
         )
     }
 
@@ -129,13 +145,13 @@ class RetryStateMachine(
 
         val currentTime = timeProvider.currentTimeMillis()
 
-        // Check 1: Global rate limiting
-        if (state.isRateLimited(currentTime)) {
+        // Check 1: Pipeline pause from rate limiting or transport backoff
+        if (state.isPaused(currentTime)) {
             return UploadDecision.SkipAllBatches to state
         }
 
-        // Clear stale rate limit state if it has expired
-        val clearedState = if (state.pipelineState == PipelineState.RATE_LIMITED &&
+        // Clear the pipeline pause if it has expired
+        val clearedState = if (state.pipelineState != PipelineState.READY &&
                                state.waitUntilTime != null &&
                                currentTime >= state.waitUntilTime) {
             state.copy(

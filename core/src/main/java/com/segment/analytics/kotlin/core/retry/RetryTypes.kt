@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class PipelineState {
     READY,
-    RATE_LIMITED
+    RATE_LIMITED,
+    TRANSPORT_BACKOFF
 }
 
 @Serializable

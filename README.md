@@ -52,6 +52,12 @@ You can find usage documentation at [https://segment.com/docs/sources/mobile/kot
 
 Explore more via the [example projects](samples) which showcase analytics instrumentation on different platforms/languages and usage of plugins. These projects contain sample [plugins](samples/kotlin-android-app/src/main/java/com/segment/analytics/next/plugins) and [destination plugins](samples/kotlin-android-app-destinations/src/main/java/com/segment/analytics/destinations/plugins) 
 
+## Transport failures and retries
+
+A transport failure (such as DNS resolution, a connection timeout, or a TLS failure) stops the current flush and leaves the failed and remaining batches queued. With the default configuration, the next flush can retry immediately.
+
+When `HttpConfig.backoffConfig.enabled` is `true`, transport failures also pause uploads for all batches using the configured exponential backoff and jitter. The pause is saved with the retry state and survives pipeline recreation when storage persists it. After the pause expires, the next flush retries; existing retry count and duration limits still apply to the failed batch. Retryable HTTP responses without `Retry-After` continue to use per-batch backoff.
+
 ## Storage and security
 
 ### Write keys are not secrets
