@@ -6,6 +6,9 @@ import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.TrackEvent
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.platform.plugins.logger.ConsoleLogger
+import com.segment.analytics.kotlin.core.platform.plugins.logger.LogMessage
+import com.segment.analytics.kotlin.core.platform.plugins.logger.Logger
 import com.segment.analytics.kotlin.core.utils.testAnalytics
 import io.mockk.every
 import io.mockk.spyk
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach
 
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
@@ -84,35 +88,39 @@ internal class StartupQueueTest {
     }
 
     @Test
-    fun `no event is stranded when events race with startup`() {
-        repeat(10) {
-            val startupQueue = StartupQueue()
-            val freshAnalytics = testAnalytics(
-                Configuration(writeKey = "123", application = "Test", autoAddSegmentDestination = false),
-                testScope, testDispatcher
-            )
-            freshAnalytics.add(startupQueue)
-            val replayed = AtomicInteger()
-            freshAnalytics.add(countingPlugin(replayed))
-            runBlocking { freshAnalytics.store.dispatch(System.ToggleRunningAction(false), System::class) }
+    fun `event queued while the startup replay runs is not stranded`() {
+        val startupQueue = StartupQueue()
+        analytics.add(startupQueue)
+        val replayed = AtomicInteger()
+        analytics.add(countingPlugin(replayed))
+        runBlocking { analytics.store.dispatch(System.ToggleRunningAction(false), System::class) }
 
-            val threads = 4
-            val perThread = 200
-            val passedDirectly = AtomicInteger()
-            val go = CountDownLatch(1)
-            val workers = (1..threads).map {
-                thread {
-                    go.await()
-                    repeat(perThread) {
-                        if (startupQueue.execute(trackEvent("e")) != null) passedDirectly.incrementAndGet()
-                    }
+        val worker = "startup-queue-worker"
+        val workerPaused = CountDownLatch(1)
+        val replayDone = CountDownLatch(1)
+        // Park the worker at its queueing log for the whole startup replay: a deschedule the
+        // scheduler could do on its own, just made deterministic.
+        Analytics.debugLogsEnabled = true
+        Analytics.setLogger(object : Logger {
+            override fun parseLog(log: LogMessage) {
+                if (log.message == "SegmentStartupQueue queueing event" && Thread.currentThread().name == worker) {
+                    workerPaused.countDown()
+                    replayDone.await(5, TimeUnit.SECONDS)
                 }
             }
-            go.countDown()
-            runBlocking { freshAnalytics.store.dispatch(System.ToggleRunningAction(true), System::class) }
-            workers.forEach { it.join() }
+        })
+        try {
+            var passed: BaseEvent? = null
+            val t = thread(name = worker) { passed = startupQueue.execute(trackEvent("e")) }
+            assertTrue(workerPaused.await(5, TimeUnit.SECONDS))
+            runBlocking { analytics.store.dispatch(System.ToggleRunningAction(true), System::class) }
+            replayDone.countDown()
+            t.join()
 
-            assertEquals(threads * perThread, passedDirectly.get() + replayed.get())
+            assertEquals(1, replayed.get() + (if (passed != null) 1 else 0))
+        } finally {
+            Analytics.debugLogsEnabled = false
+            Analytics.setLogger(ConsoleLogger())
         }
     }
 }
