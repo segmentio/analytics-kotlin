@@ -4,6 +4,7 @@ import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.BaseEvent
 import com.segment.analytics.kotlin.core.System
 import com.segment.analytics.kotlin.core.platform.Plugin
+import com.segment.analytics.kotlin.core.running
 import kotlinx.coroutines.launch
 import com.segment.analytics.kotlin.core.platform.plugins.logger.*
 import sovran.kotlin.Subscriber
@@ -24,6 +25,10 @@ class StartupQueue : Plugin, Subscriber {
     private val started: AtomicBoolean = AtomicBoolean(false)
     private val queuedEvents: Queue<BaseEvent> = ConcurrentLinkedQueue()
 
+    // Guards `started` + `queuedEvents` so the check-and-enqueue in execute() and the
+    // flip-and-drain in runningUpdate() can't interleave.
+    private val lock = Any()
+
     override fun setup(analytics: Analytics) {
         super.setup(analytics)
         with(analytics) {
@@ -40,41 +45,51 @@ class StartupQueue : Plugin, Subscriber {
     }
 
     override fun execute(event: BaseEvent): BaseEvent? {
-        if (!started.get()) {
-            analytics.log("SegmentStartupQueue queueing event")
-            // timeline hasn't started, so queue it up.
-            if (queuedEvents.size >= maxSize) {
-                // if we've exceeded the max queue size start dropping events
-                queuedEvents.remove()
+        // Without the lock an event can be enqueued just after the final drain and never replayed.
+        val queued = synchronized(lock) {
+            if (started.get()) {
+                false
+            } else {
+                // timeline hasn't started, so queue it up.
+                if (queuedEvents.size >= maxSize) {
+                    // if we've exceeded the max queue size start dropping events
+                    queuedEvents.remove()
+                }
+                queuedEvents.offer(event)
+                true
             }
-            queuedEvents.offer(event)
+        }
+        if (queued) {
+            analytics.log("SegmentStartupQueue queueing event")
             return null
         }
         // the timeline has started, so let the event pass.
         return event
     }
 
-    // Handler to manage system update
-    private fun runningUpdate(state: System) {
-        analytics.log("Analytics starting = ${state.running}")
-        started.set(state.running)
-        if (started.get()) {
-            replayEvents()
-        }
+    // Store.notify runs each handler in its own coroutine, so notifications can be handled out of
+    // order and the `state` argument may be stale (a late `running = false` after `running = true`
+    // would wedge the queue). Apply the store's current state instead, and re-check afterwards
+    // because it can change between the read and the apply.
+    @Suppress("UNUSED_PARAMETER")
+    internal suspend fun runningUpdate(state: System) {
+        do {
+            val running = analytics.running()
+            analytics.log("Analytics starting = $running")
+            val pending = synchronized(lock) {
+                started.set(running)
+                if (running) drainQueue() else emptyList()
+            }
+            // Replay outside the lock: process() re-enters execute() and runs arbitrary plugins.
+            pending.forEach { analytics.process(it, it.enrichment) }
+        } while (analytics.running() != running)
     }
 
-    private fun replayEvents() {
-        // replay the queued events to the instance of Analytics we're working with.
-        while (!queuedEvents.isEmpty()) {
-
-            val event = queuedEvents.poll()
-
-            // It is possible that event might actually be null due to time-slicing
-            // after checking if the queue is empty so we only process if the event
-            // if it is indeed not NULL.
-            event?.let {
-                analytics.process(it, it.enrichment)
-            }
+    private fun drainQueue(): List<BaseEvent> {
+        val drained = ArrayList<BaseEvent>()
+        while (true) {
+            drained.add(queuedEvents.poll() ?: break)
         }
+        return drained
     }
 }
