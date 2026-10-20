@@ -6,7 +6,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath 'com.android.tools.build:gradle:8.10.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
 
@@ -27,8 +27,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url "https://kotlin.bintray.com/kotlinx" }
-        maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
+        // maven { url "https://kotlin.bintray.com/kotlinx" }
+        // maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     }
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         kotlinOptions {
@@ -38,6 +38,34 @@ allprojects {
     }
     group GROUP
     version getVersionName()
+
+    // mockk mocks and copies JDK internals (java.time, HttpURLConnection, atomics) that JDK 17 closes by default.
+    tasks.withType(Test).configureEach {
+        jvmArgs '--add-opens=java.base/java.time=ALL-UNNAMED',
+                '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                '--add-opens=java.base/sun.net.www.protocol.https=ALL-UNNAMED',
+                '--add-opens=java.base/javax.net.ssl=ALL-UNNAMED',
+                '--add-opens=java.base/java.net=ALL-UNNAMED',
+                '--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED'
+    }
+
+    /*
+     * AGP's lint tooling (used by extractAnnotations and lint) resolves BouncyCastle 1.79 inside an
+     * internal detached configuration, which resolutionStrategy rules do not reach. Curated Artifactory
+     * blocks bcprov-jdk18on up to 1.84, so rewrite every component's BouncyCastle dependencies (the
+     * lint tooling's, and test libraries' such as Robolectric) to a version it serves. Component
+     * metadata rules apply to detached configurations too.
+     * Build-time only: BouncyCastle is not part of the published artifact.
+     */
+    dependencies.components.all { ComponentMetadataDetails details ->
+        details.allVariants {
+            withDependencies { deps ->
+                deps.findAll { it.group == "org.bouncycastle" }.each { dep ->
+                    dep.version { strictly "1.85" }
+                }
+            }
+        }
+    }
 }
 
 snyk {

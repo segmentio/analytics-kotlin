@@ -41,7 +41,7 @@ class MyFirebaseService : FirebaseMessagingService() {
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             putExtra("push_notification", true)
         }
-        val pi = PendingIntent.getActivity(applicationContext, 101, intent, 0)
+        val pi = PendingIntent.getActivity(applicationContext, 101, intent, PendingIntent.FLAG_IMMUTABLE)
         val nm = applicationContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         var channel: NotificationChannel? = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
