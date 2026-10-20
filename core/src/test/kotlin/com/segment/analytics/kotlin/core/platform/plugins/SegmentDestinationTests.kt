@@ -60,6 +60,9 @@ class SegmentDestinationTests {
         every { UUID.randomUUID().toString() } returns "qwerty-qwerty-123"
         mockkStatic(Base64::class)
         mockkConstructor(HTTPClient::class)
+        // register the constructor stub up front; mockk 1.12 doesn't apply a test's first
+        // anyConstructed stub to HTTPClients built before it (in setup), so they'd hit the network.
+        every { anyConstructed<HTTPClient>().upload(any()) } answers { callOriginal() }
     }
 
     @BeforeEach

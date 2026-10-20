@@ -39,6 +39,16 @@ allprojects {
     group GROUP
     version getVersionName()
 
+    // mockk mocks and copies JDK internals (java.time, HttpURLConnection, atomics) that JDK 17 closes by default.
+    tasks.withType(Test).configureEach {
+        jvmArgs '--add-opens=java.base/java.time=ALL-UNNAMED',
+                '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                '--add-opens=java.base/sun.net.www.protocol.https=ALL-UNNAMED',
+                '--add-opens=java.base/javax.net.ssl=ALL-UNNAMED',
+                '--add-opens=java.base/java.net=ALL-UNNAMED',
+                '--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED'
+    }
+
     /*
      * AGP's lint tooling (used by extractAnnotations and lint) resolves BouncyCastle 1.79 inside an
      * internal detached configuration, which resolutionStrategy rules do not reach. Curated Artifactory
