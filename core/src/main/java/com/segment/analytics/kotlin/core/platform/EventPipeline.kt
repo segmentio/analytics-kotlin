@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -71,7 +72,7 @@ open class EventPipeline(
                 backoffConfig = it.backoffConfig
             )
         } ?: RetryConfig()
-        
+
         retryStateMachine = RetryStateMachine(
             retryConfig,
             timeProvider
@@ -173,7 +174,7 @@ open class EventPipeline(
                 analytics.log("$logTag skipping uploads: pipeline is rate-limited until ${retryState.waitUntilTime}")
                 return@consumeEach // Skip all uploads for this flush
             }
-            
+
             // Clear RATE_LIMITED state if wait time has passed
             val waitTime = retryState.waitUntilTime
             if (retryState.pipelineState == PipelineState.RATE_LIMITED &&
@@ -220,7 +221,7 @@ open class EventPipeline(
                 }
                 // Get retry count for X-Retry-Count header
                 val retryCount = retryStateMachine.getRetryCount(retryState, url)
-                
+
                 // upload event file
                 var shouldCleanup = true
                 var statusCode = 0
@@ -228,20 +229,22 @@ open class EventPipeline(
 
                 storage.readAsStream(url)?.use { data ->
                     try {
-                        val connection = httpClient.upload(apiHost)
+                        runInterruptible {
+                            val connection = httpClient.upload(apiHost)
 
-                        // Add X-Retry-Count header (only on retries, not first attempt)
-                        if (retryCount > 0) {
-                            connection.connection.setRequestProperty("X-Retry-Count", retryCount.toString())
-                        }
-                        
-                        connection.outputStream?.let {
-                            // Write the payloads into the OutputStream
-                            data.copyTo(connection.outputStream)
-                            connection.outputStream.close()
+                            // Add X-Retry-Count header (only on retries, not first attempt)
+                            if (retryCount > 0) {
+                                connection.connection.setRequestProperty("X-Retry-Count", retryCount.toString())
+                            }
 
-                            // Upload the payloads.
-                            connection.close()
+                            connection.outputStream?.let {
+                                // Write the payloads into the OutputStream
+                                data.copyTo(connection.outputStream)
+                                connection.outputStream.close()
+
+                                // Upload the payloads.
+                                connection.close()
+                            }
                         }
 
                         // Success!
@@ -293,6 +296,7 @@ open class EventPipeline(
             }
         }
     }
+
     private fun schedule() {
         flushPolicies.forEach { it.schedule(analytics) }
     }
