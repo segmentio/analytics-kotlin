@@ -9,6 +9,10 @@ data class RetryState(
     val globalRetryCount: Int = 0,
     val batchMetadata: Map<String, BatchMetadata> = emptyMap()
 ) {
+    internal fun isPaused(currentTime: Long): Boolean =
+        pipelineState != PipelineState.READY &&
+        waitUntilTime?.let { currentTime < it } == true
+
     fun isRateLimited(currentTime: Long): Boolean =
         pipelineState == PipelineState.RATE_LIMITED &&
         waitUntilTime?.let { currentTime < it } == true
