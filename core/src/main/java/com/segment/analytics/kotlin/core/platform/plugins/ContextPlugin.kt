@@ -27,6 +27,8 @@ class ContextPlugin : Plugin {
         const val LIBRARY_NAME_KEY = "name"
         const val LIBRARY_VERSION_KEY = "version"
         const val INSTANCE_ID_KEY = "instanceId"
+        const val REFERRER_KEY = "referrer"
+        const val REFERRER_URL_KEY = "url"
     }
 
     override fun setup(analytics: Analytics) {
@@ -39,6 +41,11 @@ class ContextPlugin : Plugin {
 
     private fun applyContextData(event: BaseEvent) {
         val newContext = buildJsonObject {
+            // referrer from the last deep link; added first so a caller-supplied context wins
+            analytics.userInfo.referrer?.let { referrer ->
+                put(REFERRER_KEY, buildJsonObject { put(REFERRER_URL_KEY, referrer) })
+            }
+
             // copy existing context
             putAll(event.context)
 
