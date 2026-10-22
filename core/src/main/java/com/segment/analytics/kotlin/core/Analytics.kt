@@ -584,13 +584,26 @@ open class Analytics protected constructor(
      */
     fun reset() {
         val newAnonymousId = UUID.randomUUID().toString()
-        userInfo = UserInfo(newAnonymousId, null, null)
+        userInfo = UserInfo(newAnonymousId, null, null, null)
 
         analyticsScope.launch(analyticsDispatcher) {
             store.dispatch(UserInfo.ResetAction(newAnonymousId), UserInfo::class)
             timeline.applyClosure {
                 (it as? EventPlugin)?.reset()
             }
+        }
+    }
+
+    /**
+     * Records the URL of the most recently opened deep link so it is attached to subsequent
+     * events as `context.referrer.url`. Held in memory only; cleared by [reset].
+     *
+     * Called by the Android module when a deep link opens; not intended for direct use.
+     */
+    fun updateReferrer(referrerUrl: String?) {
+        userInfo.referrer = referrerUrl
+        analyticsScope.launch(analyticsDispatcher) {
+            store.dispatch(UserInfo.SetReferrerAction(referrerUrl), UserInfo::class)
         }
     }
 
