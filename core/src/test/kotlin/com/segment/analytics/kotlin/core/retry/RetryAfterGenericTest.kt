@@ -146,15 +146,36 @@ class RetryAfterGenericTest {
         assertNull(newState.batchMetadata["batch1"])
     }
 
-    @Test
-    fun `shouldDeleteBatch returns false for retryable code when rateLimitConfig enabled`() {
-        val config = RetryConfig(
+    private fun backoffDisabledMachine() = RetryStateMachine(
+        RetryConfig(
             rateLimitConfig = RateLimitConfig(enabled = true),
             backoffConfig = BackoffConfig(enabled = false)
         )
-        val machine = RetryStateMachine(config)
-        assertFalse(machine.shouldDeleteBatch(503))
-        assertFalse(machine.shouldDeleteBatch(529))
+    )
+
+    @Test
+    fun `shouldDeleteBatch keeps retryable code with Retry-After when backoff disabled`() {
+        val machine = backoffDisabledMachine()
+        assertFalse(machine.shouldDeleteBatch(503, retryAfterSeconds = 30))
+        assertFalse(machine.shouldDeleteBatch(529, retryAfterSeconds = 30))
+    }
+
+    @Test
+    fun `shouldDeleteBatch deletes retryable code without Retry-After when backoff disabled`() {
+        // nothing will retry it: rate limiting only pauses on Retry-After
+        val machine = backoffDisabledMachine()
+        assertTrue(machine.shouldDeleteBatch(500))
+        assertTrue(machine.shouldDeleteBatch(529))
+    }
+
+    @Test
+    fun `shouldDeleteBatch keeps 429 without Retry-After when backoff disabled`() {
+        assertFalse(backoffDisabledMachine().shouldDeleteBatch(429))
+    }
+
+    @Test
+    fun `shouldDeleteBatch keeps retryable code without Retry-After when backoff enabled`() {
+        assertFalse(RetryStateMachine(makeConfig()).shouldDeleteBatch(500))
     }
 
     @Test

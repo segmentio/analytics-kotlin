@@ -298,6 +298,45 @@ class EventPipelineSmartRetryTest {
     }
 
     @Test
+    fun `500 without Retry-After deletes batch when backoff disabled`() {
+        // rate limiting stays on, as it does when settings only disable backoff
+        val httpConfig = HttpConfig(
+            rateLimitConfig = RateLimitConfig(enabled = true),
+            backoffConfig = BackoffConfig(enabled = false)
+        )
+        pipeline = createPipeline(httpConfig)
+        pipeline.start()
+
+        every { mockHttpClient.upload(any()) } throws HTTPException(500, "", "", mutableMapOf())
+
+        pipeline.put(createTestEvent("event1"))
+        pipeline.put(createTestEvent("event2"))
+        Thread.sleep(100)
+
+        coVerify(atLeast = 1) { storage.removeFile(any()) }
+    }
+
+    @Test
+    fun `503 with Retry-After keeps batch when backoff disabled`() {
+        val httpConfig = HttpConfig(
+            rateLimitConfig = RateLimitConfig(enabled = true),
+            backoffConfig = BackoffConfig(enabled = false)
+        )
+        pipeline = createPipeline(httpConfig)
+        pipeline.start()
+
+        val headers = mutableMapOf("retry-after" to mutableListOf("60"))
+        every { mockHttpClient.upload(any()) } throws HTTPException(503, "", "", headers)
+
+        pipeline.put(createTestEvent("event1"))
+        pipeline.put(createTestEvent("event2"))
+        Thread.sleep(100)
+
+        coVerify(exactly = 0) { storage.removeFile(any()) }
+        assertEquals(PipelineState.RATE_LIMITED, storage.loadRetryState().pipelineState)
+    }
+
+    @Test
     fun `multiple batches can have independent backoff states`() {
         val httpConfig = HttpConfig(
             rateLimitConfig = RateLimitConfig(enabled = false),
