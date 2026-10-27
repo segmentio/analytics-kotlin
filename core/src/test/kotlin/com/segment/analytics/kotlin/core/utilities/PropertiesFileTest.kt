@@ -28,4 +28,13 @@ internal class PropertiesFileTest {
         kvStore.remove("int")
         assertEquals(kvStore.get("int", 0), 0)
     }
+
+    @Test
+    fun `test save recreates a removed directory`() {
+        kvStore.putString("string", "test")
+        directory.deleteRecursively()
+
+        kvStore.putString("string", "again")
+        assertEquals(PropertiesFile(File(directory, "123")).apply { load() }.get("string", ""), "again")
+    }
 }
