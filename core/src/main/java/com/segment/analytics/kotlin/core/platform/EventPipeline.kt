@@ -253,10 +253,13 @@ open class EventPipeline(
                         // Extract status code and retry-after from exception
                         if (e is HTTPException) {
                             statusCode = e.responseCode
-                            retryAfterSeconds = (e.responseHeaders["retry-after"])?.firstOrNull()?.toIntOrNull()
+                            retryAfterSeconds = parseRetryAfterSeconds(
+                                e.responseHeaders["retry-after"]?.firstOrNull(),
+                                timeProvider.currentTimeMillis()
+                            )
                         }
 
-                        shouldCleanup = handleUploadException(e, url)
+                        shouldCleanup = handleUploadException(e, url, retryAfterSeconds)
                     }
                 }
 
@@ -303,11 +306,11 @@ open class EventPipeline(
 
 
 
-    private fun handleUploadException(e: Exception, file: String): Boolean {
+    private fun handleUploadException(e: Exception, file: String, retryAfterSeconds: Int?): Boolean {
         var shouldCleanup = false
         if (e is HTTPException) {
             analytics.log("$logTag exception while uploading, ${e.message}")
-            if (retryStateMachine.shouldDeleteBatch(e.responseCode)) {
+            if (retryStateMachine.shouldDeleteBatch(e.responseCode, retryAfterSeconds)) {
                 // Simply log and proceed to remove the rejected payloads from the queue.
                 Analytics.segmentLog(
                     message = "Payloads were rejected by server. Marked for removal.",
