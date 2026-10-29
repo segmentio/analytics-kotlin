@@ -33,6 +33,8 @@ class PropertiesFile(val file: File) : KVS {
     }
 
     fun save() {
+        // the directory can be removed while running, e.g. when /tmp is cleaned up
+        file.parentFile?.mkdirs()
         FileOutputStream(file).use {
             properties.store(it, null)
         }

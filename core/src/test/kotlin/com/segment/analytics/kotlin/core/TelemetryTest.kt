@@ -1,6 +1,9 @@
 package com.segment.analytics.kotlin.core
 
 import io.mockk.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -48,6 +51,9 @@ class TelemetryTest {
             startedField.set(Telemetry, value)
         }
 
+    private val scopeField: Field = Telemetry::class.java.getDeclaredField("telemetryScope").apply { isAccessible = true }
+    private var originalScope: Any? = null
+
     val errors: MutableList<String> = mutableListOf()
 
     fun errorHandler(error: Throwable) {
@@ -72,12 +78,22 @@ class TelemetryTest {
     @BeforeEach
     fun setup() {
         Telemetry.reset()
+        // start() launches a flush loop that flushes right away, racing the queue assertions.
+        // A cancelled scope keeps the loop from ever running.
+        originalScope = scopeField.get(Telemetry)
+        scopeField.set(Telemetry, CoroutineScope(Job().apply { cancel() }))
         Telemetry.errorHandler = ::errorHandler
         errors.clear()
         Telemetry.sampleRate = 1.0
         MockKAnnotations.init(this)
         mockTelemetryHTTPClient()
         // Telemetry.enable = true <- this will call start(), so don't do it here
+    }
+
+    @AfterEach
+    fun teardown() {
+        Telemetry.reset()
+        scopeField.set(Telemetry, originalScope)
     }
 
     @Test

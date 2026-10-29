@@ -93,6 +93,8 @@ object Telemetry: Subscriber {
 
     private val queue = ConcurrentLinkedQueue<RemoteMetric>()
     private var queueBytes = 0
+    // guards the size and byte limits, which span several queue operations
+    private val queueLock = Any()
     private var started = false
     private var rateLimitEndTime: Long = 0
     private var flushFirstError = true
@@ -247,15 +249,17 @@ object Telemetry: Subscriber {
 
     private fun send() {
         if (sampleRate == 0.0) return
-        var queueCount = queue.size
-        // Reset queue data size counter since all current queue items will be removed
-        queueBytes = 0
         val sendQueue = mutableListOf<RemoteMetric>()
-        while (queueCount-- > 0 && !queue.isEmpty()) {
-            val m = queue.poll()
-            if(m != null) {
-                m.value = (m.value / sampleRate).roundToInt()
-                sendQueue.add(m)
+        synchronized(queueLock) {
+            var queueCount = queue.size
+            // Reset queue data size counter since all current queue items will be removed
+            queueBytes = 0
+            while (queueCount-- > 0 && !queue.isEmpty()) {
+                val m = queue.poll()
+                if(m != null) {
+                    m.value = (m.value / sampleRate).roundToInt()
+                    sendQueue.add(m)
+                }
             }
         }
         try {
@@ -310,28 +314,30 @@ object Telemetry: Subscriber {
 
     private fun addRemoteMetric(metric: String, tags: Map<String, String>, value: Int = 1, log: String? = null) {
         val fullTags = tags + additionalTags
-        val found = queue.find {
-            it.metric == metric && it.tags == fullTags
-        }
-        if (found != null) {
-            found.value += value
-            return
-        }
-        if (queue.size >= maxQueueSize) {
-            return
-        }
+        synchronized(queueLock) {
+            val found = queue.find {
+                it.metric == metric && it.tags == fullTags
+            }
+            if (found != null) {
+                found.value += value
+                return
+            }
+            if (queue.size >= maxQueueSize) {
+                return
+            }
 
-        val newMetric = RemoteMetric(
-            type = METRIC_TYPE,
-            metric = metric,
-            value = value,
-            log = log?.let { mapOf("timestamp" to SegmentInstant.now(), "trace" to it) },
-            tags = fullTags
-        )
-        val newMetricSize = newMetric.toString().toByteArray().size
-        if (queueBytes + newMetricSize <= maxQueueBytes) {
-            queue.add(newMetric)
-            queueBytes += newMetricSize
+            val newMetric = RemoteMetric(
+                type = METRIC_TYPE,
+                metric = metric,
+                value = value,
+                log = log?.let { mapOf("timestamp" to SegmentInstant.now(), "trace" to it) },
+                tags = fullTags
+            )
+            val newMetricSize = newMetric.toString().toByteArray().size
+            if (queueBytes + newMetricSize <= maxQueueBytes) {
+                queue.add(newMetric)
+                queueBytes += newMetricSize
+            }
         }
     }
 
@@ -358,7 +364,9 @@ object Telemetry: Subscriber {
     }
 
     private fun resetQueue() {
-        queue.clear()
-        queueBytes = 0
+        synchronized(queueLock) {
+            queue.clear()
+            queueBytes = 0
+        }
     }
 }
