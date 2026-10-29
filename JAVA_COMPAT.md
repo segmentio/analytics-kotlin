@@ -43,7 +43,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.segment.analytics.kotlin:android:1.25.0'
+    implementation 'com.segment.analytics.kotlin:android:1.27.0'
 }
 ```
 
@@ -60,7 +60,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.segment.analytics.kotlin:core:1.25.0'
+    implementation 'com.segment.analytics.kotlin:core:1.27.0'
 }
 ```
 </details>
