@@ -41,6 +41,23 @@ internal class StateTest {
     inner class UserInfoTests {
 
         @Test
+        fun referrerIsPreservedByOtherActionsAndClearedByReset() = runTest {
+            analytics.store.dispatch(UserInfo.SetReferrerAction("myapp://home"), UserInfo::class)
+            analytics.store.dispatch(UserInfo.SetUserIdAction("u"), UserInfo::class)
+            analytics.store.dispatch(UserInfo.SetAnonymousIdAction("a"), UserInfo::class)
+            analytics.store.dispatch(
+                UserInfo.SetTraitsAction(buildJsonObject { put("k", "v") }), UserInfo::class
+            )
+            analytics.store.dispatch(
+                UserInfo.SetUserIdAndTraitsAction("u2", buildJsonObject { }), UserInfo::class
+            )
+            assertEquals("myapp://home", analytics.store.currentState(UserInfo::class)?.referrer)
+
+            analytics.store.dispatch(UserInfo.ResetAction(), UserInfo::class)
+            assertNull(analytics.store.currentState(UserInfo::class)?.referrer)
+        }
+
+        @Test
         fun resetAction() = runTest  {
             val traits = buildJsonObject { put("behaviour", "bad") }
             analytics.store.dispatch(

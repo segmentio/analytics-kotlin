@@ -195,11 +195,14 @@ data class System(
  * - anonymousId (String)
  * - userId (String)
  * - traits (Map)
+ * - referrer (String): URL of the most recently opened deep link. Held in memory only, never
+ *   persisted, and cleared by [ResetAction].
  */
 data class UserInfo(
     var anonymousId: String,
     var userId: String?,
-    var traits: JsonObject?
+    var traits: JsonObject?,
+    var referrer: String? = null
 ) : State {
 
     companion object {
@@ -218,31 +221,37 @@ data class UserInfo(
 
     class ResetAction(var anonymousId: String = UUID.randomUUID().toString()) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(anonymousId, null, null)
+            return UserInfo(anonymousId, null, null, null)
         }
     }
 
     class SetUserIdAction(var userId: String) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(state.anonymousId, userId, state.traits)
+            return state.copy(userId = userId)
         }
     }
 
     class SetAnonymousIdAction(var anonymousId: String) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(anonymousId, state.userId, state.traits)
+            return state.copy(anonymousId = anonymousId)
+        }
+    }
+
+    class SetReferrerAction(var referrer: String?) : Action<UserInfo> {
+        override fun reduce(state: UserInfo): UserInfo {
+            return state.copy(referrer = referrer)
         }
     }
 
     class SetTraitsAction(var traits: JsonObject) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(state.anonymousId, state.userId, traits)
+            return state.copy(traits = traits)
         }
     }
 
     class SetUserIdAndTraitsAction(var userId: String, var traits: JsonObject) : Action<UserInfo> {
         override fun reduce(state: UserInfo): UserInfo {
-            return UserInfo(state.anonymousId, userId, traits)
+            return state.copy(userId = userId, traits = traits)
         }
     }
 }

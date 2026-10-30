@@ -1,6 +1,7 @@
 package com.segment.analytics.kotlin.android.utilities
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,15 +11,18 @@ import com.segment.analytics.kotlin.android.utils.MemorySharedPreferences
 import com.segment.analytics.kotlin.android.utils.testAnalytics
 import com.segment.analytics.kotlin.core.Analytics
 import com.segment.analytics.kotlin.core.Configuration
+import com.segment.analytics.kotlin.core.UserInfo
 import com.segment.analytics.kotlin.core.emptyJsonObject
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,6 +56,22 @@ class DeepLinkUtilsTests {
             testScope, testDispatcher
         )
         deepLinkUtils = DeepLinkUtils(analytics)
+    }
+
+    @Test
+    fun trackDeepLinkFromSetsReferrerToOpenedUrl() = runTest {
+        val url = "myapp://home?utm_source=x"
+        deepLinkUtils.trackDeepLinkFrom("android-app://com.other", Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        assertEquals(url, analytics.store.currentState(UserInfo::class)?.referrer)
+
+        analytics.reset()
+        assertNull(analytics.store.currentState(UserInfo::class)?.referrer)
+    }
+
+    @Test
+    fun trackDeepLinkFromWithoutDataLeavesReferrerUnset() = runTest {
+        deepLinkUtils.trackDeepLinkFrom("android-app://com.other", Intent(Intent.ACTION_VIEW))
+        assertNull(analytics.store.currentState(UserInfo::class)?.referrer)
     }
 
     @Test
